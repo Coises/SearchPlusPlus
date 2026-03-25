@@ -1,4 +1,4 @@
-$Project = (Get-ChildItem -Path ".vs\bin\Win32\Release" -Filter "*.dll" | Select-Object -First 1).BaseName
+$Project = "Search++"
 New-Item -Path Releases -ItemType Directory -Force
 $x86Version = (Get-Command ".vs\bin\Win32\Release\$Project.dll").FileVersionInfo.ProductVersion
 Compress-Archive -DestinationPath "Releases\$Project-$x86Version-x86.zip" -Path ".vs\bin\Win32\Release\*"
