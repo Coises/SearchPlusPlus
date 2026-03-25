@@ -1,0 +1,1282 @@
+﻿// This file is part of Search++.
+// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// at your option any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+#include "CommonData.h"
+
+#include "resource.h"
+#include "Shlwapi.h"
+#include <windowsx.h>
+#include "Host/dockingResource.h"
+
+void showSettingsDialog();
+void showHitlist();
+
+
+namespace {
+
+// Command button and menu text
+        
+const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_Text {
+
+    { SearchCommand(SearchCommand::Find, SearchCommand::Forward ), {L"&Find"         , L"&Find🡪"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Backward), {L"Find &Backward", L"&Find🡨"} },
+
+    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Region   ), {L"Find in &Marked Text"            , L"▤ &Find🡪"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Selection), {L"Find in &Selection"              , L"▣ &Find🡪"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Whole    ), {L"Find in &Whole Document"         , L"▯ &Find🡪"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Region   ), {L"Find Backward in Marked &Text"   , L"▤ &Find🡨"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Selection), {L"Find Backward in S&election"     , L"▣ &Find🡨"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Whole    ), {L"Find Backward in Whole &Document", L"▯ &Find🡨"} },
+
+
+    { SearchCommand(SearchCommand::Count, SearchCommand::All   ), {L"&Count"       , L"&Count↕"  } },
+    { SearchCommand(SearchCommand::Count, SearchCommand::Before), {L"Count &Before", L"&Count🡩"  } },
+    { SearchCommand(SearchCommand::Count, SearchCommand::After ), {L"Count &After" , L"&Count🡫"  } },
+
+    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Region   ), {L"Count in &Marked Text"          , L"▤ &Count↕" } },
+    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Selection), {L"Count in &Selection"            , L"▣ &Count↕" } },
+    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Whole    ), {L"Count in &Whole Document"       , L"▯ &Count↕" } },
+    { SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Region   ), {L"Count Before in Mar&ked Text"   , L"▤ &Count🡩"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Whole    ), {L"Count Before in W&hole Document", L"▯ &Count🡩"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Region   ), {L"Count After in Marked &Text"    , L"▤ &Count🡫"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Whole    ), {L"Count After in Whole &Document" , L"▯ &Count🡫"} },
+
+
+    { SearchCommand(SearchCommand::Find  , SearchCommand::All), {L"&Find All", L"Find &All↕"} },
+    { SearchCommand(SearchCommand::Mark  , SearchCommand::All), {L"&Mark"    , L"M&ark↕"    } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::All), {L"&Select"  , L"&Select↕"  } },
+    { SearchCommand(SearchCommand::Show  , SearchCommand::All), {L"S&how"    , L"&Show↕"    } },
+
+    { SearchCommand(SearchCommand::Find, SearchCommand::Before                          ), {L"Find All &Before"                  , L"Find &All🡩"  } },
+    { SearchCommand(SearchCommand::Find, SearchCommand::After                           ), {L"Find All &After"                   , L"Find &All🡫"  } },
+    { SearchCommand(SearchCommand::Find, SearchCommand::All   , SearchCommand::Selection), {L"Find All in &Selection"            , L"▣ Find &All↕"  } },
+    { SearchCommand(SearchCommand::Find, SearchCommand::All   , SearchCommand::Region   ), {L"Find All in &Marked Text"          , L"▤ Find &All↕"  } },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Before, SearchCommand::Region   ), {L"Find All Before in Mar&ked Text"   , L"▤ Find &All🡩"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::After , SearchCommand::Region   ), {L"Find All After in Marked &Text"    , L"▤ Find &All🡫"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::All   , SearchCommand::Whole    ), {L"Find All in &Whole Document"       , L"▯ Find &All↕" } },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Before, SearchCommand::Whole    ), {L"Find All Before in W&hole Document", L"▯ Find &All🡩"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::After , SearchCommand::Whole    ), {L"Find All After in Whole &Document" , L"▯ Find &All🡫"} },
+
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Before                          ), {L"Mark &Before"                  , L"M&ark🡩"  } },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::After                           ), {L"Mark &After"                   , L"M&ark🡫"  } },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Selection), {L"Mark in &Selection"            , L"▣ M&ark↕" } },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Region   ), {L"Mark in &Marked Text"          , L"▤ M&ark↕" } },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Region   ), {L"Mark Before in Mar&ked Text"   , L"▤ M&ark🡩"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Region   ), {L"Mark After in Marked &Text"    , L"▤ M&ark🡫"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Whole    ), {L"Mark in &Whole Document"       , L"▯ M&ark↕" } },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Whole    ), {L"Mark Before in W&hole Document", L"▯ M&ark🡩"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Whole    ), {L"Mark After in Whole &Document" , L"▯ M&ark🡫"} },
+
+    { SearchCommand(SearchCommand::Select, SearchCommand::Before                          ), {L"Select &Before"                    , L"&Select🡩"  } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::After                           ), {L"Select &After"                     , L"&Select🡫"  } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Selection), {L"Select in &Selection"              , L"▣ &Select↕" } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Region   ), {L"Select in &Marked Text"            , L"▤ &Select↕" } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Region   ), {L"Select Before in Mar&ked Text"     , L"▤ &Select🡩"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Region   ), {L"Select After in Marked &Text"      , L"▤ &Select🡫"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Whole    ), {L"Select in &Whole Document"         , L"▯ &Select↕" } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Whole    ), {L"Select Before in W&hole Document"  , L"▯ &Select🡩"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Whole    ), {L"Select After in Whole &Document"   , L"▯ &Select🡫"} },
+
+    { SearchCommand(SearchCommand::Show, SearchCommand::Before                          ), {L"Show &Before"                    , L"&Show🡩"  } },
+    { SearchCommand(SearchCommand::Show, SearchCommand::After                           ), {L"Show &After"                     , L"&Show🡫"  } },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Selection), {L"Show in &Selection"              , L"▣ &Show↕" } },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Region   ), {L"Show in &Marked Text"            , L"▤ &Show↕" } },
+    { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Region   ), {L"Show Before in Mar&ked Text"     , L"▤ &Show🡩"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Region   ), {L"Show After in Marked &Text"      , L"▤ &Show🡫"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole    ), {L"Show in &Whole Document"         , L"▯ &Show↕" } },
+    { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Whole    ), {L"Show Before in W&hole Document"  , L"▯ &Show🡩"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole    ), {L"Show After in Whole &Document"   , L"▯ &Show🡫"} },
+
+    { SearchCommand(SearchCommand::Replace , SearchCommand::Forward ), {L"&Replace and Find"         , L"&Replace🡪"} },
+    { SearchCommand(SearchCommand::FindRepl, SearchCommand::Forward ), {L"&Find or Replace"          , L"&Replace🡪❚"} },
+    { SearchCommand(SearchCommand::Replace , SearchCommand::Backward), {L"Replace and Find &Backward", L"&Replace🡨"} },
+    { SearchCommand(SearchCommand::FindRepl, SearchCommand::Backward), {L"Find Backward &or Replace" , L"&Replace❚🡨"} },
+
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Region   ), {L"Replace and Find in &Marked Text"            , L"▤ &Replace🡪"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Selection), {L"Replace and Find in &Selection"              , L"▣ &Replace🡪"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Whole    ), {L"Replace and Find in &Whole Document"         , L"▯ &Replace🡪"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Region   ), {L"Replace and Find Backward in Mar&ked Text"   , L"▤ &Replace🡨"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Selection), {L"Replace and Find Backward in Selectio&n"     , L"▣ &Replace🡨"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Whole    ), {L"Replace and Find Backward in W&hole Document", L"▯ &Replace🡨"} },
+
+    { SearchCommand(SearchCommand::FindRepl, SearchCommand::Forward , SearchCommand::Region   ), {L"Find or Replace in Marked &Text"            , L"▤ &Replace🡪❚"} },
+    { SearchCommand(SearchCommand::FindRepl, SearchCommand::Forward , SearchCommand::Selection), {L"Find or Replace in S&election"              , L"▣ &Replace🡪❚"} },
+    { SearchCommand(SearchCommand::FindRepl, SearchCommand::Forward , SearchCommand::Whole    ), {L"Find or Replace in Whole &Document"         , L"▯ &Replace🡪❚"} },
+    { SearchCommand(SearchCommand::FindRepl, SearchCommand::Backward, SearchCommand::Region   ), {L"Find Backward or Replace &in Marked Text"   , L"▤ &Replace❚🡨"} },
+    { SearchCommand(SearchCommand::FindRepl, SearchCommand::Backward, SearchCommand::Selection), {L"Find Backward or Replace in Se&lection"     , L"▣ &Replace❚🡨"} },
+    { SearchCommand(SearchCommand::FindRepl, SearchCommand::Backward, SearchCommand::Whole    ), {L"Find Backward or Replace in Whole Doc&ument", L"▯ &Replace❚🡨"} },
+
+
+    { SearchCommand(SearchCommand::Replace, SearchCommand::All   ), {L"&Replace All"       , L"R&eplace All↕"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Before), {L"Replace All &Before", L"R&eplace All🡩"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::After ), {L"Replace All &After" , L"R&eplace All🡫"} },
+
+    { SearchCommand(SearchCommand::Replace, SearchCommand::All   , SearchCommand::Region   ), {L"Replace All in &Marked Text"          , L"▤ R&eplace All↕" } },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::All   , SearchCommand::Selection), {L"Replace All in &Selection"            , L"▣ R&eplace All↕" } },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::All   , SearchCommand::Whole    ), {L"Replace All in &Whole Document"       , L"▯ R&eplace All↕" } },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Before, SearchCommand::Region   ), {L"Replace All Before in Mar&ked Text"   , L"▤ R&eplace All🡩"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Before, SearchCommand::Whole    ), {L"Replace All Before in W&hole Document", L"▯ R&eplace All🡩"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::After , SearchCommand::Region   ), {L"Replace All After in Marked &Text"    , L"▤ R&eplace All🡫"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::After , SearchCommand::Whole    ), {L"Replace All After in Whole &Document" , L"▯ R&eplace All🡫"} },
+
+};
+
+// The contains check protects against a nasty crash if the configuration file contains bad data for the buttons.
+
+const wchar_t* Command_Button(unsigned int command) {
+    return (Command_Text.contains(command)) ? Command_Text.at(command).second: L"???";
+}
+
+const wchar_t* Command_Menu(unsigned int command) {
+    return (Command_Text.contains(command)) ? Command_Text.at(command).first: L"???";
+}
+
+
+config_rect placement("Search dialog placement");
+
+
+// Subclass procedure for Scintilla controls: implement keyboard shortcuts not built in to Scintilla
+
+LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
+    switch (uMsg) {
+    case WM_GETDLGCODE:
+        return DefSubclassProc(hWnd, uMsg, wParam, lParam) & ~DLGC_HASSETSEL;
+    case WM_KEYDOWN:
+        if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000)) break;
+        switch (wParam) {
+        case 'E':
+        {
+            if (GetKeyState(VK_SHIFT) & 0x8000) break;
+            HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
+            HWND hReplBox = GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX);
+            plugin.getScintillaPointers(hReplBox);
+            std::string replText = sci.GetText(sci.Length());
+            plugin.getScintillaPointers(hFindBox);
+            std::string findText = sci.GetText(sci.Length());
+            sci.TargetWholeDocument();
+            sci.ReplaceTarget(replText);
+            plugin.getScintillaPointers(hReplBox);
+            sci.TargetWholeDocument();
+            sci.ReplaceTarget(findText);
+            break;
+        }
+        case 'F':
+        {
+            if (GetKeyState(VK_SHIFT) & 0x8000) break;
+            HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
+            HWND hReplBox = GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX);
+            plugin.getScintillaPointers(hFindBox);
+            std::string text = sci.GetText(sci.Length());
+            plugin.getScintillaPointers(hReplBox);
+            if (hWnd == hReplBox) sci.TargetFromSelection();
+                             else sci.TargetWholeDocument();
+            sci.ReplaceTarget(text);
+            break;
+        }
+        case 'H':
+            if (GetKeyState(VK_SHIFT) & 0x8000) break;
+            showHitlist();
+            break;
+        case 'I':
+        {
+            if (GetKeyState(VK_SHIFT) & 0x8000) break;
+            plugin.getScintillaPointers();
+            std::string text = sci.GetSelText();
+            plugin.getScintillaPointers(hWnd);
+            sci.TargetFromSelection();
+            sci.ReplaceTarget(text);
+            break;
+        }
+        case 'N':
+            SetFocus(plugin.currentScintilla());
+            if (GetKeyState(VK_SHIFT) & 0x8000)
+                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                                                   else ShowWindow(data.searchDialog, SW_HIDE);
+            break;
+        case 'O':
+        {
+            if (GetKeyState(VK_SHIFT) & 0x8000) break;
+            HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
+            SetFocus(hWnd == hFindBox ? GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX) : hFindBox);
+            break;
+        }
+        case 'R':
+        {
+            if (GetKeyState(VK_SHIFT) & 0x8000) break;
+            HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
+            HWND hReplBox = GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX);
+            plugin.getScintillaPointers(hReplBox);
+            std::string text = sci.GetText(sci.Length());
+            plugin.getScintillaPointers(hFindBox);
+            if (hWnd == hFindBox) sci.TargetFromSelection();
+                             else sci.TargetWholeDocument();
+            sci.ReplaceTarget(text);
+            break;
+        }
+        case 'W':
+        {
+            if (GetKeyState(VK_SHIFT) & 0x8000) break;
+            HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
+            auto& setting = hWnd == hFindBox ? data.wrapFind : data.wrapRepl;
+            plugin.getScintillaPointers(hWnd);
+            Scintilla::Wrap current = sci.WrapMode();
+            if      (current == Scintilla::Wrap::None) sci.SetWrapMode(setting = Scintilla::Wrap::Char);
+            else if (current == Scintilla::Wrap::Char) sci.SetWrapMode(setting = Scintilla::Wrap::Word);
+            else                                       sci.SetWrapMode(setting = Scintilla::Wrap::None);
+            break;
+        }
+        }
+    }
+    return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+
+// Subclass procedure for non-Scintilla controls: implement dialog-wide keyboard shortcuts
+
+LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
+    switch (uMsg) {
+    case WM_KEYDOWN:
+        if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000)) break;
+        switch (wParam) {
+        case 'N':
+            SetFocus(plugin.currentScintilla());
+            if (GetKeyState(VK_SHIFT) & 0x8000)
+                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                else ShowWindow(data.searchDialog, SW_HIDE);
+            break;
+        case 'O':
+            if (GetKeyState(VK_SHIFT) & 0x8000) break;
+            SetFocus(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
+            break;
+        }
+    }
+    return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
+
+
+HWND setupSearchBox(HWND hwndDlg, int box) {
+    HWND customBox = GetDlgItem(hwndDlg, box);
+    RECT rectBox;
+    GetWindowRect(customBox, &rectBox);
+    MapWindowPoints(0, hwndDlg, reinterpret_cast<LPPOINT>(&rectBox), 2);
+    DestroyWindow(customBox);
+    HWND sciBox = reinterpret_cast<HWND>(npp(NPPM_CREATESCINTILLAHANDLE, 0, hwndDlg));
+    SetWindowPos(sciBox, 0, rectBox.left, rectBox.top, rectBox.right - rectBox.left, rectBox.bottom - rectBox.top,
+                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+    SetWindowLong(sciBox, GWL_ID, box);
+    SetWindowLong(sciBox, GWL_STYLE, GetWindowLong(sciBox, GWL_STYLE) | WS_BORDER | WS_TABSTOP);
+    plugin.getScintillaPointers();
+    Scintilla::ColourAlpha hints = sci.ElementColour(Scintilla::Element::WhiteSpace);
+    plugin.getScintillaPointers(sciBox);
+    sci.SetModEventMask(Scintilla::ModificationFlags::DeleteText | Scintilla::ModificationFlags::InsertText);
+    sci.SetMargins(0);
+    sci.SetWrapMode(Scintilla::Wrap::Char);
+    sci.SetTabWidth(1);
+    sci.SetUseTabs(true);
+    sci.SetViewWS(Scintilla::WhiteSpace::VisibleAlways);
+    sci.SetViewEOL(true);
+    sci.SetWhitespaceSize(2);
+    sci.UsePopUp(Scintilla::PopUp::Never);
+    sci.SetMultipleSelection(false);
+    sci.SetVirtualSpaceOptions(Scintilla::VirtualSpace::None);
+    sci.SetAdditionalSelectionTyping(true);
+    sci.SetElementColour(Scintilla::Element::SelectionInactiveBack, sci.ElementColour(Scintilla::Element::SelectionBack));
+    sci.SetElementColour(Scintilla::Element::WhiteSpace, hints);
+    sci.SetRepresentation("\n"  , reinterpret_cast<const char*>(u8"\U0001F807"));
+    sci.SetRepresentation("\r"  , reinterpret_cast<const char*>(u8"\U0001F804"));
+    sci.SetRepresentation("\r\n", reinterpret_cast<const char*>(u8"\u21A9"));
+    sci.SetRepresentationAppearance("\n"  , Scintilla::RepresentationAppearance::Plain);
+    sci.SetRepresentationAppearance("\r"  , Scintilla::RepresentationAppearance::Plain);
+    sci.SetRepresentationAppearance("\r\n", Scintilla::RepresentationAppearance::Plain);
+    sci.SetRepresentationColour("\n"  , hints);
+    sci.SetRepresentationColour("\r"  , hints);
+    sci.SetRepresentationColour("\r\n", hints);
+    sci.ClearCmdKey('E' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('F' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('H' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('I' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('N' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('O' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('R' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('W' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('N' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    SetWindowSubclass(sciBox, subclassScintilla, 0, 0);
+    return sciBox;
+}
+
+
+// Reference information for control locations, used in WM_SIZE
+
+RECT hPlain, hBoost, hICU, hTools, hFindbox, hReplbox, hFind, hCount, hFindAll, hReplace, hReplaceAll,
+     hMatchCase, hDotAll, hWholeWord, hFreeSpacing, hUnicodeWord, hMessage, hClient,
+     vPlain, vBoost, vICU, vTools, vFindbox, vReplbox, vFind, vCount, vFindAll, vReplace, vReplaceAll,
+     vMatchCase, vDotAll, vWholeWord, vFreeSpacing, vUnicodeWord, vMessage, vClient;
+
+void GetControlReferencesForLayout(HWND hwndDlg) {
+    RECT window, client;
+    GetWindowRect(hwndDlg, &window);
+    GetClientRect(hwndDlg, &client);
+    hPlain       = {  7,   7,  44,  19};
+    hBoost       = { 51,   7,  88,  19};
+    hICU         = { 95,   7, 132,  19};
+    hTools       = {139,   7, 176,  19};
+    hFindbox     = {  7,  25, 176,  56};
+    hReplbox     = {186,  25, 355,  56};
+    hFind        = {  7,  62,  60,  76};
+    hCount       = { 65,  62, 118,  76};
+    hFindAll     = {123,  62, 176,  76};
+    hReplace     = {197,  62, 266,  76};
+    hReplaceAll  = {275,  62, 344,  76};
+    hMatchCase   = { 25,  84,  77,  94};
+    hDotAll      = { 82,  84, 174,  94};
+    hWholeWord   = { 82,  84, 174,  94};
+    hFreeSpacing = {179,  84, 236,  94};
+    hUnicodeWord = {241,  84, 338,  94};
+    hMessage     = {  7, 104, 356, 112};
+    hClient      = {  0,   0, 363, 116};
+    vPlain       = {  7,   7,  44,  19};
+    vBoost       = { 51,   7,  88,  19};
+    vICU         = { 95,   7, 132,  19};
+    vTools       = {139,   7, 176,  19};
+    vFindbox     = {  7,  25, 176,  56};
+    vFind        = {  7,  62,  60,  76};
+    vCount       = { 65,  62, 118,  76};
+    vFindAll     = {123,  62, 176,  76};
+    vMatchCase   = {  7,  81,  59,  91};
+    vDotAll      = { 69,  81, 161,  91};
+    vWholeWord   = { 69,  81, 161,  91};
+    vFreeSpacing = {  7,  94,  64, 104};
+    vUnicodeWord = { 69,  94, 166, 104};
+    vReplbox     = {  7, 110, 176, 141};
+    vReplace     = { 18, 147,  87, 161};
+    vReplaceAll  = { 96, 147, 165, 161};
+    vMessage     = {  7, 167, 176, 175};
+    vClient      = {  0,   0, 183, 181};
+    MapDialogRect(hwndDlg, &hPlain);
+    MapDialogRect(hwndDlg, &hBoost);
+    MapDialogRect(hwndDlg, &hICU);
+    MapDialogRect(hwndDlg, &hTools);
+    MapDialogRect(hwndDlg, &hFindbox);
+    MapDialogRect(hwndDlg, &hReplbox);
+    MapDialogRect(hwndDlg, &hFind);
+    MapDialogRect(hwndDlg, &hCount);
+    MapDialogRect(hwndDlg, &hFindAll);
+    MapDialogRect(hwndDlg, &hReplace);
+    MapDialogRect(hwndDlg, &hReplaceAll);
+    MapDialogRect(hwndDlg, &hMatchCase);
+    MapDialogRect(hwndDlg, &hDotAll);
+    MapDialogRect(hwndDlg, &hWholeWord);
+    MapDialogRect(hwndDlg, &hFreeSpacing);
+    MapDialogRect(hwndDlg, &hUnicodeWord);
+    MapDialogRect(hwndDlg, &hMessage);
+    MapDialogRect(hwndDlg, &hClient);
+    MapDialogRect(hwndDlg, &vPlain);
+    MapDialogRect(hwndDlg, &vBoost);
+    MapDialogRect(hwndDlg, &vICU);
+    MapDialogRect(hwndDlg, &vTools);
+    MapDialogRect(hwndDlg, &vFindbox);
+    MapDialogRect(hwndDlg, &vReplbox);
+    MapDialogRect(hwndDlg, &vFind);
+    MapDialogRect(hwndDlg, &vCount);
+    MapDialogRect(hwndDlg, &vFindAll);
+    MapDialogRect(hwndDlg, &vReplace);
+    MapDialogRect(hwndDlg, &vReplaceAll);
+    MapDialogRect(hwndDlg, &vMatchCase);
+    MapDialogRect(hwndDlg, &vDotAll);
+    MapDialogRect(hwndDlg, &vWholeWord);
+    MapDialogRect(hwndDlg, &vFreeSpacing);
+    MapDialogRect(hwndDlg, &vUnicodeWord);
+    MapDialogRect(hwndDlg, &vMessage);
+    MapDialogRect(hwndDlg, &vClient);
+}
+
+void adjustControlPos(HWND hwnd, RECT& rect, int dx, int dy, double xStretch, double yStretch, double xMove, double yMove) {
+    SetWindowPos(hwnd, 0, std::lround(rect.left + xMove * dx),
+        std::lround(rect.top + yMove * dy),
+        std::lround(rect.right  - rect.left + xStretch * dx),
+        std::lround(rect.bottom - rect.top  + yStretch * dy),
+        SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED);
+    InvalidateRect(hwnd, 0, TRUE);
+}
+
+void layoutDialog(HWND hwndDlg) {
+    RECT dcr;  // dialog client rectangle
+    GetClientRect(hwndDlg, &dcr);
+    bool layoutVertical = data.dialogLayout == DialogLayout::Horizontal ? false
+        : data.dialogLayout == DialogLayout::Vertical ? true
+        : 4 * dcr.bottom > 3 * dcr.right || dcr.right < hClient.right;
+    if (layoutVertical) {
+        int dx = dcr.right - vClient.right;
+        int dy = dcr.bottom - vClient.bottom;
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_PLAIN      ), vPlain      , dx, dy, 0, 0  , 0  , 0  );
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_BOOST      ), vBoost      , dx, dy, 0, 0  , 0  , 0  );
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_ICU        ), vICU        , dx, dy, 0, 0  , 0  , 0  );
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_TOOLS      ), vTools      , dx, dy, 0, 0  , 1  , 0  );
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX    ), vFindbox    , dx, dy, 1, 0.5, 0  , 0  );
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX    ), vReplbox    , dx, dy, 1, 0.5, 0  , 0.5);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FIND       ), vFind       , dx, dy, 0, 0  , 0.5, 0.5);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_COUNT      ), vCount      , dx, dy, 0, 0  , 0.5, 0.5);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FINDALL    ), vFindAll    , dx, dy, 0, 0  , 0.5, 0.5);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACE    ), vReplace    , dx, dy, 0, 0  , 0.5, 1  );
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACEALL ), vReplaceAll , dx, dy, 0, 0  , 0.5, 1  );
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_MATCHCASE  ), vMatchCase  , dx, dy, 0, 0  , 0.5, 0.5);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), vDotAll     , dx, dy, 0, 0  , 0.5, 0.5);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), vWholeWord  , dx, dy, 0, 0  , 0.5, 0.5);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), vFreeSpacing, dx, dy, 0, 0  , 0.5, 0.5);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), vUnicodeWord, dx, dy, 0, 0  , 0.5, 0.5);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_MESSAGE    ), vMessage    , dx, dy, 1, 0  , 0  , 1  );
+    }
+    else {
+        int dx = dcr.right - hClient.right;
+        int dy = dcr.bottom - hClient.bottom;
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_PLAIN      ), hPlain      , dx, dy, 0  , 0, 0   , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_BOOST      ), hBoost      , dx, dy, 0  , 0, 0   , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_ICU        ), hICU        , dx, dy, 0  , 0, 0   , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_TOOLS      ), hTools      , dx, dy, 0  , 0, 0.5 , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX    ), hFindbox    , dx, dy, 0.5, 1, 0   , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX    ), hReplbox    , dx, dy, 0.5, 1, 0.5 , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FIND       ), hFind       , dx, dy, 0  , 0, 0.25, 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_COUNT      ), hCount      , dx, dy, 0  , 0, 0.25, 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FINDALL    ), hFindAll    , dx, dy, 0  , 0, 0.25, 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACE    ), hReplace    , dx, dy, 0  , 0, 0.75, 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACEALL ), hReplaceAll , dx, dy, 0  , 0, 0.75, 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_MATCHCASE  ), hMatchCase  , dx, dy, 0  , 0, 0.5 , 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), hDotAll     , dx, dy, 0  , 0, 0.5 , 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), hWholeWord  , dx, dy, 0  , 0, 0.5 , 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), hFreeSpacing, dx, dy, 0  , 0, 0.5 , 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), hUnicodeWord, dx, dy, 0  , 0, 0.5 , 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_MESSAGE    ), hMessage    , dx, dy, 1  , 0, 0   , 1);
+    }
+    InvalidateRect(data.searchDialog, 0, TRUE);
+}
+
+
+BOOL addButtonItem(HMENU menu, SearchCommand cmd) {
+    return AppendMenu(menu, MF_STRING, cmd, Command_Menu(cmd));
+}
+
+void showBubble(HWND scintilla, std::string bubble) {
+    constexpr size_t target_width = 32;
+    for (size_t p = 0; p + target_width < bubble.length();) {
+        size_t q = bubble.substr(p, target_width).find_last_of(' ');
+        if (q == std::string::npos) {
+            q = bubble.find_first_of(' ', p + target_width);
+            if (q == std::string::npos) break;
+        }
+        else q += p;
+        bubble[q] = '\n';
+        p = q + 1;
+        while (p < bubble.length() && bubble[p] == ' ') bubble.erase(p, 1);
+    }
+    plugin.getScintillaPointers(scintilla);
+    sci.CallTipShow(sci.Length(), bubble.data());
+}
+
+void showMessage(HWND hwndDlg, const SearchResult& result) {
+    SetDlgItemText(hwndDlg, IDC_SEARCH_MESSAGE, result.message.data());
+    if (!result.findMessage.empty()) showBubble(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), result.findMessage);
+    if (!result.replMessage.empty()) showBubble(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), result.replMessage);
+}
+
+INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+
+    switch (uMsg) {
+
+    case WM_DESTROY:
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX    ), subclassScintilla, 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX    ), subclassScintilla, 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_PLAIN      ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_BOOST      ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_ICU        ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_TOOLS      ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_MATCHCASE  ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FIND       ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_COUNT      ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FINDALL    ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACE    ), subclassOther    , 0);
+        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACEALL ), subclassOther    , 0);
+        return TRUE;
+
+    case WM_INITDIALOG:
+    {
+        setupSearchBox(hwndDlg, IDC_SEARCH_REPLBOX);
+        sci.SetWrapMode(data.wrapRepl);
+        sci.SetZoom(data.zoomRepl);
+        setupSearchBox(hwndDlg, IDC_SEARCH_FINDBOX);
+        sci.SetWrapMode(data.wrapFind);
+        sci.SetZoom(data.zoomFind);
+        GetControlReferencesForLayout(hwndDlg);
+
+        switch (data.searchEngine) {
+        case SearchEngine::Boost   : CheckRadioButton(hwndDlg, IDC_SEARCH_PLAIN, IDC_SEARCH_ICU, IDC_SEARCH_BOOST); break;
+        case SearchEngine::ICU     : CheckRadioButton(hwndDlg, IDC_SEARCH_PLAIN, IDC_SEARCH_ICU, IDC_SEARCH_ICU  ); break;
+        default:                     CheckRadioButton(hwndDlg, IDC_SEARCH_PLAIN, IDC_SEARCH_ICU, IDC_SEARCH_PLAIN);
+        }
+
+        data.dotAll      .put(hwndDlg, IDC_SEARCH_DOTALL     );
+        data.freeSpacing .put(hwndDlg, IDC_SEARCH_FREESPACING);
+        data.matchCase   .put(hwndDlg, IDC_SEARCH_MATCHCASE  );
+        data.uniWordBound.put(hwndDlg, IDC_SEARCH_UNICODEWORD);
+        data.wholeWord   .put(hwndDlg, IDC_SEARCH_WHOLEWORD  );
+
+        SetDlgItemText(hwndDlg, IDC_SEARCH_FIND      , Command_Button(data.buttonFind      ));
+        SetDlgItemText(hwndDlg, IDC_SEARCH_COUNT     , Command_Button(data.buttonCount     ));
+        SetDlgItemText(hwndDlg, IDC_SEARCH_FINDALL   , Command_Button(data.buttonFindAll   ));
+        SetDlgItemText(hwndDlg, IDC_SEARCH_REPLACE   , Command_Button(data.buttonReplace   ));
+        SetDlgItemText(hwndDlg, IDC_SEARCH_REPLACEALL, Command_Button(data.buttonReplaceAll));
+
+        if (data.searchEngine == SearchEngine::Plain) {
+            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL      ), SW_HIDE);
+            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING ), SW_HIDE);
+            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD ), SW_HIDE);
+            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD   ), SW_SHOW);
+        }
+        else {
+            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), SW_SHOW);
+            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), SW_SHOW);
+            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), SW_SHOW);
+            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), SW_HIDE);
+            EnableWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), data.searchEngine == SearchEngine::ICU ? TRUE : FALSE);
+        }
+        
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_PLAIN      ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_BOOST      ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_ICU        ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_TOOLS      ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_MATCHCASE  ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FIND       ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_COUNT      ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FINDALL    ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACE    ), subclassOther, 0, 0);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACEALL ), subclassOther, 0, 0);
+
+        layoutDialog(hwndDlg);
+
+        npp(NPPM_MODELESSDIALOG, MODELESSDIALOGADD, hwndDlg);
+        if (data.dialogLayout != DialogLayout::Docking) {
+            placement.put(hwndDlg);
+            npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);
+        }
+
+        SetFocus(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX));
+        return FALSE;
+
+    }
+
+    case WM_COMMAND:
+        switch (LOWORD(wParam)) {
+        case IDCANCEL:
+            if (hwndDlg == data.dockingDialog) npp(NPPM_DMMHIDE, 0, hwndDlg);
+                                          else ShowWindow(hwndDlg, SW_HIDE);
+            return TRUE;
+        case IDC_SEARCH_FIND:
+        {
+            auto result = SearchRequest::exec(data.buttonFind.value, data.context,
+                GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+            showMessage(hwndDlg, result);
+            return TRUE;
+        }
+        case IDC_SEARCH_COUNT:
+        {
+            auto result = SearchRequest::exec(data.buttonCount.value, data.context,
+                GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+            showMessage(hwndDlg, result);
+            return TRUE;
+        }
+        case IDC_SEARCH_FINDALL:
+        {
+            auto result = SearchRequest::exec(data.buttonFindAll.value, data.context,
+                GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+            showMessage(hwndDlg, result);
+            return TRUE;
+        }
+        case IDC_SEARCH_REPLACE:
+        {
+            auto result = SearchRequest::exec(data.buttonReplace.value, data.context,
+                GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+            showMessage(hwndDlg, result);
+            return TRUE;
+        }
+        case IDC_SEARCH_REPLACEALL:
+        {
+            auto result = SearchRequest::exec(data.buttonReplaceAll.value, data.context,
+                GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+            showMessage(hwndDlg, result);
+            return TRUE;
+        }
+        case IDC_SEARCH_DOTALL     : data.dotAll      .get(hwndDlg, IDC_SEARCH_DOTALL     ); data.context.clear(); return TRUE;
+        case IDC_SEARCH_FREESPACING: data.freeSpacing .get(hwndDlg, IDC_SEARCH_FREESPACING); data.context.clear(); return TRUE;
+        case IDC_SEARCH_MATCHCASE  : data.matchCase   .get(hwndDlg, IDC_SEARCH_MATCHCASE  ); data.context.clear(); return TRUE;
+        case IDC_SEARCH_UNICODEWORD: data.uniWordBound.get(hwndDlg, IDC_SEARCH_UNICODEWORD); data.context.clear(); return TRUE;
+        case IDC_SEARCH_WHOLEWORD  : data.wholeWord   .get(hwndDlg, IDC_SEARCH_WHOLEWORD  ); data.context.clear(); return TRUE;
+        case IDC_SEARCH_PLAIN:
+        case IDC_SEARCH_BOOST:
+        case IDC_SEARCH_ICU:
+            data.searchEngine = IsDlgButtonChecked(hwndDlg, IDC_SEARCH_BOOST   ) == BST_CHECKED ? SearchEngine::Boost
+                              : IsDlgButtonChecked(hwndDlg, IDC_SEARCH_ICU     ) == BST_CHECKED ? SearchEngine::ICU
+                                                                                                : SearchEngine::Plain;
+            data.context.clear();
+            if (data.searchEngine == SearchEngine::Plain) {
+                ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), SW_HIDE);
+                ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), SW_HIDE);
+                ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), SW_HIDE);
+                ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), SW_SHOW);
+            }
+            else {
+                ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), SW_SHOW);
+                ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), SW_SHOW);
+                ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), SW_SHOW);
+                ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), SW_HIDE);
+                EnableWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), data.searchEngine == SearchEngine::ICU ? TRUE : FALSE);
+                SearchCommand sc(data.buttonFind.value);
+                if (sc.direction == SearchCommand::Backward) {
+                    sc.direction = SearchCommand::Forward;
+                    data.buttonFind = sc;
+                    SetDlgItemText(hwndDlg, IDC_SEARCH_FIND, Command_Button(data.buttonFind));
+                }
+                sc = data.buttonReplace.value;
+                if (sc.direction == SearchCommand::Backward) {
+                    sc.direction = SearchCommand::Forward;
+                    data.buttonReplace = sc;
+                    SetDlgItemText(hwndDlg, IDC_SEARCH_REPLACE, Command_Button(data.buttonReplace));
+                }
+            }
+            return TRUE;
+        case IDC_SEARCH_TOOLS:
+        {
+            enum ToolCommands {NoCommand, HideAll, ShowAll, SelToMark, MarkToSel, ClearMarks, Settings};
+            HMENU pum = CreatePopupMenu();
+            AppendMenu(pum, MF_STRING, HideAll, L"&Hide All Lines");
+            AppendMenu(pum, MF_STRING, ShowAll, L"Show &All Lines");
+            AppendMenu(pum, MF_SEPARATOR, 0, 0);
+            AppendMenu(pum, MF_STRING, SelToMark, L"&Selections 🡪 Marked Text");
+            AppendMenu(pum, MF_STRING, MarkToSel, L"&Marked Text 🡪 Selections");
+            AppendMenu(pum, MF_STRING, ClearMarks, L"&Unmark All Text");
+            AppendMenu(pum, MF_SEPARATOR, 0, 0);
+            AppendMenu(pum, MF_STRING, Settings, L"S&ettings...");
+            RECT rect;
+            GetWindowRect(reinterpret_cast<HWND>(lParam), &rect);
+            int choice = TrackPopupMenu(pum, TPM_RIGHTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD,
+                                        rect.right, rect.bottom, 0, hwndDlg, NULL);
+            DestroyMenu(pum);
+            switch (choice) {
+            case HideAll:
+                plugin.getScintillaPointers();
+                sci.HideLines(0, sci.LineCount() - 1);
+                break;
+            case ShowAll:
+                plugin.getScintillaPointers();
+                sci.ShowLines(0, sci.LineCount() - 1);
+                break;
+            case ClearMarks:
+                plugin.getScintillaPointers();
+                sci.SetIndicatorCurrent(data.indicator);
+                sci.IndicatorClearRange(0, sci.Length());
+                break;
+            case SelToMark:
+            {
+                plugin.getScintillaPointers();
+                sci.SetIndicatorCurrent(data.indicator);
+                sci.SetIndicatorValue(1);
+                int n = sci.Selections();
+                for (int i = 0; i < n; ++i) {
+                    Scintilla::Position a = sci.SelectionNStart(i);
+                    Scintilla::Position b = sci.SelectionNEnd(i);
+                    if (b > a) sci.IndicatorFillRange(a, b - a);
+                }
+                break;
+            }
+            case MarkToSel:
+            {
+                plugin.getScintillaPointers();
+                sci.ClearSelections();
+                Scintilla::Position documentLength = sci.Length();
+                for (Scintilla::Position cpMin = 0;;) {
+                    Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+                    if (cpMax == cpMin) break;
+                    if (sci.IndicatorValueAt(data.indicator, cpMin)) sci.AddSelection(cpMax, cpMin);
+                    if (cpMax == documentLength) break;
+                    cpMin = cpMax;
+                }
+                break;
+            }
+            case Settings:
+                showSettingsDialog();
+                break;
+            }
+            return TRUE;
+        }
+        }
+
+        return FALSE;
+
+    case WM_SHOWWINDOW:
+        if (!wParam && !lParam && data.dialogLayout != DialogLayout::Docking && data.autoClearMarks) {
+            plugin.getScintillaPointers();
+            sci.SetIndicatorCurrent(data.indicator);
+            sci.IndicatorClearRange(0, sci.Length());
+        }
+        return FALSE;
+
+    case WM_CONTEXTMENU:
+    {
+        POINT screenLocation = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+        HWND target = reinterpret_cast<HWND>(wParam);
+        HWND hFindBox = GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX);
+        HWND hReplBox = GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX);
+        if (target != hFindBox && target != hReplBox) return FALSE;
+        plugin.getScintillaPointers();
+        bool documentHasSelection = !sci.SelectionEmpty();
+        plugin.getScintillaPointers(target);
+        if (screenLocation.x == -1 && screenLocation.y == -1) /* invoked from keyboard, not mouse */ {
+            Scintilla::Position caret = sci.CurrentPos();
+            screenLocation.x = sci.PointXFromPosition(caret);
+            screenLocation.y = sci.PointYFromPosition(caret);
+            MapWindowPoints(target, 0, &screenLocation, 1);
+        }
+        bool hasSelection = !sci.SelectionEmpty();
+        int zoom = sci.Zoom();
+        std::wstring zoomText = (zoom > 0 ? L"&Zoom (+" : L"&Zoom (") + std::to_wstring(zoom) + L")";
+        HMENU menu = GetSubMenu(LoadMenu(plugin.dllInstance, MAKEINTRESOURCE(IDR_SEARCH_CONTEXT)), 0);
+        MENUITEMINFO mii;
+        mii.cbSize     = sizeof mii;
+        mii.fMask      = MIIM_STRING;
+        mii.dwTypeData = zoomText.data();
+        SetMenuItemInfo(menu, 10, TRUE, &mii);
+        mii.fMask = MIIM_FTYPE | MIIM_STATE;
+        mii.fType = MFT_RADIOCHECK;
+        mii.fState = sci.WrapMode() == Scintilla::Wrap::None ? MFS_CHECKED : 0;
+        SetMenuItemInfo(menu, ID_SCMSCI_WRAPNONE, FALSE, &mii);
+        mii.fState = sci.WrapMode() == Scintilla::Wrap::Char ? MFS_CHECKED : 0;
+        SetMenuItemInfo(menu, ID_SCMSCI_WRAPCHAR, FALSE, &mii);
+        mii.fState = sci.WrapMode() == Scintilla::Wrap::Word ? MFS_CHECKED : 0;
+        SetMenuItemInfo(menu, ID_SCMSCI_WRAPWORD, FALSE, &mii);
+        EnableMenuItem(menu, ID_SCMSCI_UNDO           , sci.CanUndo()        ? MF_ENABLED : MF_GRAYED);
+        EnableMenuItem(menu, ID_SCMSCI_REDO           , sci.CanRedo()        ? MF_ENABLED : MF_GRAYED);
+        EnableMenuItem(menu, ID_SCMSCI_CUT            , hasSelection         ? MF_ENABLED : MF_GRAYED);
+        EnableMenuItem(menu, ID_SCMSCI_COPY           , hasSelection         ? MF_ENABLED : MF_GRAYED);
+        EnableMenuItem(menu, ID_SCMSCI_PASTE          , sci.CanPaste()       ? MF_ENABLED : MF_GRAYED);
+        EnableMenuItem(menu, ID_SCMSCI_DELETE         , hasSelection         ? MF_ENABLED : MF_GRAYED);
+        EnableMenuItem(menu, ID_SCMSCI_INSERTSELECTION, documentHasSelection ? MF_ENABLED : MF_GRAYED);
+        EnableMenuItem(menu, ID_SCMSCI_ZOOMIN         , zoom < 60            ? MF_ENABLED : MF_GRAYED);
+        EnableMenuItem(menu, ID_SCMSCI_ZOOMOUT        , zoom > -10           ? MF_ENABLED : MF_GRAYED);
+        EnableMenuItem(menu, ID_SCMSCI_ZOOMDEFAULT    , zoom != 0            ? MF_ENABLED : MF_GRAYED);
+        std::vector<std::wstring> historyList;
+        const auto& history = target == hFindBox ? data.historyFind.history : data.historyRepl.history;
+        if (!history.empty() && !(history.size() == 1 && history.back().empty())) {
+            AppendMenu(menu, MF_SEPARATOR, 0, 0);
+            int menuCounter = 5000;
+            for (const std::wstring& item : history) {
+                if (item.empty()) {
+                    historyList.push_back(L"");
+                    ++menuCounter;
+                    continue;
+                }
+                constexpr size_t limit_width = 60;
+                constexpr size_t trail_width = 12;
+                std::wstring text;
+                for (size_t i = 0; i < item.length(); ++i) {
+                    switch (item[i]) {
+                    case L'\t':
+                        text += L"\u2B72";
+                        break;
+                    case L'\n':
+                        text += L"\u240A";
+                        break;
+                    case L'\r':
+                        if (i + 1 < item.length() && item[i + 1] == L'\n') {
+                            text += L"\u21A9";
+                            ++i;
+                        }
+                        else text += L"\u240D";
+                        break;
+                    case L'&':
+                        text += L"&&";
+                        break;
+                    default:
+                        text += item[i];
+                    }
+                }
+                if (text.back() == L' ') /* trailing invisible blanks might be confusing */ {
+                    size_t p = text.find_last_not_of(L' ');
+                    if (p == std::wstring::npos) p = 0;
+                    for (; p < text.length(); ++p) text[p] = L'·';
+                }
+                if (text.length() > limit_width)
+                    text = text.substr(0, limit_width - trail_width - 1) + L'…' + text.substr(text.length() - trail_width);
+                historyList.push_back(text);
+                AppendMenu(menu, MF_STRING, ++menuCounter, text.data());
+            }
+        }
+        int result = TrackPopupMenu(menu, TPM_NONOTIFY | TPM_RETURNCMD,
+                                    screenLocation.x, screenLocation.y, 0, target, 0);
+        DestroyMenu(menu);
+        switch (result) {
+        case ID_SCMSCI_UNDO       : sci.Undo     (); break;
+        case ID_SCMSCI_REDO       : sci.Redo     (); break;
+        case ID_SCMSCI_CUT        : sci.Cut      (); break;
+        case ID_SCMSCI_COPY       : sci.Copy     (); break;
+        case ID_SCMSCI_PASTE      : sci.Paste    (); break;
+        case ID_SCMSCI_DELETE     : sci.Clear    (); break;
+        case ID_SCMSCI_SELECTALL  : sci.SelectAll(); break;
+        case ID_SCMSCI_ZOOMIN     : sci.ZoomIn   (); break;
+        case ID_SCMSCI_ZOOMOUT    : sci.ZoomOut  (); break;
+        case ID_SCMSCI_ZOOMDEFAULT: sci.SetZoom (0); break;
+        case ID_SCMSCI_WRAPNONE   : sci.SetWrapMode((target == hFindBox ? data.wrapFind : data.wrapRepl) = Scintilla::Wrap::None); break;
+        case ID_SCMSCI_WRAPCHAR   : sci.SetWrapMode((target == hFindBox ? data.wrapFind : data.wrapRepl) = Scintilla::Wrap::Char); break;
+        case ID_SCMSCI_WRAPWORD   : sci.SetWrapMode((target == hFindBox ? data.wrapFind : data.wrapRepl) = Scintilla::Wrap::Word); break;
+
+        case ID_SCMSCI_INSERTSELECTION:
+        {
+            plugin.getScintillaPointers();
+            std::string text = sci.GetSelText();
+            plugin.getScintillaPointers(target);
+            sci.TargetFromSelection();
+            sci.ReplaceTarget(text);
+            break;
+        }
+        case ID_SCMSCI_COPYTOREPLACE:
+        {
+            plugin.getScintillaPointers(hFindBox);
+            std::string text = sci.GetText(sci.Length());
+            plugin.getScintillaPointers(hReplBox);
+            if (target == hReplBox) sci.TargetFromSelection();
+                               else sci.TargetWholeDocument();
+            sci.ReplaceTarget(text);
+            break;
+        }
+        case ID_SCMSCI_COPYTOFIND:
+        {
+            plugin.getScintillaPointers(hReplBox);
+            std::string text = sci.GetText(sci.Length());
+            plugin.getScintillaPointers(hFindBox);
+            if (target == hFindBox) sci.TargetFromSelection();
+                               else sci.TargetWholeDocument();
+            sci.ReplaceTarget(text);
+            break;
+        }
+        case ID_SCMSCI_EXCHANGE:
+        {
+            plugin.getScintillaPointers(hReplBox);
+            std::string replText = sci.GetText(sci.Length());
+            plugin.getScintillaPointers(hFindBox);
+            std::string findText = sci.GetText(sci.Length());
+            sci.TargetWholeDocument();
+            sci.ReplaceTarget(replText);
+            plugin.getScintillaPointers(hReplBox);
+            sci.TargetWholeDocument();
+            sci.ReplaceTarget(findText);
+            break;
+        }
+        default:
+            if (result > 5000 && result <= 5000 + static_cast<int>(history.size())) {
+                std::string item = utf16to8(history[result - 5001]).data();
+                sci.TargetWholeDocument();
+                sci.ReplaceTarget(item);
+            }
+        }
+        return TRUE;
+    }
+
+    case WM_NOTIFY:
+
+        if (reinterpret_cast<NMHDR*>(lParam)->hwndFrom == plugin.nppData._nppHandle) {
+            switch (reinterpret_cast<NMHDR*>(lParam)->code & 0xFFFF) {
+            case DMN_DOCK:
+                data.dockingDialogIsDocked = true;
+                break;
+            case DMN_FLOAT:
+                data.dockingDialogIsDocked = false;
+                break;
+            }
+            break;
+        }
+
+        switch (reinterpret_cast<NMHDR*>(lParam)->code) {
+
+
+        case BCN_DROPDOWN:
+        {
+            const NMBCDROPDOWN& bd = *reinterpret_cast<NMBCDROPDOWN*>(lParam);
+            POINT pt;
+            pt.x = bd.rcButton.left;
+            pt.y = bd.rcButton.bottom;
+            ClientToScreen(bd.hdr.hwndFrom, &pt);
+            HMENU pum = 0;
+            config<unsigned int>* searchButton;
+            switch (bd.hdr.idFrom) {
+            case IDC_SEARCH_FIND:
+            {
+                searchButton = &data.buttonFind;
+                pum = CreatePopupMenu();
+                addButtonItem(pum, SearchCommand::Find);
+                if (data.searchEngine == SearchEngine::Plain)
+                    addButtonItem(pum, SearchCommand::Find | SearchCommand::Backward);
+                AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                addButtonItem(pum, SearchCommand::Find | SearchCommand::Forward | SearchCommand::Selection);
+                addButtonItem(pum, SearchCommand::Find | SearchCommand::Forward | SearchCommand::Region   );
+                addButtonItem(pum, SearchCommand::Find | SearchCommand::Forward | SearchCommand::Whole    );
+                if (data.searchEngine == SearchEngine::Plain) {
+                    AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                    addButtonItem(pum, SearchCommand::Find | SearchCommand::Backward | SearchCommand::Selection);
+                    addButtonItem(pum, SearchCommand::Find | SearchCommand::Backward | SearchCommand::Region   );
+                    addButtonItem(pum, SearchCommand::Find | SearchCommand::Backward | SearchCommand::Whole    );
+                }
+                break;
+            }
+            case IDC_SEARCH_COUNT:
+            {
+                searchButton = &data.buttonCount;
+                pum = CreatePopupMenu();
+                addButtonItem(pum, SearchCommand::Count | SearchCommand::All   );
+                addButtonItem(pum, SearchCommand::Count | SearchCommand::Before);
+                addButtonItem(pum, SearchCommand::Count | SearchCommand::After );
+                AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                addButtonItem(pum, SearchCommand::Count | SearchCommand::All    | SearchCommand::Region   );
+                addButtonItem(pum, SearchCommand::Count | SearchCommand::All    | SearchCommand::Selection);
+                addButtonItem(pum, SearchCommand::Count | SearchCommand::All    | SearchCommand::Whole    );
+                AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                addButtonItem(pum, SearchCommand::Count | SearchCommand::Before | SearchCommand::Region   );
+                addButtonItem(pum, SearchCommand::Count | SearchCommand::Before | SearchCommand::Whole    );
+                addButtonItem(pum, SearchCommand::Count | SearchCommand::After  | SearchCommand::Region   );
+                addButtonItem(pum, SearchCommand::Count | SearchCommand::After  | SearchCommand::Whole    );
+                break;
+            }
+            case IDC_SEARCH_FINDALL:
+            {
+                searchButton = &data.buttonFindAll;
+                pum = CreatePopupMenu();
+
+                HMENU subFind = CreatePopupMenu();
+                addButtonItem(subFind, SearchCommand(SearchCommand::Find, SearchCommand::Before                          ));
+                addButtonItem(subFind, SearchCommand(SearchCommand::Find, SearchCommand::After                           ));
+                AppendMenu(subFind, MF_SEPARATOR, 0, 0);
+                addButtonItem(subFind, SearchCommand(SearchCommand::Find, SearchCommand::All   , SearchCommand::Selection));
+                AppendMenu(subFind, MF_SEPARATOR, 0, 0);
+                addButtonItem(subFind, SearchCommand(SearchCommand::Find, SearchCommand::All   , SearchCommand::Region   ));
+                addButtonItem(subFind, SearchCommand(SearchCommand::Find, SearchCommand::Before, SearchCommand::Region   ));
+                addButtonItem(subFind, SearchCommand(SearchCommand::Find, SearchCommand::After , SearchCommand::Region   ));
+                AppendMenu(subFind, MF_SEPARATOR, 0, 0);
+                addButtonItem(subFind, SearchCommand(SearchCommand::Find, SearchCommand::All   , SearchCommand::Whole    ));
+                addButtonItem(subFind, SearchCommand(SearchCommand::Find, SearchCommand::Before, SearchCommand::Whole    ));
+                addButtonItem(subFind, SearchCommand(SearchCommand::Find, SearchCommand::After , SearchCommand::Whole    ));
+
+                HMENU subMark = CreatePopupMenu();
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::Before                          ));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::After                           ));
+                AppendMenu(subMark, MF_SEPARATOR, 0, 0);
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Selection));
+                AppendMenu(subMark, MF_SEPARATOR, 0, 0);
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Region   ));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Region   ));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Region   ));
+                AppendMenu(subMark, MF_SEPARATOR, 0, 0);
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Whole    ));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Whole    ));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Whole    ));
+
+                HMENU subSlct = CreatePopupMenu();
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::Before                          ));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::After                           ));
+                AppendMenu(subSlct, MF_SEPARATOR, 0, 0);
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Selection));
+                AppendMenu(subSlct, MF_SEPARATOR, 0, 0);
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Region   ));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Region   ));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Region   ));
+                AppendMenu(subSlct, MF_SEPARATOR, 0, 0);
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Whole    ));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Whole    ));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Whole    ));
+
+                HMENU subShow = CreatePopupMenu();
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::Before                          ));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::After                           ));
+                AppendMenu(subShow, MF_SEPARATOR, 0, 0);
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Selection));
+                AppendMenu(subShow, MF_SEPARATOR, 0, 0);
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Region   ));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Region   ));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Region   ));
+                AppendMenu(subShow, MF_SEPARATOR, 0, 0);
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole    ));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Whole    ));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole    ));
+
+                addButtonItem(pum, SearchCommand::Find   | SearchCommand::All);
+                addButtonItem(pum, SearchCommand::Mark   | SearchCommand::All);
+                addButtonItem(pum, SearchCommand::Select | SearchCommand::All);
+                addButtonItem(pum, SearchCommand::Show   | SearchCommand::All);
+                AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subFind), L"Find &All");
+                AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subMark), L"Mar&k");
+                AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subSlct), L"Selec&t");
+                AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subShow), L"Sho&w");
+                break;
+            }
+            case IDC_SEARCH_REPLACE:
+            {
+                searchButton = &data.buttonReplace;
+                pum = CreatePopupMenu();
+                addButtonItem(pum, SearchCommand::Replace );
+                addButtonItem(pum, SearchCommand::FindRepl);
+                if (data.searchEngine == SearchEngine::Plain) {
+                    AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                    addButtonItem(pum, SearchCommand::Replace  | SearchCommand::Backward);
+                    addButtonItem(pum, SearchCommand::FindRepl | SearchCommand::Backward);
+                }
+                AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Forward, SearchCommand::Region   ));
+                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Forward, SearchCommand::Selection));
+                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Forward, SearchCommand::Whole    ));
+                if (data.searchEngine == SearchEngine::Plain) {
+                    addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Region   ));
+                    addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Selection));
+                    addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Whole    ));
+                }
+                AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                addButtonItem(pum, SearchCommand(SearchCommand::FindRepl, SearchCommand::Forward, SearchCommand::Region   ));
+                addButtonItem(pum, SearchCommand(SearchCommand::FindRepl, SearchCommand::Forward, SearchCommand::Selection));
+                addButtonItem(pum, SearchCommand(SearchCommand::FindRepl, SearchCommand::Forward, SearchCommand::Whole    ));
+                if (data.searchEngine == SearchEngine::Plain) {
+                    addButtonItem(pum, SearchCommand(SearchCommand::FindRepl, SearchCommand::Backward, SearchCommand::Region   ));
+                    addButtonItem(pum, SearchCommand(SearchCommand::FindRepl, SearchCommand::Backward, SearchCommand::Selection));
+                    addButtonItem(pum, SearchCommand(SearchCommand::FindRepl, SearchCommand::Backward, SearchCommand::Whole    ));
+                }
+                break;
+            }
+            case IDC_SEARCH_REPLACEALL:
+            {
+                searchButton = &data.buttonReplaceAll;
+                pum = CreatePopupMenu();
+                addButtonItem(pum, SearchCommand::Replace | SearchCommand::All   );
+                addButtonItem(pum, SearchCommand::Replace | SearchCommand::Before);
+                addButtonItem(pum, SearchCommand::Replace | SearchCommand::After );
+                AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::All, SearchCommand::Region   ));
+                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::All, SearchCommand::Selection));
+                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::All, SearchCommand::Whole    ));
+                AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Before, SearchCommand::Region   ));
+                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Before, SearchCommand::Whole    ));
+                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::After, SearchCommand::Region   ));
+                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::After, SearchCommand::Whole    ));
+                break;
+            }
+            default:
+                return FALSE;
+            }
+            int choice = TrackPopupMenu(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD, pt.x, pt.y, 0, hwndDlg, NULL);
+            bool shifted = GetAsyncKeyState(VK_SHIFT) < 0;
+            DestroyMenu(pum);
+            if (choice) {
+                data.context.clear();
+                if (shifted) {
+                    *searchButton = choice;
+                    SetDlgItemText(hwndDlg, static_cast<int>(bd.hdr.idFrom), Command_Button(choice));
+                }
+                auto result = SearchRequest::exec(choice, data.context,
+                    GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+                showMessage(hwndDlg, result);
+            }
+            return TRUE;
+        }
+
+        case SCN_MODIFIED:
+        {
+            const Scintilla::NotificationData& scn = *reinterpret_cast<Scintilla::NotificationData*>(lParam);
+            if (scn.nmhdr.idFrom == IDC_SEARCH_FINDBOX) data.context.clear();
+            if (scn.nmhdr.idFrom == IDC_SEARCH_REPLBOX) data.context.calcIsValid = false;
+            return TRUE;
+        }
+
+        case SCN_ZOOM:
+        {
+            const Scintilla::NotificationData& scn = *reinterpret_cast<Scintilla::NotificationData*>(lParam);
+            plugin.getScintillaPointers(reinterpret_cast<HWND>(scn.nmhdr.hwndFrom));
+            (scn.nmhdr.idFrom == IDC_SEARCH_FINDBOX ? data.zoomFind : data.zoomRepl) = sci.Zoom();
+            return TRUE;
+        }
+        
+        }
+        return FALSE;
+
+    case WM_GETMINMAXINFO:
+    {
+        MINMAXINFO& mmi = *reinterpret_cast<MINMAXINFO*>(lParam);
+        RECT window, client;
+        GetWindowRect(hwndDlg, &window);
+        GetClientRect(hwndDlg, &client);
+        switch (data.dialogLayout) {
+        case DialogLayout::Horizontal:
+            mmi.ptMinTrackSize.x = hClient.right;
+            mmi.ptMinTrackSize.y = hClient.bottom;
+            break;
+        case DialogLayout::Vertical:
+            mmi.ptMinTrackSize.x = vClient.right;
+            mmi.ptMinTrackSize.y = vClient.bottom;
+            break;
+        default:
+            mmi.ptMinTrackSize.x = vClient.right;
+            mmi.ptMinTrackSize.y = hClient.bottom;
+        }
+        mmi.ptMinTrackSize.x += window.right  - window.left - client.right;
+        mmi.ptMinTrackSize.y += window.bottom - window.top  - client.bottom;
+        return FALSE;
+    }
+
+    case WM_SIZE:
+        layoutDialog(hwndDlg);
+        return FALSE;
+
+    }
+
+    return FALSE;
+}
+
+}
+
+
+void changeDialogLayout() {
+    if (data.dialogLayout == DialogLayout::Docking) {
+        if (data.searchDialog) SendMessage(data.searchDialog, WM_COMMAND, IDCANCEL, 0);
+        data.searchDialog = data.dockingDialog;
+    }
+    else if (data.searchDialog == data.dockingDialog) {
+        if (data.searchDialog) SendMessage(data.searchDialog, WM_COMMAND, IDCANCEL, 0);
+        data.searchDialog = data.regularDialog;
+    }
+    if (!data.searchDialog) return;
+    if (data.dialogLayout != DialogLayout::Docking) {
+        RECT window, client;
+        GetWindowRect(data.searchDialog, &window);
+        GetClientRect(data.searchDialog, &client);
+        int minWidth, minHeight;
+        switch (data.dialogLayout) {
+        case DialogLayout::Horizontal:
+            minWidth  = hClient.right;
+            minHeight = hClient.bottom;
+            break;
+        case DialogLayout::Vertical:
+            minWidth  = vClient.right;
+            minHeight = vClient.bottom;
+            break;
+        default:
+            minWidth  = vClient.right;
+            minHeight = hClient.bottom;
+        }
+        if (client.right - client.left < minWidth && client.bottom - client.top < minHeight) {
+            minWidth  += window.right - window.left - client.right;
+            minHeight += window.bottom - window.top - client.bottom;
+            int width  = window.right  - window.left;
+            int height = window.bottom - window.top;
+            SetWindowPos(data.searchDialog, 0, 0, 0, std::max(width, minWidth), std::max(height, minHeight),
+                SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
+        }
+    }
+    layoutDialog(data.searchDialog);
+}
+
+void showSearchDialog() {
+    bool alreadyVisible = data.searchDialog && IsWindowVisible(data.searchDialog);
+    if (data.searchDialog) {
+        if (data.dialogLayout == DialogLayout::Docking) npp(NPPM_DMMSHOW, 0, data.searchDialog);
+        else {
+            ShowWindow(data.searchDialog, SW_NORMAL);
+            SetActiveWindow(data.searchDialog);
+        }
+    }
+    else {
+        data.historyFind.get();
+        data.historyRepl.get();
+        if (data.dialogLayout == DialogLayout::Docking) {
+            data.searchDialog = CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_DOCKINGSEARCH), plugin.nppData._nppHandle, searchDialogProc);
+            NPP::tTbData dock;
+            dock.hClient       = data.searchDialog;
+            dock.pszName       = L"Search++";                      // title bar text (caption in dialog is replaced)
+            dock.dlgID         = 0;                                   // zero-based position in menu to recall dialog at next startup
+            dock.uMask         = DWS_DF_CONT_RIGHT;                   // first time display will be docked at the right
+            dock.pszModuleName = L"Search++.dll";  // plugin module name
+            npp(NPPM_DMMREGASDCKDLG, 0, &dock);
+            data.dockingDialog = data.searchDialog;
+        }
+        else {
+            data.searchDialog = CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_SEARCH), plugin.nppData._nppHandle, searchDialogProc);
+            ShowWindow(data.searchDialog, SW_NORMAL);
+            data.regularDialog = data.searchDialog;
+        }
+    }
+    if (!alreadyVisible && data.fillSearch) {
+        plugin.getScintillaPointers();
+        if (sci.Selections() == 1) {
+            std::string text;
+            if (sci.SelectionEmpty()) {
+                if (data.fillNothing) {
+                    Scintilla::Position p = sci.CurrentPos();
+                    sci.MultipleSelectAddNext();
+                    sci.TargetFromSelection();
+                    text = sci.TargetAsUTF8();
+                    sci.SetAnchor(p);
+                    sci.SetCurrentPos(p);
+                }
+            }
+            else if (!data.fillSearchLimit) {
+                sci.TargetFromSelection();
+                text = sci.TargetAsUTF8();
+            }
+            else {
+                Scintilla::Position start = sci.SelectionStart();
+                Scintilla::Position end = sci.SelectionEnd();
+                Scintilla::Position startLine = sci.LineFromPosition(start);
+                Scintilla::Position endLine = sci.LineFromPosition(end);
+                if (endLine - startLine < data.fillLines && end - start <= 4 * data.fillChars) {
+                    if (end - start <= data.fillChars || sci.CountCharacters(start, end) <= data.selChars) {
+                        sci.TargetFromSelection();
+                        text = sci.TargetAsUTF8();
+                    }
+                }
+            }
+            if (!text.empty()) {
+                plugin.getScintillaPointers(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
+                sci.TargetWholeDocument();
+                sci.ReplaceTarget(text);
+                sci.SelectAll();
+            }
+        }
+    }
+}
+
+void destroySearchDialogs() {
+    if (data.dockingDialog) {
+        npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, data.dockingDialog);
+        data.dockingDialog = 0;
+    }
+    if (data.regularDialog) {
+        placement.get(data.regularDialog);
+        npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, data.regularDialog);
+        DestroyWindow(data.regularDialog);
+        data.regularDialog = 0;
+    }
+    data.searchDialog = 0;
+}

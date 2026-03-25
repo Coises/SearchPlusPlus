@@ -1,0 +1,792 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="utf-8">
+<title>Search++ for Notepad++</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+html, body                   {margin: 0; padding: 0; width: 100%; height: 100%;}
+body                         {display: flex; flex-direction: column; font: 1em Calibri, Tahoma, sans-serif;}
+
+@media (max-height: 27rem) {
+    body {display: block;}
+}
+
+header                       {padding: 0 1em; text-align: center;}
+header                       {border-style: none none solid none; border-width: 0 0 2px 0;}
+header                       {font-size: min(5vw,10vh,1.75rem); font-weight: bold;}
+
+footer                       {padding: 4px 0; width: 100%; display: flex; flex-direction: row; align-items: center; font-size: medium;}
+footer                       {border-style: solid none none none; border-width: 2px 0 0 0;}
+footer a[rel=license]        {padding: 0 8px; text-decoration: none;}
+footer a[rel=license] img    {border: none;}
+
+#foottext                    {flex: 1; margin: 0 1em; text-align: center;}
+#foottext a                  {white-space: nowrap; text-decoration: none; color: inherit; }
+#foottext a:hover            {text-decoration: underline;}
+#foottext.linklist a:link    {color: #00c;}
+#foottext.linklist a:visited {color: #900;}
+
+#fontdown, #fontup           {margin: 0 8px; padding: 0; height: 28px; width: 48px; text-align: center; display: none;}
+#fontdown, #fontup           {color: #000; border: none; border-radius: 15%/20%; cursor: pointer;}
+#fontdown, #fontup           {background: transparent;}
+#fontdown:hover,
+#fontup:hover                {background: #333; color: #fff;}
+#fontdown                    {font: inherit; font-size: 13px;}
+#fontup                      {font: inherit; font-size: 19px; line-height: 1.0;}
+
+main                         {flex: 1; overflow: auto;}
+article                      {padding: 0 1em; line-height: 1.4;}
+p                            {margin: 0; padding: 0;}
+p + p                        {margin: .5em 0 0 0;}
+h1                           {line-height: 1.25; margin: .5em 0 0 0;}
+h1                           {font-size: 1.5rem; text-align: center; font-weight: bold; font-style: normal; padding: 0;}
+h2                           {font-size: 1.2rem; text-align: left;   font-weight: bold; font-style: normal; padding: 0; margin: 0;}
+h3                           {font-size: 1rem;   text-align: left;   font-weight: bold; font-style: normal; padding: 0; margin: 0;}
+
+main a                       {white-space: nowrap; text-decoration: none;}
+main a:link                  {color: #00c;}
+main a:visited               {color: #900;}
+main a:hover                 {text-decoration: underline;}
+
+main a.wrappable {white-space: normal;}
+main a.wrappable > span {display: inline-block;}
+
+@media (max-width: 30rem)   {
+    main      a {white-space: normal;}
+    #foottext a {white-space: normal;}
+    .canhide    {display: none;}
+}
+
+main article section         {border-style: none; border-width: 0; padding: 0 1em .3em 1em; background: #eee;}
+main article section         {margin: 1.25rem 0 .4rem 0;}
+main article section h2      {border-style: none none solid none; border-width: 0 0 1px 0;}
+main article section h2      {margin: 0 0 .3em -6px; padding: .2em 0 .2em 6px;}
+main article section h3      {border-style: none none solid none; border-width: 0 0 1px 0;}
+main article section h3      {margin: .75em 0 .2em 0; padding: .2em 0 .1em 0; line-height: 1.2;}
+main article h1+section      {margin-top: .75rem;}
+main article h1+p            {margin-top: .6em;}
+main article section+p       {margin-top: .75em;}
+main article section >
+             p:first-child   {margin-top: .3em;}
+
+main article section.note    {font-size: .85em; border-style: solid; border-width: 3px 1px 1px 6px; padding: 0 6px;}
+
+body h1              {margin: 0;}
+body .pagenav        {font-weight: bold; text-align: center; margin: .5em 1em 0 1em; line-height: 1; background: #eee;}
+body .pagenav a      {margin: .25em .5em; white-space: normal; display: inline-block}
+
+@media (min-width: 36rem) {
+   body main         {display: flex; flex-direction: row; padding: 0;}
+   body .pagenav     {padding: .5em 0 0 0; margin: 1.25em 1em .4em;}
+   body .pagenav     {white-space: pre;}
+   body .pagenav     {width: 11em; margin-left: calc(max(1em, (100% - (11em + 48em + 4em)) / 2));}
+   body article      {flex: 1; overflow: auto; padding: 0 1em 0 0;}
+   body h1           {margin-top: .5em;}
+}
+
+body article h1        {max-width: calc(32em + 12px);}
+body article section   {max-width: 48em;}
+
+table        {border: none; margin: 1em 0 1em 1em; width: calc(100% - 1em - 2px); border-collapse: collapse;}
+table th     {padding: .5em .5em .5em .5em; font-weight: bold;   text-align: left; vertical-align: top; border: 1px solid black;}
+table td     {padding: .5em .5em .5em .5em; font-weight: normal; text-align: left; vertical-align: top; border: 1px solid black;}
+table .group {text-align: center; background: #d0d0d0; }
+
+div.hscroll  {overflow-x: auto;}
+
+ul    {margin: 0 0 .5em 0;}
+ul li {margin: .25em 0;}
+
+pre   {font-size: .9em; line-height: 1.1; background: #ddd; padding: .5em; overflow: auto;}
+pre a {white-space: pre;}
+
+div.boxed                 {margin: 1em 0; padding: 0 0 1em 0; border: 1px solid #000;}
+div.boxed > *:first-child {margin-top: 0; margin-left: 0; margin-right: 0; background: #ddd; padding: .5em;}
+div.boxed pre             {font-size: inherit; margin-top: 0;}
+div.boxed p               {margin-left: 1em; margin-right: 1em;}
+div.boxed ul              {margin-right: 1em;}
+div.boxed li > code:first-child {font-weight: bold;}
+div.boxed pre.example     {background: none; margin: .5em 1em 0; border: 1px solid #000;}
+
+body {color: #000; background: #d0d0d0;}
+*    {border-color: #999;}
+
+table.charnames          {border: none; margin: 1em 0 1em 1em; width: calc(100% - 1em - 2px); border-collapse: collapse;}
+table.charnames th       {padding: 0 .5em 0 .5em; font-weight: bold;   text-align: left; vertical-align: top; border: 1px solid black;}
+table.charnames td       {padding: 0 .5em 0 .5em; font-weight: normal; text-align: left; vertical-align: top; border: 1px solid black;}
+table.charnames tr td:first-child + td {text-align: right; font-family: monospace;}
+
+p.note {padding: 0 1.5em; font-size: .93em;}
+
+div.standout {margin: 1em 0; padding: .5em 1em; border: 5px double #000;}
+
+</style>
+<script>
+function doPageLoad() {
+    if (document.getElementById("fontdown")) {
+        document.getElementById("fontdown").style.display = "inline-block";
+        document.getElementById("fontup").style.display = "inline-block";
+        if (window.localStorage) {
+            var n = localStorage.getItem("ColumnsPlusPlusFontSize");
+            if (!isNaN(n) && n >= 9 && n <= 40) {
+                document.documentElement.style.fontSize = n + "px";
+                document.documentElement.style.fontSize = n + "px";
+            }
+        }
+    }
+}
+
+function setFontDown() {
+    var n = parseFloat(window.getComputedStyle(document.documentElement).fontSize);
+    if (n > 9) --n;
+    document.documentElement.style.fontSize = n + "px";
+    if (window.localStorage) localStorage.setItem("ColumnsPlusPlusFontSize", n);
+}
+
+function setFontUp() {
+    var n = parseFloat(window.getComputedStyle(document.documentElement).fontSize);
+    if (n < 40) ++n;
+    document.documentElement.style.fontSize = n + "px";
+    if (window.localStorage) localStorage.setItem("ColumnsPlusPlusFontSize", n);
+    if (window.getComputedStyle(document.body).display == "block") window.scrollBy(0,10000);
+}
+
+window.addEventListener("load", doPageLoad);
+</script>
+</head>
+<body>
+
+<header>Search++ for Notepad++ documentation</header>
+
+<main>
+
+<nav class=pagenav><a href="#introduction">Introduction</a>
+<a href="#purpose" >Purpose</a>
+<a href="#search"  >Search dialog</a>
+<a href="#commands">Search commands</a>
+<a href="#results" >Search results window</a>
+<a href="#regular" >Regular expressions</a>
+<a href="#formulas">Formulas</a>
+<a href="#settings">Settings</a>
+<a href="#about"   >Help/About</a></nav>
+
+<article>
+
+<section id=introduction><h2>Introduction</h2>
+
+<p><strong>Search++</strong> is an enhanced search plugin for <a href="https://notepad-plus-plus.org/">Notepad++</a>.</p>
+
+<p class=note>Like Notepad++, Search++ is released under the <a href="https://www.gnu.org/licenses/gpl.html">GNU General Public License</a> (either <a href="https://www.gnu.org/licenses/gpl-3.0.html">version 3</a> of the License, or, at your option, any later version). Some original source code files which are not dependent on Notepad++ are released under the <a href="https://www.opensource.org/licenses/MIT">MIT (Expat) license</a>: see individual files for details. Search++ was first released by <a href="http://www.coises.com/">Randall Joseph Fellmy</a> in 2026; you can find the source code on <a href="https://github.com/Coises/Search++">GitHub</a>.</p>
+
+<p class=note><strong>Search++</strong> uses the <a href="https://github.com/ArashPartow/exprtk">C++ Mathematical Expression Toolkit Library (ExprTk)</a> by <a href="https://www.partow.net/">Arash Partow</a>, which is released under the <a href="https://www.opensource.org/licenses/MIT">MIT license</a>; <a href="https://github.com/nlohmann/json">JSON for Modern C++</a> by <a href="https://nlohmann.me">Niels Lohmann</a>, which is released under the <a href="https://www.opensource.org/licenses/MIT">MIT license</a>; the <a href="https://github.com/boostorg/regex/">Boost.Regex library</a>, which is released under the <a href="https://www.boost.org/LICENSE_1_0.txt">Boost Software License, Version 1.0</a>; and <a href="https://unicode-org.github.io/icu/userguide/icu4c/">ICU4C</a>, which is released under the <a href="https://www.unicode.org/license.txt">Unicode License V3</a>. Search++ was built using <a href="https://github.com/Coises/NppCppMSVS">NppCppMSVS</a>.</p>
+
+<p class=note>Search++ does not work with versions of <strong>Notepad++</strong> older than 8.4.3 (release date 2022-07-08).</p>
+
+<div class=standout><p>The current version of Search++ should be considered preliminary. It still a work in progress: features may be missing, behavior and options may change significantly in future releases, and various things might not yet work as intended or documented. Feedback is most welcome at this stage, so I can learn what works well and what requires improvement.</p></div>
+
+<p>To install <strong>Search++</strong>, download the x86 or x64 zip file, depending on whether you're using 32-bit or 64-bit Notepad++, from the latest <a href="https://github.com/Coises/SearchPlusPlus/releases/">release on GitHub</a>. Unzip the file to a folder named <strong>Search++</strong> (the name must be exactly that, or Notepad++ will not load the plugin) and copy that folder into the plugins directory where Notepad++ is installed (usually <strong>C:\Program Files (x86)\Notepad++\plugins</strong> for 32-bit versions or <strong>C:\Program Files\Notepad++\plugins</strong> for 64-bit versions).</p>
+
+<p>This documentation, copyright ©2026 by Randy Fellmy, is provided under the <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0</a> license.</p>
+
+</section>
+
+<section id=purpose><h2>Purpose</h2>
+
+<p>I wrote <strong>Search++</strong> to bring the extended search capabilites I developed for <a href="https://coises.github.io/ColumnsPlusPlus/help.htm#search">Columns++</a> to a more general-purpose and hopefully more user-friendly search. I also wanted to experiment with alternatives to some of the user interface limitations of both native Notepad++ and Columns++ search.</p>
+
+<p><strong>Search++</strong> differs in several significant ways from the search built into Notepad++:</p>
+
+<ul>
+<li><strong>Search++</strong> can be used as a docking dialog or an ordinary dialog. An advantage of the docking dialog is that search results and context will never wind up hidden behind the dialog. As an ordinary dialog, Search++ can be oriented either horizontally or vertically. By default, Search++ opens docked to the right side of Notepad++. You can change that in the <a href="#settings">Settings</a> dialog. (As with any docking window in Notepad++, you <em>can</em> float the docking dialog by dragging its title bar into the main Notepad++ area; however, Search++ as a regular dialog, chosen from the Settings dialog, is likely to be ”better behaved” than a floating dockable dialog.)
+
+<li>The Find and Replace fields in <strong>Search++</strong> are Scintilla controls. This allows for easy inclusion and visualization of multiple lines, line ending characters and special characters, as well as zooming the fields as desired. Find and replace text is shown using the same font as in the main Notepad++ editing window.
+
+<li><strong>Search++</strong> can search within selections (including column selections and multiple selections) and within marked text. Commands are available to <strong>Find All</strong> (send a list of matches to the <strong>Search++ Results</strong> window), <strong>Select</strong>, <strong>Mark</strong> or <strong>Show</strong> (hide all lines, then unhide lines with matches and mark the matches).
+
+<li>Regular expression searches in <strong>Search++</strong> perform a fully Unicode-based search using a customized combination of <a href="https://www.boost.org/doc/libs/latest/libs/regex/doc/html/index.html">Boost.Regex</a> and <a href="https://unicode-org.github.io/icu/userguide/icu4c/">ICU4C</a>. In particular, this produces fewer “surprising” results than the native Notepad++ search with Unicode characters above 0xFFFF (including most emoji) and when searching in documents using a DBCS code page (which in Notepad++ can be Chinese, Japanese or Korean files that are in the system default encoding instead of in Unicode).
+
+<li>Regular expression replacements in <strong>Search++</strong> can include numeric calculations. The <a href="#formulas">replacement syntax</a> is similar to the one introduced in <a href="https://github.com/Coises/ColumnsPlusPlus">Columns++</a>.
+</ul>
+
+</section>
+
+<section id=search><h2>Search dialog</h2>
+
+<p>Everything <strong>Search++</strong> does begins with the Search dialog, which you can open by selecting <strong>Search...</strong> from the <strong>Search++</strong> sub-menu on the <strong>Plugins</strong> menu. If you use <strong>Search++</strong> often, you will probably want to assign a key combination to this using <strong>Shortcut Mapper...</strong> from the <strong>Settings</strong> menu in Notepad++.</p>
+
+<h3>Search engine selection</h3>
+
+<p>At the top of the dialog there are buttons from which you can choose a <strong>Plain</strong> text search or a <strong>Regex</strong> (regular expression) search. To the right of those buttons there is a <strong>Tools</strong> button, which will be described later.</p>
+
+<p class=note>In the preliminary versions there may also be a button labeled <strong>ICU</strong>. The ICU search is mostly intended for comparison testing during development and will probably be removed before the first stable version. It is a relatively simple-minded implementation of finding (no replacing) in UTF-8 documents only using the regular expression engine built into ICU4C.</p>
+
+<p>A <strong>Plain</strong> text search is simple: it looks for exactly what you’ve entered in the Find box. Options further down in the dialog let you choose whether to match or ignore case and whether to search only for whole words. Stepwise plain text searches can proceed forward (right and down the page) or backward (left and up the page).</p>
+
+<p>A regular expression (<strong>Regex</strong>) search allows you to specify a pattern to find and a replacement string that can reference parts of the pattern that matched. The <a href="#regular">Regular expressions</a> section of this help describes them in detail. Stepwise regular expression searches can only move forward (right and down the page).</p>
+
+<h3>The Find and Replace boxes</h3>
+
+<p>There are two large text entry areas in the dialog; depending on whether the dialog is oriented vertically or horizontally, they will be near the top and bottom or at the left and right. The top or left one is the <strong>Find box</strong> and the bottom or right one is the <strong>Replace box</strong>.</p>
+
+<p>The Find and Replace boxes display centered dots for blanks, a right arrow for a tab, and a symbols for each possible line ending: 🠇 for a new line (Unix style line ending), 🠄 for a carriage return (Macintosh style line ending) and ↩ for a carriage return / new line combination (Windows style line ending). The color of these will be the one specified in your Notepad++ Global Styles for the White space symbol. Other invisible characters will be shown as black boxes with the control character code inside (the same way as in Notepad++ when <strong>View</strong> | <strong>Show Symbol</strong> | <strong>Show All Characters</strong> is checked).</p>
+
+<p>Right-click in the Find or Replace box, or use the <strong>Apps</strong> key or <strong>Shift+F10</strong>, to bring up a context menu. A number of useful commands can be found there, along with their keyboard shortcuts. The bottom section of the context menu lets you select from a history of the last ten strings you have used for searches.</p>
+
+<p>By default, the text in the Find and Replace boxes wraps without regard to word boundaries; you can change that by pressing <strong>Ctrl+W</strong> to cycle through the choices (character wrap, word wrap and no wrapping) or by using the <em>Wrap</em> commands from the context menu.</p>
+
+<p>You can change the size of text in the Find and Replace boxes by zooming (Ctrl with the mouse wheel, Ctrl with the plus and minus keys on the numeric keypad, or the Zoom commands from the context menu).</p>
+
+<h3>Search command buttons</h3>
+
+<p>There are five search command buttons. <strong>Find</strong>, <strong>Count</strong> and <strong>Find All</strong> are beneath the Find box; <strong>Replace</strong> and <strong>Replace All</strong> are beneath the Replace box. Each button has a downward chevron at the right which opens a menu of similar commands you can select instead of the main command on the button.</p>
+
+<p>You can Shift+click an item in the drop-down menu for a command button to perform its action <strong><em>and make it the new direct click action for the button</em></strong>. The first item in each menu is the default action for the button, so you can always reset it whenever you wish.</p>
+
+<p>A detailed description of the available commands is provided in the <a href="#commands">Search commands</a> section of this help.</p>
+
+<h3>Search options</h3>
+
+<p>The search options are simple checkboxes you can enable or disable. Different options are available for different search engines:</p>
+
+<ul>
+
+<li><strong>Match case</strong> indicates that the case of letters matters: that is, <strong>A</strong> is different from <strong>a</strong>. When this box is not checked, letters match regardless of case (<strong>A</strong> matches <strong>A</strong> or <strong>a</strong>).
+
+<li><strong>Whole word only</strong> indicates matches cannot match only part of a word (e.g., <strong>the</strong> will not match the “the” in <strong>anthem</strong>. This option is only available for plain text searches.
+
+<li><strong>Dot matches line breaks</strong> applies only to regular expression searches. It indicates that the period (<strong>.</strong>) matches any one Unicode code point. When not checked, the period does not match the characters that end lines in Notepad++ (linefeed and carriage return).
+
+<li><strong>Free spacing</strong> applies only to regular expression searches. It indicates that unescaped “white space” (spaces, tabs and line-endings) and comments (a <strong>#</strong> sign and all text following it on the same line) in the search string are to be ignored by the regular expression engine, so you can use these characters to make complex search strings easier to read and edit.
+
+<li><strong>Unicode word boundaries</strong> enables the use of a sophisticated definition of word boundaries developed as part of the <a href="https://www.unicode.org/reports/tr29/#Word_Boundaries">Unicode Standard</a>. At present this option is only available for the ICU search engine.
+
+</ul>
+
+<h3>Tools</h3>
+
+<p>The <strong>Tools</strong> button opens a menu that offers some convenient actions you might want to use in conjunction with searching:
+
+<ul>
+
+<li><strong>Hide All Lines</strong> hides all lines in the active document.
+
+<li><strong>Show All Lines</strong> unhides all lines in the active document.
+
+<li><strong>Selections 🡪 Marked Text</strong> marks all text that is currently selected in the active document. (By default, <strong>Search++</strong> uses the “Find Mark Style” marker, the same one used by the <strong>Mark</strong> tab of the Search dialog in Notepad++. You can change the marker in the Search++ settings.)
+
+<li><strong>Marked Text 🡪 Selections</strong> selects all text that is currently marked in the active document.
+
+<li><strong>Unmark All Text</strong> removes the marker <strong>Search++</strong> is using from all text in the active document.
+
+<li><strong>Settings...</strong> opens the Search++ <a href="#settings">Settings</a> dialog.
+
+</ul>
+
+<h3>Keyboard navigation</h3>
+
+<p>The search dialog responds to the usual methods of keyboard navigation for a dialog (e.g., type an underlined character alone or with the Alt key). In addition, you can use <strong>Ctrl+O</strong> (Other) to switch between the Find box and the Replace box. (If neither is in focus, focus goes to the Find box.) <strong>Ctrl+N</strong> returns focus to the active document in the main Notepad++ window; <strong>Ctrl+Shift+N</strong> closes the search dialog and returns focus to Notepad++. If there are search results, <strong>Ctrl+H</strong> places keyboard focus in the <a href="#results">Search results window</a>.</p>
+
+</section>
+
+<section id=commands><h2>Search commands</h2>
+
+<p>Search commands are issued by clicking one of the command buttons in the search dialog or by selecting one the entries from the drop-down menus for those buttons. There are three parts to a search command: the <em>action</em>, the <em>direction</em> and the <em>scope</em>.</p>
+
+<h3>Search actions</h3>
+
+<p>Search actions define what sort of thing a command will do. The possible search actions are <strong>Find</strong>, <strong>Count</strong>, <strong>Find All</strong>, <strong>Mark</strong>, <strong>Select</strong>, <strong>Show</strong>, <strong>Replace and Find</strong>, <strong>Find or Replace</strong> and <strong>Replace All</strong>:</p>
+
+<ul>
+
+<li><strong>Find</strong> finds one occurrence of the search string. The default direction for find commands is forward, starting from the current position or selected text. For plain text searches, Find can also have the <strong>Backward</strong> direction.
+
+<li><strong>Count</strong> shows a message at the bottom of the search dialog telling how many occurrences of the search string can be found.
+
+<li><strong>Find All</strong> searches for occurrences of the find string and lists them in the <a href="results">Search results window</a>.
+
+<li><strong>Mark</strong> searches for occurrences of the find string and marks the found text. By default, marks already in the document are not cleared first; you can change this behavior, and choose which marker is used, in the <a href="#settings">Settings</a> dialog.
+
+<li><strong>Select</strong> searches for occurrences of the find string and creates a multiple selection with one selection corresponding to each match. By default, any existing selection (including rectangular and multiple selections) is cleared before the search begins; you can change this behavior in the <a href="#settings">Settings</a> dialog.
+
+<li><strong>Show</strong> unhides lines containing matches and marks the matches. If no lines are hidden before the command is given, <strong>Show</strong> first hides all lines. By default, if any lines are already hidden, <strong>Show</strong> doesn’t hide anything, and it doesn’t unmark existing marked text; you can change this behavior in the <a href="#settings">Settings</a> dialog.
+
+<li><strong>Replace and Find</strong> first finds a match, then on subsequent clicks replaces the match and finds the next match.
+
+<li><strong>Find or Replace</strong> first finds a match, then the next click replaces the found match, leaving the replacement location visible. The next click finds, the next click replaces, and so on. 
+
+<li><strong>Replace All</strong> searches for occurrences of the find string and replaces them with the replace string.
+
+</ul>
+
+<h3>Search directions</h3>
+
+<p>Search directions describe the direction of motion through the document. Command actions which take a single step at a time (<strong>Find</strong>, <strong>Replace and Find</strong> and <strong>Find or Replace</strong>) can search <strong>Forward</strong> (the default) or (for Plain text searches) <strong>Backward</strong>. All the other command actions, which search for multiple occurrences at one time, can search <strong>Everywhere</strong> (the default), <strong>Before</strong> or <strong>After</strong>:</p>
+
+<ul>
+
+<li><strong>Forward</strong> is the default for <strong>Find</strong>, <strong>Replace and Find</strong> and <strong>Find or Replace</strong> actions. It means moving to the right and downward through the document.  When a Forward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the beginning of the search scope (unless you already started from the beginning).
+
+<li><strong>Backward</strong> is available for <strong>Find</strong>, <strong>Replace and Find</strong> and <strong>Find or Replace</strong> actions only when searching for <strong>Plain</strong> text. It means moving to the left and upward through the document. When a Backward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the end of the search scope (unless you already started from the end).
+
+<li><strong>Everywhere</strong> is the default direction for command actions that search for multiple occurrences at one time. It just means that the entire scope (selected text, marked text or the whole document) is searched.
+
+<li><strong>Before</strong> applies the command action only to matches that occur earlier in the active document that the current position or selection. The action is not applied to matches which overlap the current position or selection.
+
+<li><strong>After</strong> applies the command action only to matches that occur later in the active document that the current position or selection. The action is not applied to matches which overlap the current position or selection.
+
+</ul>
+
+<h3 id="commands-scopes">Search scopes</h3>
+
+<p>Search scopes determine what will be searched: <strong>Selection</strong>, <strong>Marked Text</strong> or <strong>Whole Document</strong>. The default is a “smart scope” which determines the effective scope based on whether there is already a selection or marked text in the document:
+
+<ul>
+
+<li><strong>Whole Document</strong> means selections and marks are ignored; everything in the document (subject to any <em>direction</em> constraint) is searched.
+
+<li><strong>Selection</strong>: If there is a non-empty selection — single, rectangular or multiple — the search will be confined to the selected text. Note that for a regular expression search, each line in a rectangular selection and each selection in a multiple selection is searched independently; the search in any line or selection cannot “see” outside that selection. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>). If there is no selection, then the search will encompass the entire document.
+
+<li><strong>Marked Text</strong>: If there is any marked text, only marked text will be searched; if the document contains no marked text, the whole document will be searched. The considerations above concerning selections apply to marked text as well: regular expressions treat each span of marked text independently from other spans and from the surrounding unmarked text.
+
+<li>Default (“smart”) scope attempts to infer what you probably want to search based on whether anything is already marked or selected. The default rules are these:
+<ol>
+<li>Marked text takes precedence. If any text is marked, then the search is confined to marked text.
+<li>Otherwise, if there is a multiple selection or a rectangular selection, the selection is searched.
+<li>Otherwise, if there is a single selection encompassing at least 80 characters <em>and</em> three lines, it will be searched.
+<li>Otherwise, the whole document is searched.
+</ol>
+You can make adjustments to those rules in the <a href="#settings">Settings</a> dialog.
+
+</ul>
+
+</section>
+
+<section id=results><h2>Search results window</h2>
+
+<p>The <strong>Find All</strong> command (and its variants, <strong>Find All Before</strong>, <strong>Find All in Marked Text</strong>, etc.) lists the matches it finds in the <strong>Search++ Results</strong> window. This is a docking dialog which, by default, appears at the bottom of the Notepad++ window. Once a search results window is initialized, its content is kept as long as Notepad++ remains open. Newer <strong>Find All</strong> commands add results to the top of the window. You can close the window, and if you later reopen it (by doing another <strong>Find All</strong> command or by pressing <strong>Ctrl+H</strong> in the search dialog) during the same Notepad++ session, the content will still be there.</p>
+
+<p>Each search is headed by a gold-colored line showing the number of matches and the find string. Below that is another header line giving the file name searched and the number of lines in that file that contain matches. Below that, each line which has any matches is listed and the matches are highlighted.</p>
+
+<p>You can double-click on a header line to “fold” the content beneath it; double-click again to open it up.</p>
+
+<p>You can double-click at any position on a match line and the corresponding document will be activated with the caret set to the corresponding position in the document. If you double-click on a highlighted selection, the corresponding selection will be highlighted in the document.</p>
+
+<p><em>Note that this only works if the document is still open in Notepad++ and has not been modified since the search. If the document is not open, Search++ will not attempt to open it. If the document has changed, positions will go “out of sync” and where you double-click will not be where the caret winds up.</em></p>
+
+<p>The same wrap and zoom options are available as in the Find and Replace boxes. You can right-click or use the <strong>Apps</strong> key or <strong>Shift+F10</strong> to open a context menu.</p>
+
+<p>You can navigate the search results window by keyboard. The <strong>Tab</strong> key moves to the next match; <strong>Shift+Tab</strong> moves to the previous match. You can press the <strong>Enter</strong> key to show the position in the document corresponding to the position of the caret in the search results <em>without</em> moving focus to the document; use <strong>Shift+Enter</strong> to scroll to location and put focus in the document.</p>
+
+<p>You can use <strong>Ctrl+O</strong> to open the search dialog, if it is not already open, and focus the Find box. <strong>Ctrl+N</strong> returns focus to the active document in the main Notepad++ window; <strong>Ctrl+Shift+N</strong> closes the search results window and returns focus to Notepad++.</p>
+
+</section>
+
+<section id=regular><h2>Regular expressions</h2>
+
+<p>Regular expressions are a powerful tool for finding and replacing text using patterns instead of a literal plain text string. <strong>Search++</strong> uses the same regular expression engine, <a href="https://www.boost.org/doc/libs/latest/libs/regex/">Boost.Regex</a>, used in <strong>Notepad++</strong>, so most things work the same as they do in Notepad++. Two good resources for learning the syntax of find strings and replacements for this engine are the <a href="https://npp-user-manual.org/docs/searching/#regular-expressions">Notepad++ User Manual</a> and the Boost documentation for <a href="https://www.boost.org/doc/libs/latest/libs/regex/doc/html/boost_regex/syntax/perl_syntax.html">Find</a> and <a href="https://www.boost.org/doc/libs/latest/libs/regex/doc/html/boost_regex/format/boost_format_syntax.html">Replace</a> syntax. This section will concentrate on the differences between Search++ regular expressions and the ones used in the built-in Notepad++ search.</p>
+
+<h3>Formulas</h3>
+
+<p><strong>Search++</strong> supports mathematical formulas in the replacement string for regular expressions. They are described in the <a href="#formulas">Formulas</a> section of this help.</p>
+
+<h3>Searching marked text and searching in rectangular and multiple selections</h3>
+
+<p>Search in Notepad++ doesn’t work in rectangular or multiple selections, nor is there a facility for searching in marked text. <strong>Search++</strong> can do those things. For plain text the way it works is fairly straightforward; but for regular expressions there are some considerations that might not be obvious.</p>
+
+<p>Within a rectangular selection, the selection in each row is matched independently of the surrounding text. The <strong>^</strong> assertion matches the beginning of the selection within a row, the <strong>$</strong> assertion matches the end of the selection, and lookahead and lookbehind assertions cannot examine text past the boundaries of the selection. (Lookbehind assertions in <strong>Notepad++</strong> can examine all text back to the beginning of the document, even when counting or replacing in a simple selection.) The same principle applies to multiple selections and to runs of marked text.</p>
+
+<h3>The \K directive</h3>
+<p>Matches for regular expressions using the <strong>\K</strong> directive are never replaced when performing stepwise Find and Replace in <strong>Notepad++</strong>. In <strong>Search++</strong> such matches can be replaced if you do not change the selection in the document or activate any other document between finding the match and replacing it.</p>
+
+<h3>Case sensitivity and named character classes</h3>
+
+<p>In most regular expression engines, including unmodified Boost.Regex, case insensitive matches (when the <strong>Match case</strong> option is not checked, or when <strong>(?i)</strong> is in effect) ignore case in the text to be matched entirely. In <strong>Search++</strong>, named character classes and their equivalents (such as <strong>[[:upper:]]</strong> or <strong>\u</strong> or <strong>\p{Lu}</strong>) never ignore case.</p>
+
+<h3 id=regularUnicode>Unicode</h3>
+
+<p>In documents containing characters outside the <a href="https://en.wikipedia.org/wiki/ASCII#Character_set">ASCII character set</a> there are some significant differences in the way <strong>Search++</strong> and <strong>Notepad++</strong> match regular expressions. <strong>Search++</strong> matches document text as if it were a series of <a href="https://en.wikipedia.org/wiki/Unicode">Unicode</a> code points (i.e., <a href="https://en.wikipedia.org/wiki/UTF-32">UTF-32</a>) while <strong>Notepad++</strong> matches documents either as <a href="https://en.wikipedia.org/wiki/Windows_code_page#ANSI_code_page">ANSI</a> bytes in the system default code page or as <a href="https://en.wikipedia.org/wiki/UTF-16">UTF-16</a> code units. Most of the differences are related to this change.</p>
+
+<p>When using hexadecimal codes (<code>\x<em>hh</em></code> or <code>\x{<em>hhhh</em>}</code>) to specify a character in <strong>Search++</strong> regular expressions, you must use the Unicode code point. Character ranges (e.g., <code>[&#x2020;-&#x2030;]</code>) represent the range of Unicode code points, not the range implied by any code page.</p>
+
+<p class=note>The hexadecimal values for ASCII characters (<code>x00</code>-<code>x7f</code>) are the same in all code pages and in Unicode. There is one partial exception: in some East Asian codepages, <code>&#xa5;</code>, the Yen/Yuan sign, shares the byte value <code>x5c</code> with <code>\</code>, the backslash character. This is a matter of appearance only; the Unicode Yen/Yuan sign, <code>xa5</code>, is not an ASCII character, and the ASCII character <code>x5c</code> functions as a backslash whether it appears as <code>\</code> or as <code>&#xa5;</code>.</p>
+
+<p class=note>As an example of character ranges, <code>&#x2022;</code>, the bullet, is included in the Unicode range <code>[&#x2020;-&#x2030;]</code>, from the <a href="https://www.compart.com/en/unicode/block/U+2000">General Punctuation block</a>; but it is not between those two characters in the common <a href="https://en.wikipedia.org/wiki/Windows-1252#Codepage_layout">Windows-1252</a> code page. In a regular expression in <strong>Search++</strong> that range will match a bullet, even in an ANSI document when the system default code page is Windows-1252. In a <strong>Notepad++</strong> search it would not match in an ANSI document, but it would match in a Unicode document.</p>
+
+<p>There are no surrogate pairs in <strong>Search++</strong> regular expressions; each code point matches as a single unit. To enter any Unicode character in hexadecimal notation, use the full code point; for example, enter &#x1f642; as <code>\x{1f642}</code>. (The surrogate pair, <code>\x{d83d}\x{de42}</code>, which must be used in <strong>Notepad++</strong> search, <em>will not match</em> in <strong>Search++</strong>.)</p>
+
+<p><strong>Scintilla</strong>, the display control used in <strong>Notepad++</strong>, represents Unicode internally as UTF-8. (This is true whether the file containing the document is UTF-8, UTF-16 or anything else other than ANSI.) When displaying Unicode documents that contain invalid UTF-8, Scintilla shows each byte that cannot be decoded as a hexadecimal code in reversed colors. You can match any of these bytes with <code>\i</code>; to match a specific byte, use the hexadecimal code Scintilla displays as a symbolic character name, e.g., <code>[[.xF7.]]</code>. (When matching a regular expression, <strong>Search++</strong> treats each of these error bytes as if it were the Unicode code point formed by adding <code>0xdc00</code> to the invalid byte. These code points are in the surrogate range and are invalid as UTF-32 code units.)</p>
+
+<p>The period (<code>.</code>) matches any one code point except the characters which end lines in Scintilla: carriage return (<code>\x0d</code> or <code>\r</code>) and newline (also called line feed, <code>\x0a</code> or <code>\n</code>). This corresponds to the <a href="https://npp-user-manual.org/docs/searching/#single-character-matches">documented</a> behavior of the period, but not the actual behavior in Notepad++ (where there are several other control characters it does not match). Use <code>\X</code> to match a character including any combining code points (marks) which follow it. (In Notepad++ search, <code>.</code> and <code>\X</code> do not work as expected when the code points involved are outside the basic multilingual plane, that is, 0x10000 or greater.)</p>
+
+<p>The <a href="https://www.boost.org/doc/libs/release/libs/regex/doc/html/boost_regex/syntax/character_classes/optional_char_class_names.html">Unicode character classes</a> and these escape sequences, negations (which match characters not in the class) and character classes are added:</p>
+
+<table>
+<tr><th>escape</th><th>negation</th><th>character class</th><th>meaning</th></tr>
+<tr><td><code>\i</code></td><td><code>\I</code></td><td><code>[[:invalid:]]</code></td><td>a byte in an invalid UTF-8 sequence</td></tr>
+<tr><td><code>\o</code></td><td><code>\O</code></td><td><code>[[:ascii:]]</code></td><td>an ASCII character, code points 0 through 127</td></tr>
+<tr><td><code>\y</code></td><td><code>\Y</code></td><td><code>[[:defined:]]</code></td><td>any Unicode code point that is assigned and is not a surrogate or a private use character</td></tr>
+</table>
+
+<p>Some symbolic names for <a href="https://www.boost.org/doc/libs/release/libs/regex/doc/html/boost_regex/syntax/perl_syntax.html#boost_regex.syntax.perl_syntax.collating_elements">collating elements</a> have been added, including all the abbreviations used to display invisible characters; all can be entered in any mix of upper and lower case. This is the full list:</p>
+
+<table class=charnames>
+<tr><th>expression</th><th>code pt</th><th>common name</th></tr>
+<tr><td><code>[[.nul.]]</code></td>                                      <td>   00</td><td>null</td></tr>
+<tr><td><code>[[.soh.]]</code></td>                                      <td>   01</td><td>start of heading</td></tr>
+<tr><td><code>[[.stx.]]</code></td>                                      <td>   02</td><td>start of text</td></tr>
+<tr><td><code>[[.etx.]]</code></td>                                      <td>   03</td><td>end of text</td></tr>
+<tr><td><code>[[.eot.]]</code></td>                                      <td>   04</td><td>end of transmission</td></tr>
+<tr><td><code>[[.enq.]]</code></td>                                      <td>   05</td><td>enquiry</td></tr>
+<tr><td><code>[[.ack.]]</code></td>                                      <td>   06</td><td>acknowledge</td></tr>
+<tr><td><code>[[.bel.]]</code><br><code>[[.alert.]]</code></td>          <td>   07</td><td>bell</td></tr>
+<tr><td><code>[[.bs.]]</code><br><code>[[.backspace.]]</code></td>       <td>   08</td><td>backspace</td></tr>
+<tr><td><code>[[.ht.]]</code><br><code>[[.tab.]]</code></td>             <td>   09</td><td>horizontal tab</td></tr>
+<tr><td><code>[[.lf.]]</code><br><code>[[.newline.]]</code></td>         <td>   0a</td><td>line feed,<br>new line</td></tr>
+<tr><td><code>[[.vt.]]</code><br><code>[[.vertical-tab.]]</code></td>    <td>   0b</td><td>line tabulation,<br>vertical tab</td></tr>
+<tr><td><code>[[.ff.]]</code><br><code>[[.form-feed.]]</code></td>       <td>   0c</td><td>form feed</td></tr>
+<tr><td><code>[[.cr.]]</code><br><code>[[.carriage-return.]]</code></td> <td>   0d</td><td>carriage return</td></tr>
+<tr><td><code>[[.so.]]</code></td>                                       <td>   0e</td><td>shift out</td></tr>
+<tr><td><code>[[.si.]]</code></td>                                       <td>   0f</td><td>shift in</td></tr>
+<tr><td><code>[[.dle.]]</code></td>                                      <td>   10</td><td>data link escape</td></tr>
+<tr><td><code>[[.dc1.]]</code></td>                                      <td>   11</td><td>device control one</td></tr>
+<tr><td><code>[[.dc2.]]</code></td>                                      <td>   12</td><td>device control two</td></tr>
+<tr><td><code>[[.dc3.]]</code></td>                                      <td>   13</td><td>device control three</td></tr>
+<tr><td><code>[[.dc4.]]</code></td>                                      <td>   14</td><td>device control four</td></tr>
+<tr><td><code>[[.nak.]]</code></td>                                      <td>   15</td><td>negative acknowledge</td></tr>
+<tr><td><code>[[.syn.]]</code></td>                                      <td>   16</td><td>synchronous idle</td></tr>
+<tr><td><code>[[.etb.]]</code></td>                                      <td>   17</td><td>end of transmission block</td></tr>
+<tr><td><code>[[.can.]]</code></td>                                      <td>   18</td><td>cancel</td></tr>
+<tr><td><code>[[.em.]]</code></td>                                       <td>   19</td><td>end of medium</td></tr>
+<tr><td><code>[[.sub.]]</code></td>                                      <td>   1a</td><td>substitute</td></tr>
+<tr><td><code>[[.esc.]]</code></td>                                      <td>   1b</td><td>escape</td></tr>
+<tr><td><code>[[.fs.]]</code><br><code>[[.IS4.]]</code></td>             <td>   1c</td><td>information separator four</td></tr>
+<tr><td><code>[[.gs.]]</code><br><code>[[.IS3.]]</code></td>             <td>   1d</td><td>information separator three</td></tr>
+<tr><td><code>[[.rs.]]</code><br><code>[[.IS2.]]</code></td>             <td>   1e</td><td>information separator two</td></tr>
+<tr><td><code>[[.us.]]</code><br><code>[[.IS1.]]</code></td>             <td>   1f</td><td>information separator one</td></tr>
+<tr><td><code>[[.space.]]</code></td>                                    <td>   20</td><td></td></tr>
+<tr><td><code>[[.exclamation-mark.]]</code></td>                         <td>   21</td><td>&#x21;</td></tr>
+<tr><td><code>[[.quotation-mark.]]</code></td>                           <td>   22</td><td>&#x22;</td></tr>
+<tr><td><code>[[.number-sign.]]</code></td>                              <td>   23</td><td>&#x23;</td></tr>
+<tr><td><code>[[.dollar-sign.]]</code></td>                              <td>   24</td><td>&#x24;</td></tr>
+<tr><td><code>[[.percent-sign.]]</code></td>                             <td>   25</td><td>&#x25;</td></tr>
+<tr><td><code>[[.ampersand.]]</code></td>                                <td>   26</td><td>&#x26;</td></tr>
+<tr><td><code>[[.apostrophe.]]</code></td>                               <td>   27</td><td>&#x27;</td></tr>
+<tr><td><code>[[.left-parenthesis.]]</code></td>                         <td>   28</td><td>&#x28;</td></tr>
+<tr><td><code>[[.right-parenthesis.]]</code></td>                        <td>   29</td><td>&#x29;</td></tr>
+<tr><td><code>[[.asterisk.]]</code></td>                                 <td>   2a</td><td>&#x2a;</td></tr>
+<tr><td><code>[[.plus-sign.]]</code></td>                                <td>   2b</td><td>&#x2b;</td></tr>
+<tr><td><code>[[.comma.]]</code></td>                                    <td>   2c</td><td>&#x2c;</td></tr>
+<tr><td><code>[[.hyphen.]]</code></td>                                   <td>   2d</td><td>&#x2d;</td></tr>
+<tr><td><code>[[.period.]]</code></td>                                   <td>   2e</td><td>&#x2e;</td></tr>
+<tr><td><code>[[.slash.]]</code></td>                                    <td>   2f</td><td>&#x2f;</td></tr>
+<tr><td><code>[[.zero.]]</code></td>                                     <td>   30</td><td>&#x30;</td></tr>
+<tr><td><code>[[.one.]]</code></td>                                      <td>   31</td><td>&#x31;</td></tr>
+<tr><td><code>[[.two.]]</code></td>                                      <td>   32</td><td>&#x32;</td></tr>
+<tr><td><code>[[.three.]]</code></td>                                    <td>   33</td><td>&#x33;</td></tr>
+<tr><td><code>[[.four.]]</code></td>                                     <td>   34</td><td>&#x34;</td></tr>
+<tr><td><code>[[.five.]]</code></td>                                     <td>   35</td><td>&#x35;</td></tr>
+<tr><td><code>[[.six.]]</code></td>                                      <td>   36</td><td>&#x36;</td></tr>
+<tr><td><code>[[.seven.]]</code></td>                                    <td>   37</td><td>&#x37;</td></tr>
+<tr><td><code>[[.eight.]]</code></td>                                    <td>   38</td><td>&#x38;</td></tr>
+<tr><td><code>[[.nine.]]</code></td>                                     <td>   39</td><td>&#x39;</td></tr>
+<tr><td><code>[[.colon.]]</code></td>                                    <td>   3a</td><td>&#x3a;</td></tr>
+<tr><td><code>[[.semicolon.]]</code></td>                                <td>   3b</td><td>&#x3b;</td></tr>
+<tr><td><code>[[.less-than-sign.]]</code></td>                           <td>   3c</td><td>&#x3c;</td></tr>
+<tr><td><code>[[.equals-sign.]]</code></td>                              <td>   3d</td><td>&#x3d;</td></tr>
+<tr><td><code>[[.greater-than-sign.]]</code></td>                        <td>   3e</td><td>&#x3e;</td></tr>
+<tr><td><code>[[.question-mark.]]</code></td>                            <td>   3f</td><td>&#x3f;</td></tr>
+<tr><td><code>[[.commercial-at.]]</code></td>                            <td>   40</td><td>&#x40;</td></tr>
+<tr><td><code>[[.left-square-bracket.]]</code></td>                      <td>   5b</td><td>&#x5b;</td></tr>
+<tr><td><code>[[.backslash.]]</code></td>                                <td>   5c</td><td>&#x5c;</td></tr>
+<tr><td><code>[[.right-square-bracket.]]</code></td>                     <td>   5d</td><td>&#x5d;</td></tr>
+<tr><td><code>[[.circumflex.]]</code></td>                               <td>   5e</td><td>&#x5e;</td></tr>
+<tr><td><code>[[.underscore.]]</code></td>                               <td>   5f</td><td>&#x5f;</td></tr>
+<tr><td><code>[[.grave-accent.]]</code></td>                             <td>   60</td><td>&#x60;</td></tr>
+<tr><td><code>[[.left-curly-bracket.]]</code></td>                       <td>   7b</td><td>&#x7b;</td></tr>
+<tr><td><code>[[.vertical-line.]]</code></td>                            <td>   7c</td><td>&#x7c;</td></tr>
+<tr><td><code>[[.right-curly-bracket.]]</code></td>                      <td>   7d</td><td>&#x7d;</td></tr>
+<tr><td><code>[[.tilde.]]</code></td>                                    <td>   7e</td><td>&#x7e;</td></tr>
+<tr><td><code>[[.del.]]</code></td>                                      <td>   7f</td><td>delete</td></tr>
+<tr><td><code>[[.pad.]]</code></td>                                      <td>   80</td><td>padding character</td></tr>
+<tr><td><code>[[.hop.]]</code></td>                                      <td>   81</td><td>high octet preset</td></tr>
+<tr><td><code>[[.bph.]]</code></td>                                      <td>   82</td><td>break permitted here</td></tr>
+<tr><td><code>[[.nbh.]]</code></td>                                      <td>   83</td><td>no break here</td></tr>
+<tr><td><code>[[.ind.]]</code></td>                                      <td>   84</td><td>index</td></tr>
+<tr><td><code>[[.nel.]]</code></td>                                      <td>   85</td><td>next line</td></tr>
+<tr><td><code>[[.ssa.]]</code></td>                                      <td>   86</td><td>start of selected area</td></tr>
+<tr><td><code>[[.esa.]]</code></td>                                      <td>   87</td><td>end of selected area</td></tr>
+<tr><td><code>[[.hts.]]</code></td>                                      <td>   88</td><td>character (horizontal) tabulation set</td></tr>
+<tr><td><code>[[.htj.]]</code></td>                                      <td>   89</td><td>character (horizontal) tabulation with justification</td></tr>
+<tr><td><code>[[.lts.]]</code></td>                                      <td>   8a</td><td>line (vertical) tabulation set</td></tr>
+<tr><td><code>[[.pld.]]</code></td>                                      <td>   8b</td><td>partial line forward (down)</td></tr>
+<tr><td><code>[[.plu.]]</code></td>                                      <td>   8c</td><td>partial line backward (up)</td></tr>
+<tr><td><code>[[.ri.]]</code></td>                                       <td>   8d</td><td>reverse line feed (index)</td></tr>
+<tr><td><code>[[.ss2.]]</code></td>                                      <td>   8e</td><td>single-shift two</td></tr>
+<tr><td><code>[[.ss3.]]</code></td>                                      <td>   8f</td><td>single-shift three</td></tr>
+<tr><td><code>[[.dcs.]]</code></td>                                      <td>   90</td><td>device control string</td></tr>
+<tr><td><code>[[.pu1.]]</code></td>                                      <td>   91</td><td>private use one</td></tr>
+<tr><td><code>[[.pu2.]]</code></td>                                      <td>   92</td><td>private use two</td></tr>
+<tr><td><code>[[.sts.]]</code></td>                                      <td>   93</td><td>set transmit state</td></tr>
+<tr><td><code>[[.cch.]]</code></td>                                      <td>   94</td><td>cancel character</td></tr>
+<tr><td><code>[[.mw.]]</code></td>                                       <td>   95</td><td>message waiting</td></tr>
+<tr><td><code>[[.spa.]]</code></td>                                      <td>   96</td><td>start of protected area</td></tr>
+<tr><td><code>[[.epa.]]</code></td>                                      <td>   97</td><td>end of protected area</td></tr>
+<tr><td><code>[[.sos.]]</code></td>                                      <td>   98</td><td>start of string</td></tr>
+<tr><td><code>[[.sgci.]]</code></td>                                     <td>   99</td><td>single graphic character introducer</td></tr>
+<tr><td><code>[[.sci.]]</code></td>                                      <td>   9a</td><td>single character introducer</td></tr>
+<tr><td><code>[[.csi.]]</code></td>                                      <td>   9b</td><td>control sequence introducer</td></tr>
+<tr><td><code>[[.st.]]</code></td>                                       <td>   9c</td><td>string terminator</td></tr>
+<tr><td><code>[[.osc.]]</code></td>                                      <td>   9d</td><td>operating system command</td></tr>
+<tr><td><code>[[.pm.]]</code></td>                                       <td>   9e</td><td>private message</td></tr>
+<tr><td><code>[[.apc.]]</code></td>                                      <td>   9f</td><td>application program command</td></tr>
+<tr><td><code>[[.nbsp.]]</code></td>                                     <td>   a0</td><td>no-break space</td></tr>
+<tr><td><code>[[.shy.]]</code></td>                                      <td>   ad</td><td>soft hyphen</td></tr>
+<tr><td><code>[[.alm.]]</code></td>                                      <td> 061c</td><td>arabic letter mark</td></tr>
+<tr><td><code>[[.sam.]]</code></td>                                      <td> 070f</td><td>syriac abbreviation mark</td></tr>
+<tr><td><code>[[.ospm.]]</code></td>                                     <td> 1680</td><td>ogham space mark</td></tr>
+<tr><td><code>[[.mvs.]]</code></td>                                      <td> 180e</td><td>mongolian vowel separator</td></tr>
+<tr><td><code>[[.nqsp.]]</code></td>                                     <td> 2000</td><td>en quad</td></tr>
+<tr><td><code>[[.mqsp.]]</code></td>                                     <td> 2001</td><td>em quad</td></tr>
+<tr><td><code>[[.ensp.]]</code></td>                                     <td> 2002</td><td>en space</td></tr>
+<tr><td><code>[[.emsp.]]</code></td>                                     <td> 2003</td><td>em space</td></tr>
+<tr><td><code>[[.3/msp.]]</code></td>                                    <td> 2004</td><td>three-per-em space</td></tr>
+<tr><td><code>[[.4/msp.]]</code></td>                                    <td> 2005</td><td>four-per-em space</td></tr>
+<tr><td><code>[[.6/msp.]]</code></td>                                    <td> 2006</td><td>six-per-em space</td></tr>
+<tr><td><code>[[.fsp.]]</code></td>                                      <td> 2007</td><td>figure space</td></tr>
+<tr><td><code>[[.psp.]]</code></td>                                      <td> 2008</td><td>punctation space</td></tr>
+<tr><td><code>[[.thsp.]]</code></td>                                     <td> 2009</td><td>thin space</td></tr>
+<tr><td><code>[[.hsp.]]</code></td>                                      <td> 200a</td><td>hair space</td></tr>
+<tr><td><code>[[.zwsp.]]</code></td>                                     <td> 200b</td><td>zero-width space</td></tr>
+<tr><td><code>[[.zwnj.]]</code></td>                                     <td> 200c</td><td>zero-width non-joiner</td></tr>
+<tr><td><code>[[.zwj.]]</code></td>                                      <td> 200d</td><td>zero-width joiner</td></tr>
+<tr><td><code>[[.lrm.]]</code></td>                                      <td> 200e</td><td>left-to-right mark</td></tr>
+<tr><td><code>[[.rlm.]]</code></td>                                      <td> 200f</td><td>right-to-left mark</td></tr>
+<tr><td><code>[[.ls.]]</code></td>                                       <td> 2028</td><td>line separator</td></tr>
+<tr><td><code>[[.ps.]]</code></td>                                       <td> 2029</td><td>paragraph separator</td></tr>
+<tr><td><code>[[.lre.]]</code></td>                                      <td> 202a</td><td>left-to-right embedding</td></tr>
+<tr><td><code>[[.rle.]]</code></td>                                      <td> 202b</td><td>right-to-left embedding</td></tr>
+<tr><td><code>[[.pdf.]]</code></td>                                      <td> 202c</td><td>pop directional formatting</td></tr>
+<tr><td><code>[[.lro.]]</code></td>                                      <td> 202d</td><td>left-to-right override</td></tr>
+<tr><td><code>[[.rlo.]]</code></td>                                      <td> 202e</td><td>right-to-left override</td></tr>
+<tr><td><code>[[.nnbsp.]]</code></td>                                    <td> 202f</td><td>narrow no-break space</td></tr>
+<tr><td><code>[[.mmsp.]]</code></td>                                     <td> 205f</td><td>medium mathematical space</td></tr>
+<tr><td><code>[[.wj.]]</code></td>                                       <td> 2060</td><td>word joiner</td></tr>
+<tr><td><code>[[.(fa).]]</code></td>                                     <td> 2061</td><td>function application</td></tr>
+<tr><td><code>[[.(it).]]</code></td>                                     <td> 2062</td><td>invisible times</td></tr>
+<tr><td><code>[[.(is).]]</code></td>                                     <td> 2063</td><td>invisible separator</td></tr>
+<tr><td><code>[[.(ip).]]</code></td>                                     <td> 2064</td><td>invisible plus</td></tr>
+<tr><td><code>[[.lri.]]</code></td>                                      <td> 2066</td><td>left-to-right isolate</td></tr>
+<tr><td><code>[[.rli.]]</code></td>                                      <td> 2067</td><td>right-to-left isolate</td></tr>
+<tr><td><code>[[.fsi.]]</code></td>                                      <td> 2068</td><td>first strong isolate</td></tr>
+<tr><td><code>[[.pdi.]]</code></td>                                      <td> 2069</td><td>pop directional isolate</td></tr>
+<tr><td><code>[[.iss.]]</code></td>                                      <td> 206a</td><td>inhibit symmetric swapping</td></tr>
+<tr><td><code>[[.ass.]]</code></td>                                      <td> 206b</td><td>activate symmetric swapping</td></tr>
+<tr><td><code>[[.iafs.]]</code></td>                                     <td> 206c</td><td>inhibit arabic form shaping</td></tr>
+<tr><td><code>[[.aafs.]]</code></td>                                     <td> 206d</td><td>activate arabic form shaping</td></tr>
+<tr><td><code>[[.nads.]]</code></td>                                     <td> 206e</td><td>national digit shapes</td></tr>
+<tr><td><code>[[.nods.]]</code></td>                                     <td> 206f</td><td>nominal digit shapes</td></tr>
+<tr><td><code>[[.idsp.]]</code></td>                                     <td> 3000</td><td>ideographic space</td></tr>
+<tr><td><code>[[.zwnbsp.]]</code></td>                                   <td> feff</td><td>zero-width no-break space</td></tr>
+<tr><td><code>[[.iaa.]]</code></td>                                      <td> fff9</td><td>interlinear annotation anchor</td></tr>
+<tr><td><code>[[.ias.]]</code></td>                                      <td> fffa</td><td>interlinear annotation separator</td></tr>
+<tr><td><code>[[.iat.]]</code></td>                                      <td> fffb</td><td>interlinear annotation terminator</td></tr>
+<tr><td><code>[[.sflo.]]</code></td>                                     <td>1bca0</td><td>shorthand format letter overlap</td></tr>
+<tr><td><code>[[.sfco.]]</code></td>                                     <td>1bca1</td><td>shorthand format continuing overlap</td></tr>
+<tr><td><code>[[.sfds.]]</code></td>                                     <td>1bca2</td><td>shorthand format down step</td></tr>
+<tr><td><code>[[.sfus.]]</code></td>                                     <td>1bca3</td><td>shorthand format up step</td></tr>
+<tr><td><code>[[.x80.]], [[.x81.]],... [[.xff.]]</code></td>             <td>     </td><td>specific invalid UTF-8 bytes</td></tr>
+</table>
+
+</section>
+
+<section id=formulas><h2>Formulas</h2>
+
+<p><strong>Formulas</strong> are representations of mathematical computations. <strong>Search++</strong> uses the <a href="https://github.com/ArashPartow/exprtk">ExprTk (Expression Toolkit)</a> package to parse and evaluate formulas.</p>
+
+<h3>Replacement syntax</h3>
+
+<p>To include a formula in a replacement string, write it as:</p>
+
+<p><strong>(?=<em>formula</em>)</strong> or <strong>(?=<em>format</em>:<em>formula</em>)</strong></p>
+
+<p>within an ordinary replacement string. (The <em>format</em> option will be explained in a later sub-section.) For example:</p>
+
+<p><strong>Find box:</strong> <code>EM(\l)(\d\d\d)</code>
+<br><strong>Replace box:</strong> <code>EX$1(?=$2+100)v</code>
+<br>would replace <code>EMj437</code> with <code>EXj537v</code>.</p>
+
+<p>Use <code>$1</code>, <code>$2</code> and so on to represent capture groups; use <code>$</code> or <code>$0</code> to represent the entire match. Only matches and capture groups that can be interpreted as numbers will work within formulas. Number parsing is fairly flexible, including recognition of commas, spaces or apostrophes as thousands separators. For numbers that use a comma as the decimal separator, use two dollar signs (<code>$$</code>, <code>$$1</code>, etc.).</p>
+
+<p><strong>Search++</strong> formulas can recognize numbers formatted as times, using colons to separate days, hours, minutes and seconds. The last segment is always seconds, and the value is interpreted as seconds; e.g., <code>1:23</code> is the same as <strong>83</strong> and <code>1:00:00</code> is interpreted as <strong>3600</strong>.</p>
+
+<p><strong>Search++</strong> represents numeric values internally as <a href="https://en.wikipedia.org/wiki/Double-precision_floating-point_format">double precision floating point</a>
+ numbers. Any number up to 9,007,199,254,740,992 without a fraction or 
+decimal, positive or negative, is represented exactly. Most fractions 
+and decimals cannot be represented exactly, but in ordinary use, 
+rounding to a reasonable number of decimal places (so that the total 
+number of digits before and after the decimal is under 15) will make 
+discrepancies irrelevant. Numeric results which exceed 
+9,007,199,254,740,992 in absolute value are represented in <a href="https://en.wikipedia.org/wiki/Scientific_notation">scientific notation</a>.</p>
+
+<p>Wherever a numeric value is used, it is also possible for the value to be <em>Not-a-Number</em>, an indication that something which was expected to produce a number failed to do so. This can happen because you tried to get a number from the document, but the associated text could not be unambiguously interpreted as a number. It can also be the result of an undefined mathematical operation, such as dividing by zero. In most cases, if any of the inputs to an operation or function are <em>Not-a-Number</em>, the result is also <em>Not-a-Number</em>. When the result of a formula is <em>Not-a-Number</em>, <strong>Search++</strong> does not insert any text, and no error message is provided.</p>
+
+<p>Two special variables are defined. Use <code>match</code> to substitute a counter that begins at one for the first replacement and increases by one for each additional replacement. (Note that if you are using stepwise replacement, despite the name, the counter only counts <em>replacements</em>, not matches.) Use <strong>line</strong> to represent the line number in the document where the match begins.</p>
+
+<h3>Format specifications</h3>
+
+<p>You can control how the result of a formula is presented by including a format specification:
+<br><strong>(?=<em>format</em>:<em>formula</em>)</strong>
+<br>before the formula.</p>
+
+<table id=formatFormula>
+<tr><th colspan=2 class=group>Format specifications for Search regular expression replacement formulas</th></tr>
+<tr><td colspan=2><em>When a format is not specified, the default is </em><strong>1.-6</strong><em> (up to six decimals, suppress trailing zeros, suppress decimal separator if nothing follows, no leading zeros except that a digit is required before the decimal point).</em></td></tr>
+<tr><th><em>n</em></th><td>
+One or two digits specify the minimum number of integer digits to be shown (i.e., shorter values will be left-padded with zeros); <strong>0</strong> indicates that a leading zero is not required for decimals. If omitted, the default is <strong>1</strong>.
+</td></tr>
+<tr><th>t</th><td>
+The letter <strong>t</strong> specifies that the result of the formula will be shown in time format. The value is interpreted as seconds and displayed as minutes:seconds or hours:minutes:seconds. If <strong><em>n</em></strong> is used it must appear before <strong>t</strong>; <strong><em>n</em></strong> then applies to the leftmost time segment in each result, regardless of what time unit that represents.</td></tr>
+<tr><td><strong>.</strong><br><strong>,</strong></td><td>A period or a comma indicates that decimal places can be shown, using the specified decimal separator. When a format is specified without a decimal indicator, decimals are rounded and not shown. If a decimal indicator is present but no additional specification follows, the default is <strong>.-6</strong> (up to six decimal places, suppress trailing zeros, suppress decimal separator if nothing follows).</td></tr>
+<tr><td><strong>,.</strong><br><strong>.,</strong></td><td>A comma <em>and</em> a period indicate that a thousands separator should be used: the first mark is the thousands separator and the second mark is the decimal separator.</td></tr>
+<tr><td colspan=2><em>One of the following can follow the decimal or thousands/decimal indicator if it is specified:</em></td></tr>
+<tr><td><strong><em>d</em></strong></td><td>
+one or two digits specifying the exact number of decimal places to be shown
+</td></tr>
+<tr><td><strong>-<em>d</em></strong></td><td>
+one or two digits specifying the maximum number of decimal places to be shown, omitting any trailing zeros and decimal separator
+</td></tr>
+<tr><td><strong><em>m</em>-<em>d</em></strong></td><td>
+Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer than <strong><em>m</em></strong>. If <strong><em>m</em></strong> is <strong>0</strong>, all decimal places will be omitted if they are zeros, but the decimal separator will still be shown.
+</td></tr>
+</table>
+
+<h3>Syntax of formulas</h3>
+
+<p>Formulas are written using most of the common conventions for writing mathematical expressions in typical programming languages: numbers are written with an optional minus sign, digits and an optional decimal point (no commas); <strong>+</strong>, <strong>-</strong>, <strong>*</strong>, <strong>/</strong>, <strong>%</strong> and <strong>^</strong> indicate addition, subtraction, multiplication, division, remainder and exponentiation; parentheses are used to indicate order of operations. You can also use logical expressions built from common operators, including <strong>=</strong> or <strong>==</strong>, <strong>!=</strong> or <strong>&lt;&gt;</strong>, <strong>&lt;</strong>, <strong>&lt;=</strong>, <strong>&gt;</strong>, <strong>&gt;=</strong>, <strong>&amp;</strong> and <strong>|</strong>, in a conditional expression:</p>
+
+<table>
+<tr><th><em>test</em> ? <em>option1</em> : <em>option2</em></th><td>yields <strong><em>option1</em></strong> if <strong><em>test</em></strong> is true, <strong><em>option2</em></strong> if <strong><em>test</em></strong> is false</td></tr>
+</table>
+
+<p>so <code>$1&gt;10?$2:1</code> yields the value of the second capture group if the value of the first capture group is greater than 10, and otherwise yields 1.</p>
+
+<p>Formulas can use the many functions built into ExprTk, including these common mathematical functions:</p>
+
+<table>
+<tr><th>abs</th><td>absolute value</td></tr>
+<tr><th>avg</th><td>average of any number of values</td></tr>
+<tr><th>ceil</th><td>smallest integer greater than or equal to</td></tr>
+<tr><th>erf</th><td>error function</td></tr>
+<tr><th>erfc</th><td>complimentary error function</td></tr>
+<tr><th>exp</th><td>e to the power of the given value</td></tr>
+<tr><th>floor</th><td>largest integer less than or equal to</td></tr>
+<tr><th>frac</th><td>fractional (decimal) part</td></tr>
+<tr><th>hypot</th><td>hypotenuse of a right triangle from two sides (eg: hypot(x,y) = sqrt(x*x + y*y))</td></tr>
+<tr><th>log</th><td>natural logarithm</td></tr>
+<tr><th>log10</th><td>base 10 logarithm</td></tr>
+<tr><th>log2</th><td>base 2 logarithm</td></tr>
+<tr><th>max</th><td>largest of any number of values</td></tr>
+<tr><th>min</th><td>smallest of any number of values</td></tr>
+<tr><th>ncdf</th><td>normal cumulative distribution function</td></tr>
+<tr><th>round</th><td>round to the nearest integer</td></tr>
+<tr><th>roundn</th><td>round the first argument to the number of decimal places specified by the second argument</td></tr>
+<tr><th>sqrt</th><td>square root</td></tr>
+<tr><th>trunc</th><td>integer part (round down)</td></tr>
+</table>
+
+<p>and trigonometric functions (in all cases, angles are expressed in radians):</p>
+
+<table>
+<tr><th>acos</th><td>arc cosine; interval [-1,+1]</td></tr>
+<tr><th>acosh</th><td>inverse hyperbolic cosine</td></tr>
+<tr><th>asin</th><td>arc sine; interval [-1,+1]</td></tr>
+<tr><th>asinh</th><td>inverse hyperbolic sine</td></tr>
+<tr><th>atan</th><td>arc tangent; interval [-1,+1]</td></tr>
+<tr><th>atan2</th><td>two-argument arc tangent; interval [-pi,+pi]</td></tr>
+<tr><th>atanh</th><td>inverse hyperbolic tangent</td></tr>
+<tr><th>cos</th><td>cosine</td></tr>
+<tr><th>cosh</th><td>hyperbolic cosine</td></tr>
+<tr><th>cot</th><td>cotangent</td></tr>
+<tr><th>csc</th><td>cosecant</td></tr>
+<tr><th>deg2grad</th><td>convert from degrees to gradians</td></tr>
+<tr><th>deg2rad</th><td>convert from degrees to radians</td></tr>
+<tr><th>grad2deg</th><td>convert from gradians to degrees</td></tr>
+<tr><th>rad2deg</th><td>convert from radians to degrees</td></tr>
+<tr><th>sec</th><td>secant</td></tr>
+<tr><th>sin</th><td>sine</td></tr>
+<tr><th>sinc</th><td>sine cardinal</td></tr>
+<tr><th>sinh</th><td>hyperbolic sine</td></tr>
+<tr><th>tan</th><td>tangent</td></tr>
+<tr><th>tanh</th><td>hyperbolic tangent</td></tr>
+</table>
+
+<p>ExprTk expressions have many more features which are described in Sections 8, 12, 13 and 20 of the <a href="https://github.com/ArashPartow/exprtk#readme">documentation</a> for ExprTk.</p>
+
+</section>
+
+<section id=settings><h2>Settings</h2>
+
+<p>The <strong>Settings...</strong> item, on the <strong>Plugins</strong> | <strong>Search++</strong> menu and the <strong>Tools</strong> menu in the search dialog, opens a dialog that allows you to customize various aspects of <strong>Search++</strong>:
+
+<table>
+<tr><th colspan=2 class=group>Search Dialog Layout</th></tr>
+<tr><th>Docking</th><td>The main <strong>Search++</strong> dialog will be a docking dialog. By default it will open on the right side of the Notepad++ window, but you can move it to a different side like any docking dialog in Notepad++. While you can (as with any docking dialog in Notepad++) detatch it from any side and make it floating, it is better to choose one of the other options if you want a dialog that isn’t docked.</td></tr>
+<tr><th>Horizontal</th><td>The search dialog will be a regular (non-docking) dialog with the Find box on the left and the Replace box on the right.</td></tr>
+<tr><th>Vertical</th><td>The search dialog will be a regular dialog with the Find box on the top and the Replace box on the bottom.</td></tr>
+<tr><th>Adaptive</th><td>The search dialog will be a regular dialog; depending on how you size it, the Find box will be above (in a narrow dialog) or to the left of (in a wide dialog) the Replace box.</td></tr>
+</table>
+
+<table>
+<tr><th colspan=2 class=group>Selections</th></tr>
+<tr><th>Fill the find box from a single selection in the document when showing the search dialog.</th><td>If this box is checked and there is a single selection (not a column selection or a multiple selection) in the active document when you open the search dialog, the selection will be copied into the Find box — subject to the constraints indicated below, if enabled.</td></tr>
+<tr><th>Only if the selection has no more than: ___ characters and ___ lines.</th><td>If this box is checked, selections are only copied into the Find box if they contain no more than the specified number of characters <em>and also</em> contain no more than the specified number of lines. Use this to avoid filling the search box with text from a selection when you meant to search <em>within</em> the selection.</td></tr>
+<tr><th>Fill with the word containing the caret if nothing is selected.</th><td>If this box is checked when you open the search dialog and there is no selection in the document, the word the caret is within or next to will be used to fill the Find box.</td></tr>
+<tr><th>Automatically search within selections.</th><td>When this box is checked, commands with default (“smart”) <a href="#commands-scopes">scope</a> will search within the selection (single, column or multiple) if one is present. (However, if the selection is the result of a stepwise Find or Replace command, repeating the same search will not search within the selection regardless of this setting.)</td></tr>
+<tr><th>Single selections must have at least: ___ characters and ___ lines.</th><td>If this box is checked, single selections will not cause the search to be restricted to the selection unless the selection contains at least the specified number of characters <em>and</em> the specified number of lines. Columns selections and multiple selections are not subject to these limitations.</td></tr>
+<tr><th>Convert selections to marked text before beginning a stepwise search.</th><td>Since a stepwise search selects the match it finds, the original selection is lost after the first match when searching within a selection. If this box is checked, whenever a stepwise search command begins a search within a selection, the text included in the selection is marked, so subsequent searches can search within marked text to preserve the intended scope of the search.</td></tr>
+</table>
+
+<table>
+<tr><th colspan=2 class=group>Marked Text</th></tr>
+<tr><td colspan=2>
+<p></p>
+</td></tr>
+<tr><th>Mark style</th><td>When <strong>Search++</strong> marks text or searches within marked text, it uses one of the mark styles available in Notepad++. This drop-down lets you choose which one.</td></tr>
+<tr><th>Automatically search within marked text.</th><td>When this box is checked, commands with default (“smart”) <a href="#commands-scopes">scope</a> will search within marked text if any text within the active document is marked.</td></tr>
+<tr><th>Unmark all text when closing the search dialog. (Does not apply to docking dialog.)</th><td>Check this box if you use one of the regular (non-docking) layouts and you want <strong>Search++</strong> to unmark any text in the active document marked in the chosen mark style when you close the dialog. (This isn’t useful or reliable, and hence is not honored, for docking dialogs as docking dialogs “close” when you switch to another tab in the same dock, even though you wouldn’t think of that as closing the dialog.)</td></tr>
+</table>
+
+<table>
+<tr><th colspan=2 class=group>Focus</th></tr>
+<tr><td colspan=2>
+<p></p>
+</td></tr>
+<tr><th>Focus the document after a stepwise find or replace.</th><td>If this box is checked, when you perform a stepwise find or replace which finds a match, keyboard focus will be placed in the active document, so you can immediately begin typing at or navigating from the match location. (If this box is not checked, keyboard focus remains in the search dialog. You can focus the active document with <strong>Ctrl+N</strong>.)</td></tr>
+<tr><th>Focus the search results window after commands that use it.</th><td>If this box is checked, successful commands which add lines to the search results window (currently only <strong>Find All</strong> commands) will place keyboard focus at the beginning of the new search results. (If this box is not checked, keyboard focus remains in the search dialog. You can focus the search results window with <strong>Ctrl+H</strong>.)</td></tr>
+</table>
+
+<table>
+<tr><th colspan=2 class=group>Clearing</th></tr>
+<tr><td colspan=2>
+<p></p>
+</td></tr>
+<tr><th>Always clear selections before Select command. (Otherwise add to existing selections.)</th><td>When this box is checked (the default), existing selections are de-selected before beginning one of the <strong>Select</strong> commands. If you want Select commands to add to any existing selection, uncheck this box. If you are selecting <em>within a selection</em>, the original selection will be de-selected regardless of this setting.</td></tr>
+<tr><th>Always unmark all text before Mark command. (Otherwise add to existing marked text.)</th><td>When this box is checked, <strong>Mark</strong> commands remove all marks from the text before beginning the search. If this box is unchecked (the default), marks “accumulate” until you clear them. If you are marking <em>within marked text</em>, existing marks are removed regardless of this setting.</td></tr>
+<tr><th>Always hide all lines and unmark all text before Show command.</th><td>Normally <strong>Show</strong> commands only hide lines if no lines are hidden, and do not unmark text; this makes different Show commands run in succession effectively “cumulative.” Check this box if you want each Show command to “start over” by hiding all lines and unmarking all text before searching.</td></tr>
+</table>
+
+</section>
+
+<section id=about><h2>Help/About</h2>
+
+<p><strong>Help/About...</strong> provides access to release/version identification, this help file, and changelog, license and source information.</p>
+
+</section>
+
+</article>
+
+</main><footer id=footer><div id=foottext class=linklist>
+
+<a href="https://notepad-plus-plus.org/">Notepad++</a> • <a href="http://www.coises.com/">coises.com (author’s web site)</a> • <a href="https://github.com/Coises/Search++">Search++ on GitHub</a>
+
+</div><button type=button id=fontdown onclick="setFontDown();">Txt-</button><button type=button id=fontup onclick="setFontUp();">Txt+</button>
+</footer></body></html>
