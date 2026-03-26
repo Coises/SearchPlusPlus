@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# CHANGE TO DEFAULT VS GITIGNORE: INCLUDE EVERYTHING IN ICU4C
+!/ICU4C/
+!/ICU4C/**/*
