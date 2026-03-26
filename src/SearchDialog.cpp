@@ -491,6 +491,56 @@ void showMessage(HWND hwndDlg, const SearchResult& result) {
     if (!result.replMessage.empty()) showBubble(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), result.replMessage);
 }
 
+
+void synchronizeDialogItems(HWND hwndDlg) {
+
+    plugin.getScintillaPointers(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX));
+    sci.SetWrapMode(data.wrapFind);
+    sci.SetZoom(data.zoomFind);
+    sci.TargetWholeDocument();
+    sci.ReplaceTarget(data.findBoxLast.get());
+
+    plugin.getScintillaPointers(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX));
+    sci.SetWrapMode(data.wrapRepl);
+    sci.SetZoom(data.zoomRepl);
+    sci.TargetWholeDocument();
+    sci.ReplaceTarget(data.replBoxLast.get());
+
+    switch (data.searchEngine) {
+    case SearchEngine::Boost   : CheckRadioButton(hwndDlg, IDC_SEARCH_PLAIN, IDC_SEARCH_ICU, IDC_SEARCH_BOOST); break;
+    case SearchEngine::ICU     : CheckRadioButton(hwndDlg, IDC_SEARCH_PLAIN, IDC_SEARCH_ICU, IDC_SEARCH_ICU  ); break;
+    default:                     CheckRadioButton(hwndDlg, IDC_SEARCH_PLAIN, IDC_SEARCH_ICU, IDC_SEARCH_PLAIN);
+    }
+
+    data.dotAll      .put(hwndDlg, IDC_SEARCH_DOTALL     );
+    data.freeSpacing .put(hwndDlg, IDC_SEARCH_FREESPACING);
+    data.matchCase   .put(hwndDlg, IDC_SEARCH_MATCHCASE  );
+    data.uniWordBound.put(hwndDlg, IDC_SEARCH_UNICODEWORD);
+    data.wholeWord   .put(hwndDlg, IDC_SEARCH_WHOLEWORD  );
+
+    SetDlgItemText(hwndDlg, IDC_SEARCH_FIND      , Command_Button(data.buttonFind      ));
+    SetDlgItemText(hwndDlg, IDC_SEARCH_COUNT     , Command_Button(data.buttonCount     ));
+    SetDlgItemText(hwndDlg, IDC_SEARCH_FINDALL   , Command_Button(data.buttonFindAll   ));
+    SetDlgItemText(hwndDlg, IDC_SEARCH_REPLACE   , Command_Button(data.buttonReplace   ));
+    SetDlgItemText(hwndDlg, IDC_SEARCH_REPLACEALL, Command_Button(data.buttonReplaceAll));
+
+    if (data.searchEngine == SearchEngine::Plain) {
+        ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL      ), SW_HIDE);
+        ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING ), SW_HIDE);
+        ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD ), SW_HIDE);
+        ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD   ), SW_SHOW);
+    }
+    else {
+        ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), SW_SHOW);
+        ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), SW_SHOW);
+        ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), SW_SHOW);
+        ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), SW_HIDE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), data.searchEngine == SearchEngine::ICU ? TRUE : FALSE);
+    }
+
+}
+
+
 INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
     switch (uMsg) {
@@ -517,44 +567,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
     case WM_INITDIALOG:
     {
         setupSearchBox(hwndDlg, IDC_SEARCH_REPLBOX);
-        sci.SetWrapMode(data.wrapRepl);
-        sci.SetZoom(data.zoomRepl);
         setupSearchBox(hwndDlg, IDC_SEARCH_FINDBOX);
-        sci.SetWrapMode(data.wrapFind);
-        sci.SetZoom(data.zoomFind);
         GetControlReferencesForLayout(hwndDlg);
-
-        switch (data.searchEngine) {
-        case SearchEngine::Boost   : CheckRadioButton(hwndDlg, IDC_SEARCH_PLAIN, IDC_SEARCH_ICU, IDC_SEARCH_BOOST); break;
-        case SearchEngine::ICU     : CheckRadioButton(hwndDlg, IDC_SEARCH_PLAIN, IDC_SEARCH_ICU, IDC_SEARCH_ICU  ); break;
-        default:                     CheckRadioButton(hwndDlg, IDC_SEARCH_PLAIN, IDC_SEARCH_ICU, IDC_SEARCH_PLAIN);
-        }
-
-        data.dotAll      .put(hwndDlg, IDC_SEARCH_DOTALL     );
-        data.freeSpacing .put(hwndDlg, IDC_SEARCH_FREESPACING);
-        data.matchCase   .put(hwndDlg, IDC_SEARCH_MATCHCASE  );
-        data.uniWordBound.put(hwndDlg, IDC_SEARCH_UNICODEWORD);
-        data.wholeWord   .put(hwndDlg, IDC_SEARCH_WHOLEWORD  );
-
-        SetDlgItemText(hwndDlg, IDC_SEARCH_FIND      , Command_Button(data.buttonFind      ));
-        SetDlgItemText(hwndDlg, IDC_SEARCH_COUNT     , Command_Button(data.buttonCount     ));
-        SetDlgItemText(hwndDlg, IDC_SEARCH_FINDALL   , Command_Button(data.buttonFindAll   ));
-        SetDlgItemText(hwndDlg, IDC_SEARCH_REPLACE   , Command_Button(data.buttonReplace   ));
-        SetDlgItemText(hwndDlg, IDC_SEARCH_REPLACEALL, Command_Button(data.buttonReplaceAll));
-
-        if (data.searchEngine == SearchEngine::Plain) {
-            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL      ), SW_HIDE);
-            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING ), SW_HIDE);
-            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD ), SW_HIDE);
-            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD   ), SW_SHOW);
-        }
-        else {
-            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), SW_SHOW);
-            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), SW_SHOW);
-            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), SW_SHOW);
-            ShowWindow(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), SW_HIDE);
-            EnableWindow(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), data.searchEngine == SearchEngine::ICU ? TRUE : FALSE);
-        }
+        synchronizeDialogItems(hwndDlg);
         
         SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_PLAIN      ), subclassOther, 0, 0);
         SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_BOOST      ), subclassOther, 0, 0);
@@ -587,6 +602,12 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
         case IDCANCEL:
+            plugin.getScintillaPointers(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX));
+            sci.TargetWholeDocument();
+            data.findBoxLast = sci.TargetText();
+            plugin.getScintillaPointers(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX));
+            sci.TargetWholeDocument();
+            data.replBoxLast = sci.TargetText();
             if (hwndDlg == data.dockingDialog) npp(NPPM_DMMHIDE, 0, hwndDlg);
                                           else ShowWindow(hwndDlg, SW_HIDE);
             return TRUE;
@@ -1162,10 +1183,12 @@ void changeDialogLayout() {
     if (data.dialogLayout == DialogLayout::Docking) {
         if (data.searchDialog) SendMessage(data.searchDialog, WM_COMMAND, IDCANCEL, 0);
         data.searchDialog = data.dockingDialog;
+        if (data.searchDialog) synchronizeDialogItems(data.searchDialog);
     }
     else if (data.searchDialog == data.dockingDialog) {
         if (data.searchDialog) SendMessage(data.searchDialog, WM_COMMAND, IDCANCEL, 0);
         data.searchDialog = data.regularDialog;
+        if (data.searchDialog) synchronizeDialogItems(data.searchDialog);
     }
     if (!data.searchDialog) return;
     if (data.dialogLayout != DialogLayout::Docking) {
@@ -1214,10 +1237,10 @@ void showSearchDialog() {
             data.searchDialog = CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_DOCKINGSEARCH), plugin.nppData._nppHandle, searchDialogProc);
             NPP::tTbData dock;
             dock.hClient       = data.searchDialog;
-            dock.pszName       = L"Search++";                      // title bar text (caption in dialog is replaced)
-            dock.dlgID         = 0;                                   // zero-based position in menu to recall dialog at next startup
-            dock.uMask         = DWS_DF_CONT_RIGHT;                   // first time display will be docked at the right
-            dock.pszModuleName = L"Search++.dll";  // plugin module name
+            dock.pszName       = L"Search++";             // title bar text (caption in dialog is replaced)
+            dock.dlgID         = 0;                       // zero-based position in menu to recall dialog at next startup
+            dock.uMask         = DWS_DF_CONT_RIGHT;       // first time display will be docked at the right
+            dock.pszModuleName = L"Search++.dll";         // plugin module name
             npp(NPPM_DMMREGASDCKDLG, 0, &dock);
             data.dockingDialog = data.searchDialog;
         }
@@ -1268,15 +1291,23 @@ void showSearchDialog() {
 }
 
 void destroySearchDialogs() {
-    if (data.dockingDialog) {
-        npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, data.dockingDialog);
-        data.dockingDialog = 0;
+    if (data.searchDialog) {
+        plugin.getScintillaPointers(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
+        sci.TargetWholeDocument();
+        data.findBoxLast = sci.TargetText();
+        plugin.getScintillaPointers(GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX));
+        sci.TargetWholeDocument();
+        data.replBoxLast = sci.TargetText();
+        if (data.dockingDialog) {
+            npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, data.dockingDialog);
+            data.dockingDialog = 0;
+        }
+        if (data.regularDialog) {
+            placement.get(data.regularDialog);
+            npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, data.regularDialog);
+            DestroyWindow(data.regularDialog);
+            data.regularDialog = 0;
+        }
+        data.searchDialog = 0;
     }
-    if (data.regularDialog) {
-        placement.get(data.regularDialog);
-        npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, data.regularDialog);
-        DestroyWindow(data.regularDialog);
-        data.regularDialog = 0;
-    }
-    data.searchDialog = 0;
 }

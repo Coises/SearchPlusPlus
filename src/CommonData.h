@@ -85,6 +85,9 @@ inline struct CommonData {
     config_history historyFind = { "find history"   , {}, 12, config_history::Blank };
     config_history historyRepl = { "replace history", {}, 12, config_history::Blank };
 
+    config<std::string> findBoxLast = { "find box last content", "" };
+    config<std::string> replBoxLast = { "replace box last content", "" };
+
     config<bool           > dotAll       = { "period matches all"     , false                 };
     config<bool           > freeSpacing  = { "free spacing"           , false                 };
     config<bool           > matchCase    = { "match case"             , false                 };
