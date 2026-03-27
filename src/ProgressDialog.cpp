@@ -111,13 +111,14 @@ SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
     rangeStart = req.ranges.front().cpMin;
     rangeEnd   = req.ranges.back ().cpMax;
     if (req.command.direction == SearchCommand::After) {
-        rangeStart = req.context->none() ? sci.SelectionEnd() : sci.SelectionStart();
+        rangeStart = req.command.verb == SearchCommand::Replace && req.context->found() ? sci.SelectionStart() : sci.SelectionEnd();
         if (req.ranges.back().cpMax <= rangeStart) return SearchResult(L"Nothing to search after current position or selection.");
         for (; req.ranges[rangeIndex].cpMax <= rangeStart; ++rangeIndex);
         rangeStart = std::max(rangeStart, req.ranges[rangeIndex].cpMin);
     }
     else if (req.command.direction == SearchCommand::Before) {
-        rangeEnd = std::min(rangeEnd, req.context->none() ? sci.SelectionStart() : sci.SelectionEnd());
+        rangeEnd = std::min(rangeEnd, req.command.verb == SearchCommand::Replace && req.context->found()
+                                    ? sci.SelectionEnd() : sci.SelectionStart());
         if (req.ranges.front().cpMin >= rangeEnd) return SearchResult(L"Nothing to search before current position or selection.");
     }
 
