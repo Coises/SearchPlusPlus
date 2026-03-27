@@ -335,6 +335,8 @@ window.addEventListener("load", doPageLoad);
 
 </ul>
 
+<p>There is an exception to the Before/After rules. If there is a single selection which is the result of an immediately preceeding stepwise find, or the find step of a stepwise replace, <strong>Replace Before/After</strong> <em>includes</em> the found text. This lets you do a series of stepwise replaces and then complete them with a Replace After (and for Plain text searches, the same with replacing backward and Replace Before).</p>
+
 <h3 id="commands-scopes">Search scopes</h3>
 
 <p>Search scopes determine what will be searched: <strong>Selection</strong>, <strong>Marked Text</strong> or <strong>Whole Document</strong>. The default is a “smart scope” which determines the effective scope based on whether there is already a selection or marked text in the document:
@@ -629,7 +631,7 @@ discrepancies irrelevant. Numeric results which exceed
 
 <p>Wherever a numeric value is used, it is also possible for the value to be <em>Not-a-Number</em>, an indication that something which was expected to produce a number failed to do so. This can happen because you tried to get a number from the document, but the associated text could not be unambiguously interpreted as a number. It can also be the result of an undefined mathematical operation, such as dividing by zero. In most cases, if any of the inputs to an operation or function are <em>Not-a-Number</em>, the result is also <em>Not-a-Number</em>. When the result of a formula is <em>Not-a-Number</em>, <strong>Search++</strong> does not insert any text, and no error message is provided.</p>
 
-<p>Two special variables are defined. Use <code>match</code> to substitute a counter that begins at one for the first replacement and increases by one for each additional replacement. (Note that if you are using stepwise replacement, despite the name, the counter only counts <em>replacements</em>, not matches.) Use <strong>line</strong> to represent the line number in the document where the match begins.</p>
+<p>Two special variables are defined. Use <code>match</code> to substitute a counter that begins at one for the first replacement and increases by one for each additional replacement. (Note that if you are using stepwise replacement, despite the name, the counter only counts <em>replacements</em>, not matches. The counter continues through stepwise replaces, but resets after a Replace All or whenever the replace string is modified.) Use <strong>line</strong> to represent the line number in the document where the match begins.</p>
 
 <h3>Format specifications</h3>
 
