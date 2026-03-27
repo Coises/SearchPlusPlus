@@ -204,6 +204,7 @@ SearchResult multipleSearch(SearchRequest& req) {
     pib.hitSet = std::make_unique<ProgressInfo::HitSet>();
     pib.hitSet->searchString = "(Regex): " + find;
     pib.exec(progressiveSearch);
+    if (pib.result.success() && req.command.verb == SearchCommand::Replace) req.context->calcIsValid = false;
     return pib.result;
 }
 

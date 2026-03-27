@@ -1112,7 +1112,6 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             bool shifted = GetAsyncKeyState(VK_SHIFT) < 0;
             DestroyMenu(pum);
             if (choice) {
-                data.context.clear();
                 if (shifted) {
                     *searchButton = choice;
                     SetDlgItemText(hwndDlg, static_cast<int>(bd.hdr.idFrom), Command_Button(choice));
