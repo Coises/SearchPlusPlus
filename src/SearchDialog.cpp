@@ -22,6 +22,8 @@
 #include "Host/dockingResource.h"
 
 void showSettingsDialog();
+void clearHitlist();
+bool hitlistEmpty();
 void showHitlist();
 
 
@@ -692,7 +694,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             return TRUE;
         case IDC_SEARCH_TOOLS:
         {
-            enum ToolCommands {NoCommand, HideAll, ShowAll, SelToMark, MarkToSel, ClearMarks, Settings};
+            enum ToolCommands {NoCommand, HideAll, ShowAll, SelToMark, MarkToSel, ClearMarks, ClearHitlist, Settings};
             HMENU pum = CreatePopupMenu();
             AppendMenu(pum, MF_STRING, HideAll, L"&Hide All Lines");
             AppendMenu(pum, MF_STRING, ShowAll, L"Show &All Lines");
@@ -701,7 +703,10 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             AppendMenu(pum, MF_STRING, MarkToSel, L"&Marked Text 🡪 Selections");
             AppendMenu(pum, MF_STRING, ClearMarks, L"&Unmark All Text");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
+            AppendMenu(pum, MF_STRING, ClearHitlist, L"&Clear search results list");
+            AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, Settings, L"S&ettings...");
+            EnableMenuItem(pum, 7, MF_BYPOSITION | (hitlistEmpty() ? MF_GRAYED : MF_ENABLED));
             RECT rect;
             GetWindowRect(reinterpret_cast<HWND>(lParam), &rect);
             int choice = TrackPopupMenu(pum, TPM_RIGHTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD,
@@ -748,6 +753,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 }
                 break;
             }
+            case ClearHitlist:
+                clearHitlist();
+                break;
             case Settings:
                 showSettingsDialog();
                 break;

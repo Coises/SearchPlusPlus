@@ -71,44 +71,24 @@
 #define ID_SCMSCI_COPYTOREPLACE         40012
 #define ID_SCMSCI_COPYTOFIND            40013
 #define ID_SCMSCI_EXCHANGE              40014
-#define ID_RESULTSMENU_COPY             40015
-#define ID_RESULTSMENU_SELECTALL        40016
-#define ID_RESULTSMENU_WORDWRAP         40017
-#define ID_SCMSCI_WORDWRAP              40018
-#define ID_SCMSCI_WRAP                  40019
-#define ID_SCIMENU_WRAP                 40020
-#define ID_WRAP_NONE                    40021
-#define ID_WRAP_CHAR                    40022
-#define ID_WRAP_WORD                    40023
-#define ID_WRAP_SPACE                   40024
-#define ID_DCMSCI_WRAPNONE              40025
-#define ID_SCMSCI_WRAPCHAR              40026
-#define ID_SCMSCI_WRAPWORD              40027
-#define ID_SCMSCI_WRAPSPACE             40028
-#define ID_SCMSCI_WRAPNONE              40029
-#define ID_RESULTSMENU_NEXTMATCH        40030
-#define ID_RESULTSMENU_PREVIOUSMATCH    40031
-#define ID_SCMSCI_PREVIOUSMATCH         40032
-#define ID_SCMSCI_NEXTMATCH             40033
-#define ID_RESULTSMENU_NEXXFILE         40034
-#define ID_RESULTSMENU_PREVIOUSFILE     40035
-#define ID_RESULTSMENU_OLDERSEARCH      40036
-#define ID_RESULTSMENU_NEWERSEARCH      40037
-#define ID_SCMSCI_NEXXFILE              40038
-#define ID_SCMSCI_PREVDOC               40039
-#define ID_SCMSCI_PREVMATCH             40040
-#define ID_SCMSCI_NEXTDOC               40041
-#define ID_SCMSCI_OLDSEARCH             40042
-#define ID_SCMSCI_NEWSEARCH             40043
-#define ID_SCMSCI_NEXTSEARCH            40044
-#define ID_SCMSCI_PREVSEARCH            40045
+#define ID_SCMSCI_WRAPCHAR              40015
+#define ID_SCMSCI_WRAPWORD              40016
+#define ID_SCMSCI_WRAPNONE              40017
+#define ID_SCMSCI_NEXTMATCH             40018
+#define ID_SCMSCI_PREVMATCH             40019
+#define ID_SCMSCI_NEXTDOC               40020
+#define ID_SCMSCI_PREVDOC               40021
+#define ID_SCMSCI_NEXTSEARCH            40022
+#define ID_SCMSCI_PREVSEARCH            40023
+#define ID_SCMSCI_CLEARALL              40024
+#define ID_SCMSCI_CLEARBELOW            40025
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        115
-#define _APS_NEXT_COMMAND_VALUE         40046
+#define _APS_NEXT_COMMAND_VALUE         40026
 #define _APS_NEXT_CONTROL_VALUE         5027
 #define _APS_NEXT_SYMED_VALUE           101
 #endif

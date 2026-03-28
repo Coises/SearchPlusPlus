@@ -259,6 +259,30 @@ void prevDocument() {
     sci.ScrollVertical(line, 0);
 }
 
+void clearAll() {
+    plugin.getScintillaPointers(sciHits);
+    sci.SetReadOnly(false);
+    sci.ClearAll();
+    hitSets.clear();
+    foundLines.clear();
+    foundLines.push_back({ 0, -1 });  // First entry represents no location
+    sci.SetReadOnly(true);
+}
+
+void clearBelow() {
+    plugin.getScintillaPointers(sciHits);
+    Scintilla::Line line = sci.LineFromPosition(sci.CurrentPos());
+    Scintilla::Line last = sci.LastChild(line, Level_Search);
+    if (last + 1 < sci.LineCount()) {
+        sci.SetReadOnly(false);
+        Scintilla::Position removeBelow = sci.PositionFromLine(last + 1);
+        sci.DeleteRange(removeBelow, sci.Length() - removeBelow);
+        sci.MarkerDelete(last + 1, -1);
+        sci.SetReadOnly(true);
+    }
+}
+
+
 
 // Subclass procedure for Scintilla control
 
@@ -459,7 +483,7 @@ INT_PTR CALLBACK hitlistDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
         mii.cbSize     = sizeof mii;
         mii.fMask      = MIIM_STRING;
         mii.dwTypeData = zoomText.data();
-        SetMenuItemInfo(menu, 10, TRUE, &mii);
+        SetMenuItemInfo(menu, 14, TRUE, &mii);
         EnableMenuItem(menu, ID_SCMSCI_COPY       , hasSelection   ? MF_ENABLED : MF_GRAYED);
         EnableMenuItem(menu, ID_SCMSCI_ZOOMIN     , zoom < 60      ? MF_ENABLED : MF_GRAYED);
         EnableMenuItem(menu, ID_SCMSCI_ZOOMOUT    , zoom > -10     ? MF_ENABLED : MF_GRAYED);
@@ -482,6 +506,8 @@ INT_PTR CALLBACK hitlistDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
         case ID_SCMSCI_PREVDOC    : prevDocument (); break;
         case ID_SCMSCI_NEXTSEARCH : nextSearch   (); break;
         case ID_SCMSCI_PREVSEARCH : prevSearch   (); break;
+        case ID_SCMSCI_CLEARALL   : clearAll     (); break;
+        case ID_SCMSCI_CLEARBELOW : clearBelow   (); break;
         case ID_SCMSCI_COPY       : sci.Copy     (); break;
         case ID_SCMSCI_SELECTALL  : sci.SelectAll(); break;
         case ID_SCMSCI_ZOOMIN     : sci.ZoomIn   (); break;
@@ -524,7 +550,9 @@ INT_PTR CALLBACK hitlistDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 }
 
 
-void showHitlist() { if (hitlist) npp(NPPM_DMMSHOW, 0, hitlist); }
+void clearHitlist() { if (hitlist) clearAll(); }
+bool hitlistEmpty() { if (!hitlist) return true; plugin.getScintillaPointers(sciHits); return sci.Length() == 0; }
+void showHitlist () { if (hitlist) npp(NPPM_DMMSHOW, 0, hitlist); }
 
 void showHitlist(ProgressInfo& pi) {
 
