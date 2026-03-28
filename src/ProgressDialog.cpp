@@ -160,7 +160,7 @@ SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
                           : req.command.verb == SearchCommand::Mark    ? L"Marked "
                                                                        : L"Found ";
 
-        std::wstring suffix = req.command.scope == SearchCommand::Scope::Region    ? L" in marked region"
+        std::wstring suffix = req.command.scope == SearchCommand::Scope::Region    ? L" in marked text"
                             : req.command.scope == SearchCommand::Scope::Selection ? L" in selection"
                                                                                    : L"";
         if (req.command.direction == SearchCommand::All) suffix += L".";

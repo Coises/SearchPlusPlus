@@ -47,23 +47,12 @@ SearchResult singleFind(SearchRequest& req, bool postReplace = false) {
     sci.SetSearchFlags(searchFlags);
 
     Scintilla::Position documentLength = sci.Length();
-    Scintilla::Position searchFrom;
-    size_t rangeFrom, rangeTo;
-    if (backward) {
-        rangeFrom  = req.ranges.size() - 1;
-        rangeTo    = 0;
-        searchFrom = inSelection ? req.ranges.back().cpMax : std::min(sci.Anchor(), sci.CurrentPos());
-        if (wrap) searchFrom = documentLength;
-    }
-    else {
-        rangeFrom = 0;
-        rangeTo   = req.ranges.size() - 1;
-        searchFrom = inSelection ? req.ranges.front().cpMin : std::max(sci.Anchor(), sci.CurrentPos());
-        if (wrap) searchFrom = 0;
-    }
+    Scintilla::Position searchFrom =
+        backward ? (inSelection ? req.ranges.back() .cpMax : wrap ? documentLength : std::min(sci.Anchor(), sci.CurrentPos()))
+                 : (inSelection ? req.ranges.front().cpMin : wrap ? 0              : std::max(sci.Anchor(), sci.CurrentPos()));
 
-    for (size_t range = rangeFrom; range <= rangeTo; backward ? --range : ++range) {
-        auto r = req.ranges[range];
+    for (size_t range = 0; range < req.ranges.size(); ++range) {
+        auto r = req.ranges[backward ? req.ranges.size() - 1 - range : range];
         if (backward) {
             if (searchFrom <= r.cpMin) continue;
             sci.SetTargetRange(std::min(searchFrom, r.cpMax), r.cpMin);
@@ -113,7 +102,11 @@ SearchResult singleReplace(SearchRequest& req) {
 
     Scintilla::Position start = sci.TargetStart();
     Scintilla::Position end   = sci.TargetEnd();
-    if (req.command.scope == SearchCommand::Scope::Region && start != end) sci.IndicatorFillRange(start, end - start);
+    if (req.command.scope == SearchCommand::Scope::Region && start != end) {
+        sci.SetIndicatorCurrent(data.indicator);
+        sci.SetIndicatorValue(1);
+        sci.IndicatorFillRange(start, end - start);
+    }
     if (req.command.verb == SearchCommand::FindRepl) return req.replaced(start, end, L"Match replaced.");
     sci.SetSel(start, end);
     return singleFind(req, true);

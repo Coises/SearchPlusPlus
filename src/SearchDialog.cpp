@@ -613,7 +613,10 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             return TRUE;
         case IDC_SEARCH_FIND:
         {
-            auto result = SearchRequest::exec(data.buttonFind.value, data.context,
+            SearchCommand command = data.buttonFind.get();
+            if ((GetKeyState(VK_SHIFT) & 0x8000) && data.searchEngine == SearchEngine::Plain)
+                command.direction = command.direction == SearchCommand::Forward ? SearchCommand::Backward : SearchCommand::Forward;
+            auto result = SearchRequest::exec(command, data.context,
                 GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
             showMessage(hwndDlg, result);
             return TRUE;
@@ -634,7 +637,10 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
         }
         case IDC_SEARCH_REPLACE:
         {
-            auto result = SearchRequest::exec(data.buttonReplace.value, data.context,
+            SearchCommand command = data.buttonReplace.get();
+            if ((GetKeyState(VK_SHIFT) & 0x8000) && data.searchEngine == SearchEngine::Plain)
+                command.direction = command.direction == SearchCommand::Forward ? SearchCommand::Backward : SearchCommand::Forward;
+            auto result = SearchRequest::exec(command, data.context,
                 GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
             showMessage(hwndDlg, result);
             return TRUE;
