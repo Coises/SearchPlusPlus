@@ -325,7 +325,9 @@ HWND setupSearchBox(HWND hwndDlg, int box) {
 RECT hPlain, hBoost, hICU, hTools, hFindbox, hReplbox, hFind, hCount, hFindAll, hReplace, hReplaceAll,
      hMatchCase, hDotAll, hWholeWord, hFreeSpacing, hUnicodeWord, hMessage, hClient,
      vPlain, vBoost, vICU, vTools, vFindbox, vReplbox, vFind, vCount, vFindAll, vReplace, vReplaceAll,
-     vMatchCase, vDotAll, vWholeWord, vFreeSpacing, vUnicodeWord, vMessage, vClient;
+     vMatchCase, vDotAll, vWholeWord, vFreeSpacing, vUnicodeWord, vMessage, vClient,
+     wPlain, wBoost, wICU, wTools, wFindbox, wReplbox, wFind, wCount, wFindAll, wReplace, wReplaceAll,
+     wMatchCase, wDotAll, wWholeWord, wFreeSpacing, wUnicodeWord, wMessage, wClient;
 
 void GetControlReferencesForLayout(HWND hwndDlg) {
     RECT window, client;
@@ -367,6 +369,24 @@ void GetControlReferencesForLayout(HWND hwndDlg) {
     vReplaceAll  = { 96, 147, 165, 161};
     vMessage     = {  7, 167, 176, 175};
     vClient      = {  0,   0, 183, 181};
+    wPlain       = {  7,  7,  44, 19};
+    wBoost       = {  7, 24,  44, 36};
+    wICU         = {  7, 41,  44, 53};
+    wTools       = {  7, 58,  44, 70};
+    wFindbox     = { 52,  7, 365, 38};
+    wReplbox     = {374,  7, 687, 38};
+    wFind        = { 52, 43, 105, 57};
+    wCount       = {110, 43, 163, 57};
+    wFindAll     = {168, 43, 221, 57};
+    wReplace     = {544, 43, 613, 57};
+    wReplaceAll  = {618, 43, 687, 57};
+    wMatchCase   = {226, 45, 278, 55};
+    wDotAll      = {283, 45, 375, 55};
+    wWholeWord   = {283, 45, 375, 55};
+    wFreeSpacing = {380, 45, 437, 55};
+    wUnicodeWord = {442, 45, 539, 55};
+    wMessage     = { 51, 62, 688, 70};
+    wClient      = {  0,  0, 695, 72};
     MapDialogRect(hwndDlg, &hPlain);
     MapDialogRect(hwndDlg, &hBoost);
     MapDialogRect(hwndDlg, &hICU);
@@ -403,6 +423,24 @@ void GetControlReferencesForLayout(HWND hwndDlg) {
     MapDialogRect(hwndDlg, &vUnicodeWord);
     MapDialogRect(hwndDlg, &vMessage);
     MapDialogRect(hwndDlg, &vClient);
+    MapDialogRect(hwndDlg, &wPlain);
+    MapDialogRect(hwndDlg, &wBoost);
+    MapDialogRect(hwndDlg, &wICU);
+    MapDialogRect(hwndDlg, &wTools);
+    MapDialogRect(hwndDlg, &wFindbox);
+    MapDialogRect(hwndDlg, &wReplbox);
+    MapDialogRect(hwndDlg, &wFind);
+    MapDialogRect(hwndDlg, &wCount);
+    MapDialogRect(hwndDlg, &wFindAll);
+    MapDialogRect(hwndDlg, &wReplace);
+    MapDialogRect(hwndDlg, &wReplaceAll);
+    MapDialogRect(hwndDlg, &wMatchCase);
+    MapDialogRect(hwndDlg, &wDotAll);
+    MapDialogRect(hwndDlg, &wWholeWord);
+    MapDialogRect(hwndDlg, &wFreeSpacing);
+    MapDialogRect(hwndDlg, &wUnicodeWord);
+    MapDialogRect(hwndDlg, &wMessage);
+    MapDialogRect(hwndDlg, &wClient);
 }
 
 void adjustControlPos(HWND hwnd, RECT& rect, int dx, int dy, double xStretch, double yStretch, double xMove, double yMove) {
@@ -420,9 +458,20 @@ void layoutDialog(HWND hwndDlg) {
     bool layoutVertical = data.dialogLayout == DialogLayout::Horizontal ? false
         : data.dialogLayout == DialogLayout::Vertical ? true
         : 4 * dcr.bottom > 3 * dcr.right || dcr.right < hClient.right;
+    bool layoutWide = !layoutVertical && data.dialogLayout != DialogLayout::Horizontal && dcr.right - dcr.left >= wClient.right;
     if (layoutVertical) {
         int dx = dcr.right - vClient.right;
         int dy = dcr.bottom - vClient.bottom;
+        if (dx < 0 || dy < 0) {
+            RECT dwr;
+            GetWindowRect(hwndDlg, &dwr);
+            long newWidth  = dwr.right - dwr.left;
+            long newHeight = dwr.bottom - dwr.top;
+            if (dx < 0) { newWidth  -= dx; dx = 0; }
+            if (dy < 0) { newHeight -= dy; dy = 0; }
+            SetWindowPos(hwndDlg, 0, 0, 0, newWidth, newHeight,
+                SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOMOVE);
+        }
         adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_PLAIN      ), vPlain      , dx, dy, 0, 0  , 0  , 0  );
         adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_BOOST      ), vBoost      , dx, dy, 0, 0  , 0  , 0  );
         adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_ICU        ), vICU        , dx, dy, 0, 0  , 0  , 0  );
@@ -441,9 +490,50 @@ void layoutDialog(HWND hwndDlg) {
         adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), vUnicodeWord, dx, dy, 0, 0  , 0.5, 0.5);
         adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_MESSAGE    ), vMessage    , dx, dy, 1, 0  , 0  , 1  );
     }
+    else if (layoutWide) {
+        int dx = dcr.right - wClient.right;
+        int dy = dcr.bottom - wClient.bottom;
+        if (dx < 0 || dy < 0) {
+            RECT dwr;
+            GetWindowRect(hwndDlg, &dwr);
+            long newWidth  = dwr.right - dwr.left;
+            long newHeight = dwr.bottom - dwr.top;
+            if (dx < 0) { newWidth  -= dx; dx = 0; }
+            if (dy < 0) { newHeight -= dy; dy = 0; }
+            SetWindowPos(hwndDlg, 0, 0, 0, newWidth, newHeight,
+                SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOMOVE);
+        }
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_PLAIN      ), wPlain      , dx, dy, 0  , 0, 0   , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_BOOST      ), wBoost      , dx, dy, 0  , 0, 0   , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_ICU        ), wICU        , dx, dy, 0  , 0, 0   , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_TOOLS      ), wTools      , dx, dy, 0  , 0, 0   , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX    ), wFindbox    , dx, dy, 0.5, 1, 0   , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX    ), wReplbox    , dx, dy, 0.5, 1, 0.5 , 0);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FIND       ), wFind       , dx, dy, 0  , 0, 0.25, 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_COUNT      ), wCount      , dx, dy, 0  , 0, 0.25, 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FINDALL    ), wFindAll    , dx, dy, 0  , 0, 0.25, 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACE    ), wReplace    , dx, dy, 0  , 0, 0.75, 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACEALL ), wReplaceAll , dx, dy, 0  , 0, 0.75, 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_MATCHCASE  ), wMatchCase  , dx, dy, 0  , 0, 0.5 , 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), wDotAll     , dx, dy, 0  , 0, 0.5 , 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), wWholeWord  , dx, dy, 0  , 0, 0.5 , 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), wFreeSpacing, dx, dy, 0  , 0, 0.5 , 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), wUnicodeWord, dx, dy, 0  , 0, 0.5 , 1);
+        adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_MESSAGE    ), wMessage    , dx, dy, 1  , 0, 0   , 1);
+    }
     else {
         int dx = dcr.right - hClient.right;
         int dy = dcr.bottom - hClient.bottom;
+        if (dx < 0 || dy < 0) {
+            RECT dwr;
+            GetWindowRect(hwndDlg, &dwr);
+            long newWidth = dwr.right - dwr.left;
+            long newHeight = dwr.bottom - dwr.top;
+            if (dx < 0) { newWidth  -= dx; dx = 0; }
+            if (dy < 0) { newHeight -= dy; dy = 0; }
+            SetWindowPos(hwndDlg, 0, 0, 0, newWidth, newHeight,
+                SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_NOMOVE);
+        }
         adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_PLAIN      ), hPlain      , dx, dy, 0  , 0, 0   , 0);
         adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_BOOST      ), hBoost      , dx, dy, 0  , 0, 0   , 0);
         adjustControlPos(GetDlgItem(hwndDlg, IDC_SEARCH_ICU        ), hICU        , dx, dy, 0  , 0, 0   , 0);
@@ -1172,8 +1262,12 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             mmi.ptMinTrackSize.y = vClient.bottom;
             break;
         default:
-            mmi.ptMinTrackSize.x = vClient.right;
-            mmi.ptMinTrackSize.y = hClient.bottom;
+            mmi.ptMinTrackSize.x = client.bottom < hClient.bottom ? wClient.right
+                                 : client.bottom < vClient.bottom ? hClient.right
+                                                                  : vClient.right;
+            mmi.ptMinTrackSize.y = client.right  < hClient.right  ? vClient.bottom
+                                 : client.right  < wClient.right  ? hClient.bottom
+                                                                  : wClient.bottom;
         }
         mmi.ptMinTrackSize.x += window.right  - window.left - client.right;
         mmi.ptMinTrackSize.y += window.bottom - window.top  - client.bottom;
