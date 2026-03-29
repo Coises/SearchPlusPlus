@@ -116,6 +116,7 @@ table.charnames td       {padding: 0 .5em 0 .5em; font-weight: normal; text-alig
 table.charnames tr td:first-child + td {text-align: right; font-family: monospace;}
 
 p.note {padding: 0 1.5em; font-size: .93em;}
+li > p.note:last-child {padding-bottom: 0.5em;}
 
 div.standout {margin: 1em 0; padding: .5em 1em; border: 5px double #000;}
 
@@ -241,6 +242,8 @@ window.addEventListener("load", doPageLoad);
 
 <p>You can Shift+click an item in the drop-down menu for a command button to perform its action <strong><em>and make it the new direct click action for the button</em></strong>. The first item in each menu is the default action for the button, so you can always reset it whenever you wish.</p>
 
+<p>When <strong>Plain</strong> text search is selected, you can Shift+click the <strong>Find</strong> or <strong>Replace</strong> button to reverse the direction of the search (swap <strong>Forward</strong> and <strong>Backward</strong>).</p>
+
 <p>A detailed description of the available commands is provided in the <a href="#commands">Search commands</a> section of this help.</p>
 
 <h3>Search options</h3>
@@ -276,6 +279,8 @@ window.addEventListener("load", doPageLoad);
 <li><strong>Marked Text 🡪 Selections</strong> selects all text that is currently marked in the active document.
 
 <li><strong>Unmark All Text</strong> removes the marker <strong>Search++</strong> is using from all text in the active document.
+
+<li><strong>Clear search results list</strong> removes all results currently accumulated in the search results list.
 
 <li><strong>Settings...</strong> opens the Search++ <a href="#settings">Settings</a> dialog.
 
@@ -345,7 +350,11 @@ window.addEventListener("load", doPageLoad);
 
 <li><strong>Whole Document</strong> means selections and marks are ignored; everything in the document (subject to any <em>direction</em> constraint) is searched.
 
-<li><strong>Selection</strong>: If there is a non-empty selection — single, rectangular or multiple — the search will be confined to the selected text. Note that for a regular expression search, each line in a rectangular selection and each selection in a multiple selection is searched independently; the search in any line or selection cannot “see” outside that selection. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>). If there is no selection, then the search will encompass the entire document.
+<li><p><strong>Selection</strong>: If there is a non-empty selection — single, rectangular or multiple — the search will be confined to the selected text. If there is no selection, the search will encompass the entire document.</p>
+
+<p class=note>Because a <strong>Find</strong> command, or the preliminary find step in a replace command, selects the found text, subsequent commands won’t be confined to the originally-selected text, since it will no longer be selected. To avoid this, you can use <strong>Selections 🡪 Marked Text</strong> from the <strong>Tools</strong> button menu before searching, or check the box <strong>Convert selections to marked text before beginning a stepwise search</strong> in the <a href="#settings">Settings</a> dialog.</p>
+
+<p class=note>For a regular expression search, each line in a rectangular selection and each selection in a multiple selection is searched independently; the search in any line or selection cannot “see” outside that selection. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>).</p>
 
 <li><strong>Marked Text</strong>: If there is any marked text, only marked text will be searched; if the document contains no marked text, the whole document will be searched. The considerations above concerning selections apply to marked text as well: regular expressions treat each span of marked text independently from other spans and from the surrounding unmarked text.
 

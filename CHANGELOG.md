@@ -1,5 +1,14 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.3 -- March 28th, 2026
+
+* Fix error that caused backward searches to fail in some cases.
+* Fix replaced marked text not being marked in some cases.
+* Make Shift+click on Find and Replace buttons reverse direction for Plain text searches.
+* Add functions to clear the search results list.
+* Clarify the search results list context menu a bit.
+* Update help file for changes. Clarify the effect of stepwise search in selection.
+
 ## Version 0.2 -- March 27th, 2026
 
 * Fix failure to reset `match` counter after a Replace All.
