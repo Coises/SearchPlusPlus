@@ -24,6 +24,7 @@
 void showSettingsDialog();
 void clearHitlist();
 bool hitlistEmpty();
+void hideHitlist();
 void showHitlist();
 
 
@@ -189,8 +190,8 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
             break;
         }
         case 'H':
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            showHitlist();
+            if (GetKeyState(VK_SHIFT) & 0x8000) hideHitlist();
+            else                                showHitlist();
             break;
         case 'I':
         {
@@ -204,17 +205,23 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
         }
         case 'N':
             SetFocus(plugin.currentScintilla());
-            if (GetKeyState(VK_SHIFT) & 0x8000)
+            if (GetKeyState(VK_SHIFT) & 0x8000) {
                 if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                                                   else ShowWindow(data.searchDialog, SW_HIDE);
+                                                        else ShowWindow(data.searchDialog, SW_HIDE);
+                hideHitlist();
+            }
             break;
         case 'O':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
-            SetFocus(hWnd == hFindBox ? GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX) : hFindBox);
+            if (GetKeyState(VK_SHIFT) & 0x8000) {
+                SetFocus(plugin.currentScintilla());
+                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                                                        else ShowWindow(data.searchDialog, SW_HIDE);
+            }
+            else {
+                HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
+                SetFocus(hWnd == hFindBox ? GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX) : hFindBox);
+            }
             break;
-        }
         case 'R':
         {
             if (GetKeyState(VK_SHIFT) & 0x8000) break;
@@ -253,15 +260,25 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     case WM_KEYDOWN:
         if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000)) break;
         switch (wParam) {
+        case 'H':
+            if (GetKeyState(VK_SHIFT) & 0x8000) hideHitlist();
+            else                                showHitlist();
+            break;
         case 'N':
             SetFocus(plugin.currentScintilla());
-            if (GetKeyState(VK_SHIFT) & 0x8000)
+            if (GetKeyState(VK_SHIFT) & 0x8000) {
                 if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                else ShowWindow(data.searchDialog, SW_HIDE);
+                                                        else ShowWindow(data.searchDialog, SW_HIDE);
+                hideHitlist();
+            }
             break;
         case 'O':
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            SetFocus(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
+            if (GetKeyState(VK_SHIFT) & 0x8000) {
+                SetFocus(plugin.currentScintilla());
+                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                else ShowWindow(data.searchDialog, SW_HIDE);
+            }
+            else SetFocus(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
             break;
         }
     }
@@ -314,7 +331,9 @@ HWND setupSearchBox(HWND hwndDlg, int box) {
     sci.ClearCmdKey('O' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('R' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('W' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('H' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('N' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    sci.ClearCmdKey('O' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     SetWindowSubclass(sciBox, subclassScintilla, 0, 0);
     return sciBox;
 }

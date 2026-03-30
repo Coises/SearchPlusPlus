@@ -20,6 +20,8 @@
 #include "Shlwapi.h"
 #include <windowsx.h>
 
+void showSearchDialog();
+
 
 namespace {
 
@@ -303,17 +305,30 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
             if (GetKeyState(VK_SHIFT) & 0x8000) prevDocument();
             else nextDocument();
             return 0;
+        case 'H':
+            if (GetKeyState(VK_SHIFT) & 0x8000) {
+                npp(NPPM_DMMHIDE, 0, hitlist);
+                SetFocus(plugin.currentScintilla());
+            }
+            else showSearchDialog();
+            return 0;
         case 'N':
             SetFocus(plugin.currentScintilla());
-            if (GetKeyState(VK_SHIFT) & 0x8000) npp(NPPM_DMMHIDE, 0, hitlist);
+            if (GetKeyState(VK_SHIFT) & 0x8000) {
+                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                                                        else ShowWindow(data.searchDialog, SW_HIDE);
+                npp(NPPM_DMMHIDE, 0, hitlist);
+            }
             return 0;
         case 'O':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            if (!data.searchDialog) break;
-            SetFocus(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
+            if (GetKeyState(VK_SHIFT) & 0x8000)
+                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                else ShowWindow(data.searchDialog, SW_HIDE);
+            else {
+                showSearchDialog();
+                SetFocus(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
+            }
             return 0;
-        }
         case 'S':
             if (GetKeyState(VK_SHIFT) & 0x8000) prevSearch();
             else nextSearch();
@@ -395,12 +410,15 @@ HWND setupScintilla() {
     sci.ClearCmdKey(SCK_TAB + (SCMOD_SHIFT << 16));
     sci.ClearCmdKey(SCK_RETURN);
     sci.ClearCmdKey('D' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('H' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('N' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('O' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('S' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('W' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('D' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    sci.ClearCmdKey('H' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('N' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    sci.ClearCmdKey('O' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('S' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
 
     sci.SetMargins(1);
@@ -552,6 +570,7 @@ INT_PTR CALLBACK hitlistDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 void clearHitlist() { if (hitlist) clearAll(); }
 bool hitlistEmpty() { if (!hitlist) return true; plugin.getScintillaPointers(sciHits); return sci.Length() == 0; }
+void hideHitlist () { if (hitlist) npp(NPPM_DMMHIDE, 0, hitlist); }
 void showHitlist () { if (hitlist) npp(NPPM_DMMSHOW, 0, hitlist); }
 
 void showHitlist(ProgressInfo& pi) {
