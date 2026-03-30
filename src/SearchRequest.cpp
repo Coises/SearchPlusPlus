@@ -160,9 +160,18 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
             length = sci.Length();
             if (length) data.historyRepl += utf8to16(sci.GetText(length));
         }
-        if (result.success() && data.focusStepwise
-            && (command.direction == SearchCommand::Forward || command.direction == SearchCommand::Backward)) 
-            SetFocus(plugin.currentScintilla());
+        if (result.success()) {
+            if (data.focusStepwise && (command.direction == SearchCommand::Forward || command.direction == SearchCommand::Backward))
+                SetFocus(plugin.currentScintilla());
+            else if (data.focusShow &&command.verb == SearchCommand::Show)
+                SetFocus(plugin.currentScintilla());
+            else if (data.focusSelect && command.verb == SearchCommand::Select) {
+                SetFocus(plugin.currentScintilla());
+                plugin.getScintillaPointers();
+                sci.SetMainSelection(0);
+                scrollIntoView(sci.SelectionNStart(0), sci.SelectionNEnd(0), false);
+            }
+        }
     }
 
     plugin.bypassNotifications = false;

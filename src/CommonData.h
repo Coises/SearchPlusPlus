@@ -77,6 +77,8 @@ inline struct CommonData {
     config<bool> autoSearchMarked      = { "search marked"                 , true  }; // IDC_SETTINGS_AUTOSEARCH_MARKS
     config<bool> autoClearMarks        = { "automatic clear marks"         , false }; // IDC_SETTINGS_AUTOCLEAR_MARKS
     config<bool> focusStepwise         = { "focus document after step"     , false }; // IDC_SETTINGS_FOCUS_STEPWISE
+    config<bool> focusSelect           = { "focus document after select"   , true  }; // IDC_SETTINGS_FOCUS_SELECT
+    config<bool> focusShow             = { "focus document after show"     , true  }; // IDC_SETTINGS_FOCUS_SHOW
     config<bool> focusResults          = { "focus search results"          , true  }; // IDC_SETTINGS_FOCUS_RESULTS
     config<bool> clearSelections       = { "clear selections before select", true  }; // IDC_SETTINGS_CLEARSELECTIONS
     config<bool> clearMarked           = { "unmark before mark"            , false }; // IDC_SETTINGS_CLEARMARKED

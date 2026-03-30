@@ -758,28 +758,21 @@ Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer tha
 
 <table>
 <tr><th colspan=2 class=group>Marked Text</th></tr>
-<tr><td colspan=2>
-<p></p>
-</td></tr>
 <tr><th>Mark style</th><td>When <strong>Search++</strong> marks text or searches within marked text, it uses one of the mark styles available in Notepad++. This drop-down lets you choose which one.</td></tr>
 <tr><th>Automatically search within marked text.</th><td>When this box is checked, commands with default (“smart”) <a href="#commands-scopes">scope</a> will search within marked text if any text within the active document is marked.</td></tr>
 <tr><th>Unmark all text when closing the search dialog. (Does not apply to docking dialog.)</th><td>Check this box if you use one of the regular (non-docking) layouts and you want <strong>Search++</strong> to unmark any text in the active document marked in the chosen mark style when you close the dialog. (This isn’t useful or reliable, and hence is not honored, for docking dialogs as docking dialogs “close” when you switch to another tab in the same dock, even though you wouldn’t think of that as closing the dialog.)</td></tr>
 </table>
 
 <table>
-<tr><th colspan=2 class=group>Focus</th></tr>
-<tr><td colspan=2>
-<p></p>
-</td></tr>
-<tr><th>Focus the document after a stepwise find or replace.</th><td>If this box is checked, when you perform a stepwise find or replace which finds a match, keyboard focus will be placed in the active document, so you can immediately begin typing at or navigating from the match location. (If this box is not checked, keyboard focus remains in the search dialog. You can focus the active document with <strong>Ctrl+N</strong>.)</td></tr>
-<tr><th>Focus the search results window after commands that use it.</th><td>If this box is checked, successful commands which add lines to the search results window (currently only <strong>Find All</strong> commands) will place keyboard focus at the beginning of the new search results. (If this box is not checked, keyboard focus remains in the search dialog. You can focus the search results window with <strong>Ctrl+H</strong>.)</td></tr>
+<tr><th colspan=3 class=group>Focus</th></tr>
+<tr><th rowspan=3>Focus the document after:<th>stepwise find or replace commands</th><td>If this box is checked, when you perform a stepwise find or replace which finds a match, keyboard focus will be placed in the active document, so you can immediately begin typing at or navigating from the match location. (If this box is not checked, keyboard focus remains in the search dialog. You can focus the active document with <strong>Ctrl+N</strong>.)</td></tr>
+<tr><th>Select commands</th><td>If this box is checked, keyboard focus is placed in the active document after any Select command that finds at least one match.</td></tr>
+<tr><th>Show commands</th><td>If this box is checked, keyboard focus is placed in the active document after any Show command that finds at least one match.</td></tr>
+<tr><th colspan=2>Focus the search results window after commands that use it.</th><td>If this box is checked, successful commands which add lines to the search results window (currently only <strong>Find All</strong> commands) will place keyboard focus at the beginning of the new search results. (If this box is not checked, keyboard focus remains in the search dialog. You can focus the search results window with <strong>Ctrl+H</strong>.)</td></tr>
 </table>
 
 <table>
 <tr><th colspan=2 class=group>Clearing</th></tr>
-<tr><td colspan=2>
-<p></p>
-</td></tr>
 <tr><th>Always clear selections before Select command. (Otherwise add to existing selections.)</th><td>When this box is checked (the default), existing selections are de-selected before beginning one of the <strong>Select</strong> commands. If you want Select commands to add to any existing selection, uncheck this box. If you are selecting <em>within a selection</em>, the original selection will be de-selected regardless of this setting.</td></tr>
 <tr><th>Always unmark all text before Mark command. (Otherwise add to existing marked text.)</th><td>When this box is checked, <strong>Mark</strong> commands remove all marks from the text before beginning the search. If this box is unchecked (the default), marks “accumulate” until you clear them. If you are marking <em>within marked text</em>, existing marks are removed regardless of this setting.</td></tr>
 <tr><th>Always hide all lines and unmark all text before Show command.</th><td>Normally <strong>Show</strong> commands only hide lines if no lines are hidden, and do not unmark text; this makes different Show commands run in succession effectively “cumulative.” Check this box if you want each Show command to “start over” by hiding all lines and unmarking all text before searching.</td></tr>

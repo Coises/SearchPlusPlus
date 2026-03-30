@@ -58,6 +58,8 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         data.autoSearchMarked     .put(hwndDlg, IDC_SETTINGS_AUTOSEARCH_MARKS          );
         data.autoClearMarks       .put(hwndDlg, IDC_SETTINGS_AUTOCLEAR_MARKS           );
         data.focusStepwise        .put(hwndDlg, IDC_SETTINGS_FOCUS_STEPWISE            );
+        data.focusSelect          .put(hwndDlg, IDC_SETTINGS_FOCUS_SELECT              );
+        data.focusShow            .put(hwndDlg, IDC_SETTINGS_FOCUS_SHOW                );
         data.focusResults         .put(hwndDlg, IDC_SETTINGS_FOCUS_RESULTS             );
         data.clearSelections      .put(hwndDlg, IDC_SETTINGS_CLEARSELECTIONS           );
         data.clearMarked          .put(hwndDlg, IDC_SETTINGS_CLEARMARKED               );
@@ -138,6 +140,8 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             data.autoSearchMarked     .get(hwndDlg, IDC_SETTINGS_AUTOSEARCH_MARKS          );
             data.autoClearMarks       .get(hwndDlg, IDC_SETTINGS_AUTOCLEAR_MARKS           );
             data.focusStepwise        .get(hwndDlg, IDC_SETTINGS_FOCUS_STEPWISE            );
+            data.focusSelect          .get(hwndDlg, IDC_SETTINGS_FOCUS_SELECT              );
+            data.focusShow            .get(hwndDlg, IDC_SETTINGS_FOCUS_SHOW                );
             data.focusResults         .get(hwndDlg, IDC_SETTINGS_FOCUS_RESULTS             );
             data.clearSelections      .get(hwndDlg, IDC_SETTINGS_CLEARSELECTIONS           );
             data.clearMarked          .get(hwndDlg, IDC_SETTINGS_CLEARMARKED               );
