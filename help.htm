@@ -747,7 +747,7 @@ Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer tha
 
 <p>The <strong>Settings...</strong> item, on the <strong>Plugins</strong> | <strong>Search++</strong> menu and the <strong>Tools</strong> menu in the search dialog, opens a dialog that allows you to customize various aspects of <strong>Search++</strong>:
 
-<table>
+<table id="settings-layout">
 <tr><th colspan=2 class=group>Search Dialog Layout</th></tr>
 <tr><th>Docking</th><td>The main <strong>Search++</strong> dialog will be a docking dialog. By default it will open on the right side of the Notepad++ window, but you can move it to a different side like any docking dialog in Notepad++. While you can (as with any docking dialog in Notepad++) detatch it from any side and make it floating, it is better to choose one of the other options if you want a dialog that isn’t docked.</td></tr>
 <tr><th>Horizontal</th><td>The search dialog will be a regular (non-docking) dialog with the Find box on the left and the Replace box on the right.</td></tr>
@@ -755,7 +755,7 @@ Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer tha
 <tr><th>Adaptive</th><td>The search dialog will be a regular dialog; depending on how you size it, the Find box will be above (in a narrow dialog) or to the left of (in a wide dialog) the Replace box.</td></tr>
 </table>
 
-<table>
+<table id="settings-selections">
 <tr><th colspan=2 class=group>Selections</th></tr>
 <tr><th>Fill the find box from a single selection in the document when showing the search dialog.</th><td>If this box is checked and there is a single selection (not a column selection or a multiple selection) in the active document when you open the search dialog, the selection will be copied into the Find box — subject to the constraints indicated below, if enabled.</td></tr>
 <tr><th>Only if the selection has no more than: ___ characters and ___ lines.</th><td>If this box is checked, selections are only copied into the Find box if they contain no more than the specified number of characters <em>and also</em> contain no more than the specified number of lines. Use this to avoid filling the search box with text from a selection when you meant to search <em>within</em> the selection.</td></tr>
@@ -765,14 +765,14 @@ Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer tha
 <tr><th>Convert selections to marked text before beginning a stepwise search.</th><td>Since a stepwise search selects the match it finds, the original selection is lost after the first match when searching within a selection. If this box is checked, whenever a stepwise search command begins a search within a selection, the text included in the selection is marked, so subsequent searches can search within marked text to preserve the intended scope of the search.</td></tr>
 </table>
 
-<table>
+<table id="settings-marked-text">
 <tr><th colspan=2 class=group>Marked Text</th></tr>
 <tr><th>Mark style</th><td>When <strong>Search++</strong> marks text or searches within marked text, it uses one of the mark styles available in Notepad++. This drop-down lets you choose which one.</td></tr>
 <tr><th>Automatically search within marked text.</th><td>When this box is checked, commands with default (“smart”) <a href="#commands-scopes">scope</a> will search within marked text if any text within the active document is marked.</td></tr>
 <tr><th>Unmark all text when closing the search dialog. (Does not apply to docking dialog.)</th><td>Check this box if you use one of the regular (non-docking) layouts and you want <strong>Search++</strong> to unmark any text in the active document marked in the chosen mark style when you close the dialog. (This isn’t useful or reliable, and hence is not honored, for docking dialogs as docking dialogs “close” when you switch to another tab in the same dock, even though you wouldn’t think of that as closing the dialog.)</td></tr>
 </table>
 
-<table>
+<table id="settings-focus">
 <tr><th colspan=3 class=group>Focus</th></tr>
 <tr><th rowspan=3>Focus the document after:<th>stepwise find or replace commands</th><td>If this box is checked, when you perform a stepwise find or replace which finds a match, keyboard focus will be placed in the active document, so you can immediately begin typing at or navigating from the match location. (If this box is not checked, keyboard focus remains in the search dialog. You can focus the active document with <strong>Ctrl+N</strong>.)</td></tr>
 <tr><th>Select commands</th><td>If this box is checked, keyboard focus is placed in the active document after any Select command that finds at least one match.</td></tr>
@@ -780,7 +780,7 @@ Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer tha
 <tr><th colspan=2>Focus the search results window after commands that use it.</th><td>If this box is checked, successful commands which add lines to the search results window (currently only <strong>Find All</strong> commands) will place keyboard focus at the beginning of the new search results. (If this box is not checked, keyboard focus remains in the search dialog. You can focus the search results window with <strong>Ctrl+H</strong>.)</td></tr>
 </table>
 
-<table>
+<table id="settings-clearing">
 <tr><th colspan=2 class=group>Clearing</th></tr>
 <tr><th>Always clear selections before Select command. (Otherwise add to existing selections.)</th><td>When this box is checked (the default), existing selections are de-selected before beginning one of the <strong>Select</strong> commands. If you want Select commands to add to any existing selection, uncheck this box. If you are selecting <em>within a selection</em>, the original selection will be de-selected regardless of this setting.</td></tr>
 <tr><th>Always unmark all text before Mark command. (Otherwise add to existing marked text.)</th><td>When this box is checked, <strong>Mark</strong> commands remove all marks from the text before beginning the search. If this box is unchecked (the default), marks “accumulate” until you clear them. If you are marking <em>within marked text</em>, existing marks are removed regardless of this setting.</td></tr>
