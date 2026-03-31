@@ -214,7 +214,7 @@ window.addEventListener("load", doPageLoad);
 
 <p>Everything <strong>Search++</strong> does begins with the Search dialog, which you can open by selecting <strong>Search...</strong> from the <strong>Search++</strong> sub-menu on the <strong>Plugins</strong> menu. If you use <strong>Search++</strong> often, you will probably want to assign a key combination to this using <strong>Shortcut Mapper...</strong> from the <strong>Settings</strong> menu in Notepad++.</p>
 
-<h3>Search engine selection</h3>
+<h3 id="search-engine">Search engine selection</h3>
 
 <p>At the top of the dialog there are buttons from which you can choose a <strong>Plain</strong> text search or a <strong>Regex</strong> (regular expression) search. To the right of those buttons there is a <strong>Tools</strong> button, which will be described later.</p>
 
@@ -224,7 +224,7 @@ window.addEventListener("load", doPageLoad);
 
 <p>A regular expression (<strong>Regex</strong>) search allows you to specify a pattern to find and a replacement string that can reference parts of the pattern that matched. The <a href="#regular">Regular expressions</a> section of this help describes them in detail. Stepwise regular expression searches can only move forward (right and down the page).</p>
 
-<h3>The Find and Replace boxes</h3>
+<h3 id="search-boxes">The Find and Replace boxes</h3>
 
 <p>There are two large text entry areas in the dialog; depending on whether the dialog is oriented vertically or horizontally, they will be near the top and bottom or at the left and right. The top or left one is the <strong>Find box</strong> and the bottom or right one is the <strong>Replace box</strong>.</p>
 
@@ -236,7 +236,7 @@ window.addEventListener("load", doPageLoad);
 
 <p>You can change the size of text in the Find and Replace boxes by zooming (Ctrl with the mouse wheel, Ctrl with the plus and minus keys on the numeric keypad, or the Zoom commands from the context menu).</p>
 
-<h3>Search command buttons</h3>
+<h3 id="search-command-buttons">Search command buttons</h3>
 
 <p>There are five search command buttons. <strong>Find</strong>, <strong>Count</strong> and <strong>Find All</strong> are beneath the Find box; <strong>Replace</strong> and <strong>Replace All</strong> are beneath the Replace box. Each button has a downward chevron at the right which opens a menu of similar commands you can select instead of the main command on the button.</p>
 
@@ -246,7 +246,7 @@ window.addEventListener("load", doPageLoad);
 
 <p>A detailed description of the available commands is provided in the <a href="#commands">Search commands</a> section of this help.</p>
 
-<h3>Search options</h3>
+<h3 id="search-options">Search options</h3>
 
 <p>The search options are simple checkboxes you can enable or disable. Different options are available for different search engines:</p>
 
@@ -258,13 +258,13 @@ window.addEventListener("load", doPageLoad);
 
 <li><strong>Dot matches line breaks</strong> applies only to regular expression searches. It indicates that the period (<strong>.</strong>) matches any one Unicode code point. When not checked, the period does not match the characters that end lines in Notepad++ (linefeed and carriage return).
 
-<li><strong>Free spacing</strong> applies only to regular expression searches. It indicates that unescaped “white space” (spaces, tabs and line-endings) and comments (a <strong>#</strong> sign and all text following it on the same line) in the search string are to be ignored by the regular expression engine, so you can use these characters to make complex search strings easier to read and edit.
+se<li><strong>Free spacing</strong> applies only to regular expression searches. It indicates that unescaped “white space” (spaces, tabs and line-endings) and comments (a <strong>#</strong> sign and all text following it on the same line) in the search string are to be ignored by the regular expression engine, so you can use these characters to make complex search strings easier to read and edit.
 
 <li><strong>Unicode word boundaries</strong> enables the use of a sophisticated definition of word boundaries developed as part of the <a href="https://www.unicode.org/reports/tr29/#Word_Boundaries">Unicode Standard</a>. At present this option is only available for the ICU search engine.
 
 </ul>
 
-<h3>Tools</h3>
+<h3 id="search-tools">Tools</h3>
 
 <p>The <strong>Tools</strong> button opens a menu that offers some convenient actions you might want to use in conjunction with searching:
 
@@ -286,9 +286,18 @@ window.addEventListener("load", doPageLoad);
 
 </ul>
 
-<h3>Keyboard navigation</h3>
+<h3 id="search-keyboard">Keyboard navigation</h3>
 
-<p>The search dialog responds to the usual methods of keyboard navigation for a dialog (e.g., type an underlined character alone or with the Alt key). In addition, you can use <strong>Ctrl+O</strong> (Other) to switch between the Find box and the Replace box. (If neither is in focus, focus goes to the Find box.) <strong>Ctrl+N</strong> returns focus to the active document in the main Notepad++ window; <strong>Ctrl+Shift+N</strong> closes the search dialog and returns focus to Notepad++. If there are search results, <strong>Ctrl+H</strong> places keyboard focus in the <a href="#results">Search results window</a>.</p>
+<p>The search dialog responds to the usual methods of keyboard navigation for a dialog (e.g., type an underlined character alone or with the Alt key). In addition, there are six general navigation commands you can use in the search dialog and in the <a href="#results">search results window</a>:</p>
+
+<table>
+<tr><th>Ctrl+H</th><td>Swap keyboard focus between the search dialog and the search results window. If the target dialog or window is not visible, open it.</td></tr>
+<tr><th>Ctrl+N</th><td>Return keyboard focus to the active Notepad++ document.</td></tr>
+<tr><th>Ctrl+O</th><td>If keyboard focus is in the Find box, switch to the Replace box; otherwise, switch focus to the Find box. If focus is in the search results window and the search dialog is not visible, open it.</td></tr>
+<tr><th>Ctrl+Shift+H</th><td>Close the search results window if it is open. If focus was in the search results window, return it to the active Notepad++ document.</td></tr>
+<tr><th>Ctrl+Shift+N</th><td>Close the search dialog and the search results window, and return focus to the active Notepad++ document.</td></tr>
+<tr><th>Ctrl+Shift+O</th><td>Close the search dialog if it is open. If focus was in the search dialog, return it to the active Notepad++ document.</td></tr>
+</table>
 
 </section>
 
@@ -296,7 +305,7 @@ window.addEventListener("load", doPageLoad);
 
 <p>Search commands are issued by clicking one of the command buttons in the search dialog or by selecting one the entries from the drop-down menus for those buttons. There are three parts to a search command: the <em>action</em>, the <em>direction</em> and the <em>scope</em>.</p>
 
-<h3>Search actions</h3>
+<h3 id="commands-actions">Search actions</h3>
 
 <p>Search actions define what sort of thing a command will do. The possible search actions are <strong>Find</strong>, <strong>Count</strong>, <strong>Find All</strong>, <strong>Mark</strong>, <strong>Select</strong>, <strong>Show</strong>, <strong>Replace and Find</strong>, <strong>Find or Replace</strong> and <strong>Replace All</strong>:</p>
 
@@ -322,7 +331,7 @@ window.addEventListener("load", doPageLoad);
 
 </ul>
 
-<h3>Search directions</h3>
+<h3 id="commands-directions">Search directions</h3>
 
 <p>Search directions describe the direction of motion through the document. Command actions which take a single step at a time (<strong>Find</strong>, <strong>Replace and Find</strong> and <strong>Find or Replace</strong>) can search <strong>Forward</strong> (the default) or (for Plain text searches) <strong>Backward</strong>. All the other command actions, which search for multiple occurrences at one time, can search <strong>Everywhere</strong> (the default), <strong>Before</strong> or <strong>After</strong>:</p>
 
@@ -340,7 +349,7 @@ window.addEventListener("load", doPageLoad);
 
 </ul>
 
-<p>There is an exception to the Before/After rules. If there is a single selection which is the result of an immediately preceeding stepwise find, or the find step of a stepwise replace, <strong>Replace Before/After</strong> <em>includes</em> the found text. This lets you do a series of stepwise replaces and then complete them with a Replace After (and for Plain text searches, the same with replacing backward and Replace Before).</p>
+<p>There is an exception to the Before/After rules. If there is a single selection which is the result of an immediately preceding stepwise find, or the find step of a stepwise replace, <strong>Replace Before/After</strong> <em>includes</em> the found text. This lets you do a series of stepwise replaces and then complete them with a Replace After (and for Plain text searches, the same with replacing backward and Replace Before).</p>
 
 <h3 id="commands-scopes">Search scopes</h3>
 
@@ -387,7 +396,7 @@ You can make adjustments to those rules in the <a href="#settings">Settings</a> 
 
 <p>You can navigate the search results window by keyboard. The <strong>Tab</strong> key moves to the next match; <strong>Shift+Tab</strong> moves to the previous match. You can press the <strong>Enter</strong> key to show the position in the document corresponding to the position of the caret in the search results <em>without</em> moving focus to the document; use <strong>Shift+Enter</strong> to scroll to location and put focus in the document.</p>
 
-<p>You can use <strong>Ctrl+O</strong> to open the search dialog, if it is not already open, and focus the Find box. <strong>Ctrl+N</strong> returns focus to the active document in the main Notepad++ window; <strong>Ctrl+Shift+N</strong> closes the search results window and returns focus to Notepad++.</p>
+<p>You can use the <a href="#search-keyboard">general navigation</a> keyboard shortcuts described for the search dialog in the search results window, too.</p>
 
 </section>
 
@@ -395,24 +404,24 @@ You can make adjustments to those rules in the <a href="#settings">Settings</a> 
 
 <p>Regular expressions are a powerful tool for finding and replacing text using patterns instead of a literal plain text string. <strong>Search++</strong> uses the same regular expression engine, <a href="https://www.boost.org/doc/libs/latest/libs/regex/">Boost.Regex</a>, used in <strong>Notepad++</strong>, so most things work the same as they do in Notepad++. Two good resources for learning the syntax of find strings and replacements for this engine are the <a href="https://npp-user-manual.org/docs/searching/#regular-expressions">Notepad++ User Manual</a> and the Boost documentation for <a href="https://www.boost.org/doc/libs/latest/libs/regex/doc/html/boost_regex/syntax/perl_syntax.html">Find</a> and <a href="https://www.boost.org/doc/libs/latest/libs/regex/doc/html/boost_regex/format/boost_format_syntax.html">Replace</a> syntax. This section will concentrate on the differences between Search++ regular expressions and the ones used in the built-in Notepad++ search.</p>
 
-<h3>Formulas</h3>
+<h3 id="regular-formulas">Formulas</h3>
 
 <p><strong>Search++</strong> supports mathematical formulas in the replacement string for regular expressions. They are described in the <a href="#formulas">Formulas</a> section of this help.</p>
 
-<h3>Searching marked text and searching in rectangular and multiple selections</h3>
+<h3 id="regular-marked-rectangular-multiple">Searching marked text and searching in rectangular and multiple selections</h3>
 
 <p>Search in Notepad++ doesn’t work in rectangular or multiple selections, nor is there a facility for searching in marked text. <strong>Search++</strong> can do those things. For plain text the way it works is fairly straightforward; but for regular expressions there are some considerations that might not be obvious.</p>
 
 <p>Within a rectangular selection, the selection in each row is matched independently of the surrounding text. The <strong>^</strong> assertion matches the beginning of the selection within a row, the <strong>$</strong> assertion matches the end of the selection, and lookahead and lookbehind assertions cannot examine text past the boundaries of the selection. (Lookbehind assertions in <strong>Notepad++</strong> can examine all text back to the beginning of the document, even when counting or replacing in a simple selection.) The same principle applies to multiple selections and to runs of marked text.</p>
 
-<h3>The \K directive</h3>
+<h3 id="regular-K">The \K directive</h3>
 <p>Matches for regular expressions using the <strong>\K</strong> directive are never replaced when performing stepwise Find and Replace in <strong>Notepad++</strong>. In <strong>Search++</strong> such matches can be replaced if you do not change the selection in the document or activate any other document between finding the match and replacing it.</p>
 
-<h3>Case sensitivity and named character classes</h3>
+<h3 id="regular-case">Case sensitivity and named character classes</h3>
 
 <p>In most regular expression engines, including unmodified Boost.Regex, case insensitive matches (when the <strong>Match case</strong> option is not checked, or when <strong>(?i)</strong> is in effect) ignore case in the text to be matched entirely. In <strong>Search++</strong>, named character classes and their equivalents (such as <strong>[[:upper:]]</strong> or <strong>\u</strong> or <strong>\p{Lu}</strong>) never ignore case.</p>
 
-<h3 id=regularUnicode>Unicode</h3>
+<h3 id="regular-unicode">Unicode</h3>
 
 <p>In documents containing characters outside the <a href="https://en.wikipedia.org/wiki/ASCII#Character_set">ASCII character set</a> there are some significant differences in the way <strong>Search++</strong> and <strong>Notepad++</strong> match regular expressions. <strong>Search++</strong> matches document text as if it were a series of <a href="https://en.wikipedia.org/wiki/Unicode">Unicode</a> code points (i.e., <a href="https://en.wikipedia.org/wiki/UTF-32">UTF-32</a>) while <strong>Notepad++</strong> matches documents either as <a href="https://en.wikipedia.org/wiki/Windows_code_page#ANSI_code_page">ANSI</a> bytes in the system default code page or as <a href="https://en.wikipedia.org/wiki/UTF-16">UTF-16</a> code units. Most of the differences are related to this change.</p>
 
@@ -613,7 +622,7 @@ You can make adjustments to those rules in the <a href="#settings">Settings</a> 
 
 <p><strong>Formulas</strong> are representations of mathematical computations. <strong>Search++</strong> uses the <a href="https://github.com/ArashPartow/exprtk">ExprTk (Expression Toolkit)</a> package to parse and evaluate formulas.</p>
 
-<h3>Replacement syntax</h3>
+<h3 id="formulas-replacement">Replacement syntax</h3>
 
 <p>To include a formula in a replacement string, write it as:</p>
 
@@ -642,7 +651,7 @@ discrepancies irrelevant. Numeric results which exceed
 
 <p>Two special variables are defined. Use <code>match</code> to substitute a counter that begins at one for the first replacement and increases by one for each additional replacement. (Note that if you are using stepwise replacement, despite the name, the counter only counts <em>replacements</em>, not matches. The counter continues through stepwise replaces, but resets after a Replace All or whenever the replace string is modified.) Use <strong>line</strong> to represent the line number in the document where the match begins.</p>
 
-<h3>Format specifications</h3>
+<h3 id="formulas-format">Format specifications</h3>
 
 <p>You can control how the result of a formula is presented by including a format specification:
 <br><strong>(?=<em>format</em>:<em>formula</em>)</strong>
@@ -670,7 +679,7 @@ Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer tha
 </td></tr>
 </table>
 
-<h3>Syntax of formulas</h3>
+<h3 id="formulas-syntax">Syntax of formulas</h3>
 
 <p>Formulas are written using most of the common conventions for writing mathematical expressions in typical programming languages: numbers are written with an optional minus sign, digits and an optional decimal point (no commas); <strong>+</strong>, <strong>-</strong>, <strong>*</strong>, <strong>/</strong>, <strong>%</strong> and <strong>^</strong> indicate addition, subtraction, multiplication, division, remainder and exponentiation; parentheses are used to indicate order of operations. You can also use logical expressions built from common operators, including <strong>=</strong> or <strong>==</strong>, <strong>!=</strong> or <strong>&lt;&gt;</strong>, <strong>&lt;</strong>, <strong>&lt;=</strong>, <strong>&gt;</strong>, <strong>&gt;=</strong>, <strong>&amp;</strong> and <strong>|</strong>, in a conditional expression:</p>
 

@@ -1,5 +1,12 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.4 -- March 30th, 2026
+
+* Add wide layout for better top/bottom docking. Improve layout handling and make sure non-docking dialogs aren't sized too small.
+* Add settings (checked by default) to focus the document after Select commands and after Show commands.
+* Make behavior of general navigation commands (Ctrl/Ctrl+Shift + H/N/O) more consistent.
+* Update documentation.
+
 ## Version 0.3 -- March 28th, 2026
 
 * Fix error that caused backward searches to fail in some cases.
