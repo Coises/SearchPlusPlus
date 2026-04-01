@@ -25,6 +25,8 @@ void showSearchDialog();
 
 namespace {
 
+std::locale userLocale("");
+
 HWND hitlist = 0;  // Window handle to the hit list dialog
 HWND sciHits = 0;  // Window handle to the Scintilla control containing the hit list
 
@@ -621,9 +623,8 @@ void showHitlist(ProgressInfo& pi) {
     sci.SetSel(0, 0);
 
     size_t documentCount = hitSets.back()->hitBlocks.size();
-    std::string search = " " +std::to_string(pi.count) + (pi.count == 1 ? " match in " : " matches in ")
-                       + std::to_string(documentCount) + (documentCount == 1 ? " document " : " documents ")
-                       + singleLineFindText + "\r\n";
+    std::string search = utf16to8(std::format(userLocale, L" {:Ld} match{:s} in {:Ld} document{:s} ",
+        pi.count, pi.count == 1 ? L"" : L"es", documentCount, documentCount == 1 ? L"" : L"s")) + singleLineFindText + "\r\n";
     sci.AddText(search.length(), search.data());
     sci.StartStyling(0, 0);
     sci.SetStyling(search.length(), Style_Search);
@@ -638,11 +639,9 @@ void showHitlist(ProgressInfo& pi) {
         Scintilla::Line line = sci.LineFromPosition(position);
         intptr_t matchesInDocument = static_cast<intptr_t>(hitBlock.count());
         intptr_t linesMatched = static_cast<intptr_t>(hitBlock.hitLines.size());
-        std::string documentLine = "-- " + std::to_string(matchesInDocument)
-                                 + (matchesInDocument == 1 ? " match in " : " matches in ")
-                                 + std::to_string(linesMatched)
-                                 + (linesMatched == 1 ? " line: " : " lines: ")
-                                 + hitBlock.documentPath + "\r\n";
+        std::string documentLine = utf16to8(std::format(userLocale, L"-- {:Ld} match{:s} in {:Ld} line{:s}: ",
+            matchesInDocument, matchesInDocument == 1 ? L"" : L"es", linesMatched, linesMatched == 1 ? L"" : L"s"))
+            + hitBlock.documentPath + "\r\n";
         sci.AddText(documentLine.length(), documentLine.data());
         sci.StartStyling(position, 0);
         sci.SetStyling(documentLine.length(), Style_Document);

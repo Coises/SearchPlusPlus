@@ -28,7 +28,12 @@ namespace {
         OpenDocument(UINT_PTR bufferID, int index, int view) : bufferID(bufferID), index(index), view(view) {}
     };
 }
-class ProgressiveDocumentsList : public std::vector<OpenDocument> {};
+
+class ProgressiveDocumentsList : public std::vector<OpenDocument> {
+public:
+    intptr_t fileHits   = 0;
+    intptr_t priorCount = 0;
+};
 
 
 namespace {
@@ -196,7 +201,7 @@ SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
         }
         result = !count     ? SearchResult(SearchResult::Failure, L"No matches found" + suffix)
                : count == 1 ? SearchResult(SearchResult::Success, verb + L"1 match" + suffix)
-                            : SearchResult(SearchResult::Success, verb + std::to_wstring(count) + L" matches" + suffix);
+                            : SearchResult(SearchResult::Success, verb + std::format(userLocale, L"{:Ld} matches", count) + suffix);
         if (req.command.verb == SearchCommand::FindAll && count > 0) showHitlist(*this);
     }
     return result;
@@ -205,6 +210,10 @@ SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
 
 
 void ProgressInfo::nextDocument() {
+    if (count > pdl->priorCount) {
+        ++pdl->fileHits;
+        pdl->priorCount = count;
+    }
     if (documentIndex > 0 && req.command.verb == SearchCommand::ReplaceAll) sci.EndUndoAction();
     npp(NPPM_ACTIVATEDOC, (*pdl)[documentIndex].view, (*pdl)[documentIndex].index);
     plugin.getScintillaPointers();
@@ -289,18 +298,19 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
         if (originalDocIndex0 >= 0) npp(NPPM_ACTIVATEDOC, 0, originalDocIndex0);
         npp(NPPM_ACTIVATEDOC, 1, originalDocIndex1);
     }
-    
+
     if (!result.error()) {
+        if (count > pdl->priorCount) ++pdl->fileHits;
         std::wstring verb = req.command.verb == SearchCommand::ReplaceAll ? L"Replaced "
                           : req.command.verb == SearchCommand::Select     ? L"Selected "
                           : req.command.verb == SearchCommand::Show       ? L"Shown "
                           : req.command.verb == SearchCommand::Mark       ? L"Marked "
                                                                           : L"Found ";
 
-        std::wstring suffix = L" in open documents.";
+        std::wstring suffix = std::format(userLocale, L" in {:Ld} of {:Ld} open documents.", pdl->fileHits, documentCount);
         result = !count     ? SearchResult(SearchResult::Failure, L"No matches found" + suffix)
                : count == 1 ? SearchResult(SearchResult::Success, verb + L"1 match" + suffix)
-                            : SearchResult(SearchResult::Success, verb + std::to_wstring(count) + L" matches" + suffix);
+                            : SearchResult(SearchResult::Success, verb + std::format(userLocale, L"{:Ld} matches", count) + suffix);
         if (req.command.verb == SearchCommand::FindAll && count > 0) showHitlist(*this);
     }
     return result;
