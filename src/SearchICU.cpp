@@ -217,7 +217,7 @@ SearchResult multipleSearch(SearchRequest& req) {
     icu::ErrorCode status;
     pii.icuMatcher = std::make_unique<icu::RegexMatcher>(find.data(), flags, status);
     if (status.isFailure()) return req.error(L"Invalid regular expression.", utf16to8(rxError(status.get(), L"")));
-    if (req.command.verb == SearchCommand::Replace) {
+    if (req.command.verb == SearchCommand::ReplaceAll) {
         plugin.getScintillaPointers(req.sciRepl);
         Scintilla::Position replLength = sci.Length();
         pii.repl = replLength ? sci.GetText(replLength) : "";
@@ -241,30 +241,23 @@ SearchResult searchICU(SearchRequest& req) {
 
     switch (req.command.verb) {
     case SearchCommand::Find:
-        switch (req.command.direction) {
+        switch (req.command.extent) {
         case SearchCommand::Forward:
             return singleFind(req);
-        case SearchCommand::All:
-        case SearchCommand::Before:
-        case SearchCommand::After:
-            return multipleSearch(req);
         default:
             return SearchResult(L"Command not implemented.");
         }
     case SearchCommand::Count:
+    case SearchCommand::FindAll:
     case SearchCommand::Mark:
     case SearchCommand::Select:
     case SearchCommand::Show:
-        return multipleSearch(req);
-    case SearchCommand::Replace:
-    case SearchCommand::FindRepl:
-        switch (req.command.direction) {
-        case SearchCommand::Forward:
-            return SearchResult(L"Command not implemented.");
+    case SearchCommand::ReplaceAll:
+        switch (req.command.extent) {
         case SearchCommand::All:
         case SearchCommand::Before:
         case SearchCommand::After:
-            return SearchResult(L"Command not implemented.");
+            return multipleSearch(req);
         default:
             return SearchResult(L"Command not implemented.");
         }

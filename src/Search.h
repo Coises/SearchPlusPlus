@@ -27,16 +27,16 @@ void scrollIntoView(Scintilla::Position foundStart, Scintilla::Position foundEnd
 
 
 struct SearchCommand {
-    enum Verb : uint8_t { None, Count, Find, Mark, Select, Show, Replace, FindRepl } verb;
-    enum Direction : uint8_t { Forward, Backward, Before, After, All } direction;
-    enum Scope : uint8_t { Smart, Region, Selection, Whole, Open, Files } scope;
+    enum Verb   : uint8_t { None, Find, Replace, ReplStop, Count, FindAll, Mark, Select, Show, ReplaceAll } verb;
+    enum Extent : uint8_t { Forward, Backward, All, Before, After, Open } extent;
+    enum Scope  : uint8_t { Smart, Region, Selection, Whole } scope;
     uint8_t unused = 0;
-    constexpr SearchCommand() : verb(None), direction(Forward), scope(Smart) {}
-    constexpr SearchCommand(Verb verb, Direction direction = Forward, Scope scope = Smart) : verb(verb), direction(direction), scope(scope) {}
+    constexpr SearchCommand() : verb(None), extent(Forward), scope(Smart) {}
+    constexpr SearchCommand(Verb verb, Extent extent = Forward, Scope scope = Smart) : verb(verb), extent(extent), scope(scope) {}
     constexpr SearchCommand(unsigned int c)
-        : verb(static_cast<Verb>(c & 15)), direction(static_cast<Direction>((c >> 8) & 15)), scope(static_cast<Scope>((c >> 16) & 15)) {
+        : verb(static_cast<Verb>(c & 15)), extent(static_cast<Extent>((c >> 8) & 15)), scope(static_cast<Scope>((c >> 16) & 15)) {
     }
-    constexpr operator unsigned int() { return verb | (direction << 8) | (scope << 16); }
+    constexpr operator unsigned int() { return verb | (extent << 8) | (scope << 16); }
 };
 
 
@@ -163,6 +163,3 @@ struct SearchRequest {
     }
 
 };
-
-constexpr SearchCommand operator|(SearchCommand::Verb v, SearchCommand::Direction d) { return SearchCommand(v, d); }
-constexpr SearchCommand operator|(SearchCommand c, SearchCommand::Scope s) { return SearchCommand(c.verb, c.direction, s); }

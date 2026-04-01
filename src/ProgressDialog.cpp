@@ -16,6 +16,7 @@
 
 #include "CommonData.h"
 #include "resource.h"
+#include <set>
 
 void showHitlist(ProgressInfo& pi);
 
@@ -110,27 +111,27 @@ SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
 
     rangeStart = req.ranges.front().cpMin;
     rangeEnd   = req.ranges.back ().cpMax;
-    if (req.command.direction == SearchCommand::After) {
-        rangeStart = req.command.verb == SearchCommand::Replace && req.context->found() ? sci.SelectionStart() : sci.SelectionEnd();
+    if (req.command.extent == SearchCommand::After) {
+        rangeStart = req.command.verb == SearchCommand::ReplaceAll && req.context->found() ? sci.SelectionStart() : sci.SelectionEnd();
         if (req.ranges.back().cpMax <= rangeStart) return SearchResult(L"Nothing to search after current position or selection.");
         for (; req.ranges[rangeIndex].cpMax <= rangeStart; ++rangeIndex);
         rangeStart = std::max(rangeStart, req.ranges[rangeIndex].cpMin);
     }
-    else if (req.command.direction == SearchCommand::Before) {
-        rangeEnd = std::min(rangeEnd, req.command.verb == SearchCommand::Replace && req.context->found()
+    else if (req.command.extent == SearchCommand::Before) {
+        rangeEnd = std::min(rangeEnd, req.command.verb == SearchCommand::ReplaceAll && req.context->found()
                                     ? sci.SelectionEnd() : sci.SelectionStart());
         if (req.ranges.front().cpMin >= rangeEnd) return SearchResult(L"Nothing to search before current position or selection.");
     }
 
     position = rangeStart;
     result   = SearchResult(SearchResult::Success, L"");
-    message  = req.command.verb == SearchCommand::Replace ? L"Matches replaced"
-             : req.command.verb == SearchCommand::Select  ? L"Matches selected"
-             : req.command.verb == SearchCommand::Show    ? L"Matches shown"
-             : req.command.verb == SearchCommand::Mark    ? L"Matches marked"
-                                                          : L"Matches found";
+    message  = req.command.verb == SearchCommand::ReplaceAll ? L"Matches replaced"
+             : req.command.verb == SearchCommand::Select     ? L"Matches selected"
+             : req.command.verb == SearchCommand::Show       ? L"Matches shown"
+             : req.command.verb == SearchCommand::Mark       ? L"Matches marked"
+                                                             : L"Matches found";
 
-    if (req.command.verb != SearchCommand::Count) sci.BeginUndoAction();
+    if (req.command.verb == SearchCommand::ReplaceAll) sci.BeginUndoAction();
 
     unsigned long long tickBefore, tickAfter;
     Scintilla::Position posBefore = rangeStart;
@@ -151,27 +152,129 @@ SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
         tickBefore = tickAfter;
     }
 
-    if (req.command.verb != SearchCommand::Count) sci.EndUndoAction();
+    if (req.command.verb == SearchCommand::ReplaceAll) sci.EndUndoAction();
 
     if (!result.error()) {
-        std::wstring verb = req.command.verb == SearchCommand::Replace ? L"Replaced "
-                          : req.command.verb == SearchCommand::Select  ? L"Selected "
-                          : req.command.verb == SearchCommand::Show    ? L"Shown "
-                          : req.command.verb == SearchCommand::Mark    ? L"Marked "
-                                                                       : L"Found ";
+        std::wstring verb = req.command.verb == SearchCommand::ReplaceAll ? L"Replaced "
+                          : req.command.verb == SearchCommand::Select     ? L"Selected "
+                          : req.command.verb == SearchCommand::Show       ? L"Shown "
+                          : req.command.verb == SearchCommand::Mark       ? L"Marked "
+                                                                          : L"Found ";
 
         std::wstring suffix = req.command.scope == SearchCommand::Scope::Region    ? L" in marked text"
                             : req.command.scope == SearchCommand::Scope::Selection ? L" in selection"
                                                                                    : L"";
-        if (req.command.direction == SearchCommand::All) suffix += L".";
+        if (req.command.extent == SearchCommand::All) suffix += L".";
         else {
-            suffix += (req.command.direction == SearchCommand::Before ? L" before " : L" after ");
+            suffix += (req.command.extent == SearchCommand::Before ? L" before " : L" after ");
             suffix += (sci.SelectionEmpty() ? L"current position." : L"selection.");
         }
         result = !count     ? SearchResult(SearchResult::Failure, L"No matches found" + suffix)
                : count == 1 ? SearchResult(SearchResult::Success, verb + L"1 match" + suffix)
                             : SearchResult(SearchResult::Success, verb + std::to_wstring(count) + L" matches" + suffix);
-        if (req.command.verb == SearchCommand::Find && count > 0) showHitlist(*this);
+        if (req.command.verb == SearchCommand::FindAll && count > 0) showHitlist(*this);
+    }
+    return result;
+
+}
+
+
+SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*prepare)(ProgressInfo&)) {
+
+    struct OpenDocument {
+        UINT_PTR bufferID;
+        int index;
+        int view;
+        OpenDocument(UINT_PTR bufferID, int index, int view) : bufferID(bufferID), index(index), view(view) {}
+    };
+
+    task = worker;
+
+    int originalDocIndex0 = static_cast<int>(npp(NPPM_GETCURRENTDOCINDEX, 0, 0));
+    int originalDocIndex1 = static_cast<int>(npp(NPPM_GETCURRENTDOCINDEX, 0, 1));
+    int originalView      = static_cast<int>(npp(NPPM_GETCURRENTVIEW, 0, 0));
+
+    std::vector<OpenDocument> documents;
+    {
+        std::set<UINT_PTR> alreadyHaveBuffer;
+        int documentCount0 = originalDocIndex0 < 0 ? 0 : static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, 1));
+        int documentCount1 = originalDocIndex1 < 0 ? 0 : static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, 2));
+        for (int pos = 0; pos < documentCount0; ++pos) {
+            UINT_PTR buffer = npp(NPPM_GETBUFFERIDFROMPOS, pos, 0);
+            documents.emplace_back(buffer, pos, 0);
+            alreadyHaveBuffer.insert(buffer);
+        }
+        for (int pos = 0; pos < documentCount1; ++pos) {
+            UINT_PTR buffer = npp(NPPM_GETBUFFERIDFROMPOS, pos, 1);
+            if (alreadyHaveBuffer.contains(buffer)) continue;
+            documents.emplace_back(buffer, pos, 1);
+        }
+    }
+
+    for (documentIndex = 0; documentIndex < documents.size(); ++documentIndex) {
+
+        npp(NPPM_ACTIVATEDOC, documents[documentIndex].view, documents[documentIndex].index);
+        plugin.getScintillaPointers();
+        Scintilla::Position length = sci.Length();
+        req.ranges.clear();
+        req.ranges.emplace_back(Scintilla::CharacterRangeFull(0, length));
+        position = rangeIndex = rangeStart = 0;
+        rangeEnd = length;
+        result   = SearchResult(SearchResult::Success, L"");
+        message  = req.command.verb == SearchCommand::ReplaceAll ? L"Matches replaced"
+                 : req.command.verb == SearchCommand::Select     ? L"Matches selected"
+                 : req.command.verb == SearchCommand::Show       ? L"Matches shown"
+                 : req.command.verb == SearchCommand::Mark       ? L"Matches marked"
+                                                                 : L"Matches found";
+
+        prepare(*this);
+        
+        if (req.command.verb == SearchCommand::ReplaceAll) sci.BeginUndoAction();
+        
+        unsigned long long tickBefore, tickAfter;
+        Scintilla::Position posBefore = rangeStart;
+        tickBefore = GetTickCount64();
+        double tickLimit = 2;
+        while (task(*this)) {
+            tickAfter = GetTickCount64();
+            if (tickAfter - tickBefore < 20 || position == posBefore) continue;
+            double projected =
+                static_cast<double>(rangeEnd - position) * static_cast<double>(tickAfter - tickBefore)
+                / (1000 * static_cast<double>(position - posBefore));
+            if (projected > tickLimit) {
+                DialogBoxParam(plugin.dllInstance, MAKEINTRESOURCE(IDD_SEARCH_PROGRESS), plugin.nppData._nppHandle,
+                    progressDialogProc, reinterpret_cast<LPARAM>(this));
+                break;
+            }
+            posBefore = position;
+            tickBefore = tickAfter;
+        }
+
+        if (req.command.verb == SearchCommand::ReplaceAll) sci.EndUndoAction();
+
+    }
+
+    if (originalView == 0) {
+        if (originalDocIndex1 >= 0) npp(NPPM_ACTIVATEDOC, 1, originalDocIndex1);
+        npp(NPPM_ACTIVATEDOC, 0, originalDocIndex0);
+    }
+    else {
+        if (originalDocIndex0 >= 0) npp(NPPM_ACTIVATEDOC, 0, originalDocIndex0);
+        npp(NPPM_ACTIVATEDOC, 1, originalDocIndex1);
+    }
+    
+    if (!result.error()) {
+        std::wstring verb = req.command.verb == SearchCommand::ReplaceAll ? L"Replaced "
+                          : req.command.verb == SearchCommand::Select     ? L"Selected "
+                          : req.command.verb == SearchCommand::Show       ? L"Shown "
+                          : req.command.verb == SearchCommand::Mark       ? L"Marked "
+                                                                          : L"Found ";
+
+        std::wstring suffix = L" in open documents.";
+        result = !count     ? SearchResult(SearchResult::Failure, L"No matches found" + suffix)
+               : count == 1 ? SearchResult(SearchResult::Success, verb + L"1 match" + suffix)
+                            : SearchResult(SearchResult::Success, verb + std::to_wstring(count) + L" matches" + suffix);
+        if (req.command.verb == SearchCommand::FindAll && count > 0) showHitlist(*this);
     }
     return result;
 

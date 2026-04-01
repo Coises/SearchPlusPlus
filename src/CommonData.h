@@ -103,11 +103,11 @@ inline struct CommonData {
     config<int            > zoomRepl     = { "zoom replace"           , 0                     };
     config<int            > zoomHits     = { "zoom search results"    , 0                     };
 
-    config<SearchEngine> searchEngine     = { "search engine"    , SearchEngine::Plain   };
-    config<unsigned int> buttonFind       = { "Find button"      , SearchCommand::Find                         };
-    config<unsigned int> buttonCount      = { "Count button"     , SearchCommand::Count   | SearchCommand::All };
-    config<unsigned int> buttonFindAll    = { "FindAll button"   , SearchCommand::Find    | SearchCommand::All };
-    config<unsigned int> buttonReplace    = { "Replace button"   , SearchCommand::Replace                      };  
-    config<unsigned int> buttonReplaceAll = { "ReplaceAll button", SearchCommand::Replace | SearchCommand::All };  
+    config<SearchEngine> searchEngine     = { "search engine"    , SearchEngine::Plain };
+    config<unsigned int> buttonFind       = { "Find button"      , SearchCommand(SearchCommand::Find                          ) };
+    config<unsigned int> buttonCount      = { "Count button"     , SearchCommand(SearchCommand::Count     , SearchCommand::All) };
+    config<unsigned int> buttonFindAll    = { "FindAll button"   , SearchCommand(SearchCommand::FindAll   , SearchCommand::All) };
+    config<unsigned int> buttonReplace    = { "Replace button"   , SearchCommand(SearchCommand::Replace                       ) };  
+    config<unsigned int> buttonReplaceAll = { "ReplaceAll button", SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All) };  
 
 } data;

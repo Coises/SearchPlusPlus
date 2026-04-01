@@ -61,17 +61,19 @@ struct ProgressInfo {
     SearchResult   result;
     std::wstring   message;
 
-    Scintilla::Position position     = 0;
-    Scintilla::Position rangeStart   = 0;
-    Scintilla::Position rangeEnd     = 0;
-    size_t              rangeIndex   = 0;
-    intptr_t            count        = 0;
-    bool                timerStarted = false;
+    Scintilla::Position position      = 0;
+    Scintilla::Position rangeStart    = 0;
+    Scintilla::Position rangeEnd      = 0;
+    size_t              rangeIndex    = 0;
+    size_t              documentIndex = 0;
+    intptr_t            count         = 0;
+    bool                timerStarted  = false;
 
     bool (*task)(ProgressInfo&) = 0;
 
     ProgressInfo(SearchRequest& req) : req(req) {}
 
-    SearchResult exec(bool (*worker)(ProgressInfo&) = 0);
+    SearchResult exec(bool (*worker)(ProgressInfo&));
+    SearchResult openDocuments(bool (*worker)(ProgressInfo&), void (*prepare)(ProgressInfo&));
 
 };

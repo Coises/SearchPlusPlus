@@ -36,8 +36,7 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
         sci.IndicatorClearRange(0, sci.Length());
     }
 
-    if (command.scope == SearchCommand::Smart || command.scope == SearchCommand::Region
-        || command.scope == SearchCommand::Selection || command.scope == SearchCommand::Whole) {
+    if (command.extent != SearchCommand::Open) {
 
         if (documentLength == 0) {
             plugin.bypassNotifications = false;
@@ -53,7 +52,7 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
                 }
             }
             if (command.scope == SearchCommand::Smart && context->none()
-                && command.direction != SearchCommand::Before && command.direction != SearchCommand::After) {
+                && command.extent != SearchCommand::Before && command.extent != SearchCommand::After) {
                 if (data.autoSearchSelect && !sci.SelectionEmpty()) {
                     if (!data.autoSearchSelectLimit || sci.Selections() > 1) command.scope = SearchCommand::Selection;
                     else {
@@ -66,7 +65,7 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
                                 sci.CountCharacters(start, end) >= data.selChars) command.scope = SearchCommand::Selection;
                         }
                     }
-                    if (data.selectionToMarks && command.scope == SearchCommand::Selection && command.direction != SearchCommand::All) {
+                    if (data.selectionToMarks && command.scope == SearchCommand::Selection && command.extent != SearchCommand::All) {
                         sci.SetIndicatorCurrent(data.indicator);
                         sci.SetIndicatorValue(1);
                         int n = sci.Selections();
@@ -120,20 +119,20 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
             command.scope = SearchCommand::Whole;
         }
 
-    }
-
-    if (command.verb == SearchCommand::Select) {
-        if (data.clearSelections || command.scope == SearchCommand::Selection) sci.ClearSelections();
-    }
-    else if (command.verb == SearchCommand::Mark) {
-        if (data.clearMarked || command.scope == SearchCommand::Region) sci.IndicatorClearRange(0, documentLength);
-    }
-    else if (command.verb == SearchCommand::Show) {
-        if (data.hideBeforeShow) {
-            sci.IndicatorClearRange(0, sci.Length());
-            sci.HideLines(0, sci.LineCount() - 1);
+        if (command.verb == SearchCommand::Select) {
+            if (data.clearSelections || command.scope == SearchCommand::Selection) sci.ClearSelections();
         }
-        else if (sci.AllLinesVisible()) sci.HideLines(0, sci.LineCount() - 1);
+        else if (command.verb == SearchCommand::Mark) {
+            if (data.clearMarked || command.scope == SearchCommand::Region) sci.IndicatorClearRange(0, documentLength);
+        }
+        else if (command.verb == SearchCommand::Show) {
+            if (data.hideBeforeShow) {
+                sci.IndicatorClearRange(0, sci.Length());
+                sci.HideLines(0, sci.LineCount() - 1);
+            }
+            else if (sci.AllLinesVisible()) sci.HideLines(0, sci.LineCount() - 1);
+        }
+
     }
 
     SearchResult result;
@@ -155,13 +154,13 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
         plugin.getScintillaPointers(sciFind);
         Scintilla::Position length = sci.Length();
         if (length) data.historyFind += utf8to16(sci.GetText(length));
-        if (command.verb == SearchCommand::Verb::Replace || command.verb == SearchCommand::Verb::FindRepl) {
+        if (command.verb == SearchCommand::Verb::Replace || command.verb == SearchCommand::Verb::ReplStop) {
             plugin.getScintillaPointers(sciRepl);
             length = sci.Length();
             if (length) data.historyRepl += utf8to16(sci.GetText(length));
         }
         if (result.success()) {
-            if (data.focusStepwise && (command.direction == SearchCommand::Forward || command.direction == SearchCommand::Backward))
+            if (data.focusStepwise && (command.extent == SearchCommand::Forward || command.extent == SearchCommand::Backward))
                 SetFocus(plugin.currentScintilla());
             else if (data.focusShow &&command.verb == SearchCommand::Show)
                 SetFocus(plugin.currentScintilla());

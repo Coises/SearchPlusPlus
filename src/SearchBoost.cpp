@@ -29,6 +29,13 @@ struct ProgressInfoBoost : ProgressInfo {
 };
 
 
+struct ProgressOpenDocumentsBoost : ProgressInfoBoost {
+    std::string originalFind;
+    std::string originalRepl;
+    ProgressOpenDocumentsBoost(SearchRequest& req) : ProgressInfoBoost(req) {}
+};
+
+
 SearchResult singleFind(SearchRequest& req, bool postReplace = false) {
 
     bool inSelection = !postReplace && req.command.scope == SearchCommand::Selection;
@@ -101,7 +108,7 @@ SearchResult singleReplace(SearchRequest& req) {
     Scintilla::Position start = sci.TargetStart();
     Scintilla::Position end = sci.TargetEnd();
     if (req.command.scope == SearchCommand::Scope::Region && start != end) sci.IndicatorFillRange(start, end - start);
-    if (req.command.verb == SearchCommand::FindRepl) return req.replaced(start, end, L"Match replaced.");
+    if (req.command.verb == SearchCommand::ReplStop) return req.replaced(start, end, L"Match replaced.");
     sci.SetSel(start, end);
 
     Scintilla::Position offset = end - start - (foundEnd - foundStart);
@@ -152,7 +159,7 @@ bool progressiveSearch(ProgressInfo& pi) {
                 sci.IndicatorFillRange(found, length);
             }
             break;
-        case SearchCommand::Replace:
+        case SearchCommand::ReplaceAll:
         {
             std::string repl = pib.req.context->calc.format(pib.rx, sci);
             sci.SetTarget(Scintilla::Span(found, found + length));
@@ -187,7 +194,7 @@ SearchResult multipleSearch(SearchRequest& req) {
     if (findLength < 1) return req.error(L"Nothing to find.");
     std::string find = sci.GetText(findLength);
     ProgressInfoBoost pib(req);
-    if (req.command.verb == SearchCommand::Replace && !req.context->calcIsValid) {
+    if (req.command.verb == SearchCommand::ReplaceAll && !req.context->calcIsValid) {
         plugin.getScintillaPointers(req.sciRepl);
         Scintilla::Position replLength = sci.Length();
         std::string repl = replLength ? sci.GetText(replLength) : "";
@@ -204,7 +211,43 @@ SearchResult multipleSearch(SearchRequest& req) {
     pib.hitSet = std::make_unique<ProgressInfo::HitSet>();
     pib.hitSet->searchString = "(Regex): " + find;
     pib.exec(progressiveSearch);
-    if (pib.result.success() && req.command.verb == SearchCommand::Replace) req.context->calcIsValid = false;
+    if (pib.result.success() && req.command.verb == SearchCommand::ReplaceAll) req.context->calcIsValid = false;
+    return pib.result;
+}
+
+
+void openDocumentsPrepare(ProgressInfo& pi) {
+    ProgressOpenDocumentsBoost& pib = static_cast<ProgressOpenDocumentsBoost&>(pi);
+    pib.offset1 = pib.offset2 = 0;
+    pib.rx.setup(sci);
+    pib.rx.find(pib.originalFind, data.matchCase, data.dotAll, data.freeSpacing);
+    pib.req.context->calc.parse(pib.originalRepl);
+    pib.req.context->calcIsValid = true;
+}
+
+
+SearchResult openDocumentsSearch(SearchRequest& req) {
+    plugin.getScintillaPointers(req.sciFind);
+    Scintilla::Position findLength = sci.Length();
+    if (findLength < 1) return req.error(L"Nothing to find.");
+    ProgressOpenDocumentsBoost pib(req);
+    pib.originalFind = sci.GetText(findLength);
+    if (req.command.verb == SearchCommand::ReplaceAll && !req.context->calcIsValid) {
+        plugin.getScintillaPointers(req.sciRepl);
+        Scintilla::Position replLength = sci.Length();
+        pib.originalRepl = replLength ? sci.GetText(replLength) : "";
+        std::string errmsg = req.context->calc.parse(pib.originalRepl);
+        if (!errmsg.empty()) return SearchResult(L"Error in replacement formula.", "", errmsg);
+        req.context->calcIsValid = true;
+    }
+    plugin.getScintillaPointers(req.sciText);
+    pib.rx.setup(sci);
+    std::string rxMessage = pib.rx.find(pib.originalFind, data.matchCase, data.dotAll, data.freeSpacing);
+    if (!rxMessage.empty()) return SearchResult(L"Invalid regular expression.", rxMessage);
+    pib.hitSet = std::make_unique<ProgressInfo::HitSet>();
+    pib.hitSet->searchString = "(Regex): " + pib.originalFind;
+    pib.openDocuments(progressiveSearch, openDocumentsPrepare);
+    if (pib.result.success() && req.command.verb == SearchCommand::ReplaceAll) req.context->calcIsValid = false;
     return pib.result;
 }
 
@@ -214,30 +257,33 @@ SearchResult multipleSearch(SearchRequest& req) {
 SearchResult searchBoost(SearchRequest& req) {
     switch (req.command.verb) {
     case SearchCommand::Find:
-        switch (req.command.direction) {
+        switch (req.command.extent) {
         case SearchCommand::Forward:
             return singleFind(req);
-        case SearchCommand::All:
-        case SearchCommand::Before:
-        case SearchCommand::After:
-            return multipleSearch(req);
+        default:
+            return SearchResult(L"Command not implemented.");
+        }
+    case SearchCommand::Replace:
+    case SearchCommand::ReplStop:
+        switch (req.command.extent) {
+        case SearchCommand::Forward:
+            return singleReplace(req);
         default:
             return SearchResult(L"Command not implemented.");
         }
     case SearchCommand::Count:
+    case SearchCommand::FindAll:
     case SearchCommand::Mark:
     case SearchCommand::Select:
     case SearchCommand::Show:
-        return multipleSearch(req);
-    case SearchCommand::Replace:
-    case SearchCommand::FindRepl:
-        switch (req.command.direction) {
-        case SearchCommand::Forward:
-            return singleReplace(req);
+    case SearchCommand::ReplaceAll:
+        switch (req.command.extent) {
         case SearchCommand::All:
         case SearchCommand::Before:
         case SearchCommand::After:
             return multipleSearch(req);
+        case SearchCommand::Open:
+            return openDocumentsSearch(req);
         default:
             return SearchResult(L"Command not implemented.");
         }

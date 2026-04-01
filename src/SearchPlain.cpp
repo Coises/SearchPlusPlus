@@ -28,9 +28,17 @@ struct ProgressInfoPlain : ProgressInfo {
 };
 
 
+struct ProgressOpenDocumentsPlain : ProgressInfoPlain {
+    std::string originalFind;
+    std::string originalRepl;
+    Scintilla::FindOption searchFlags = Scintilla::FindOption::None;
+    ProgressOpenDocumentsPlain(SearchRequest& req) : ProgressInfoPlain(req) {}
+};
+
+
 SearchResult singleFind(SearchRequest& req, bool postReplace = false) {
 
-    bool backward    = req.command.direction == SearchCommand::Backward;
+    bool backward    = req.command.extent == SearchCommand::Backward;
     bool inSelection = !postReplace && req.command.scope == SearchCommand::Selection;
     bool wrap        = req.context->notFound();
 
@@ -107,7 +115,7 @@ SearchResult singleReplace(SearchRequest& req) {
         sci.SetIndicatorValue(1);
         sci.IndicatorFillRange(start, end - start);
     }
-    if (req.command.verb == SearchCommand::FindRepl) return req.replaced(start, end, L"Match replaced.");
+    if (req.command.verb == SearchCommand::ReplStop) return req.replaced(start, end, L"Match replaced.");
     sci.SetSel(start, end);
     return singleFind(req, true);
 
@@ -151,7 +159,7 @@ bool progressiveSearch(ProgressInfo& pi) {
             sci.SetIndicatorValue(1);
             sci.IndicatorFillRange(found, length);
             break;
-        case SearchCommand::Replace:
+        case SearchCommand::ReplaceAll:
             sci.ReplaceTarget(pip.repl);
             if (req.command.scope == SearchCommand::Scope::Region && !pip.repl.empty()) {
                 sci.SetIndicatorCurrent(data.indicator);
@@ -184,16 +192,12 @@ SearchResult multipleSearch(SearchRequest& req) {
     if (findLength < 1) return req.error(L"Nothing to find.");
     ProgressInfoPlain pip(req);
     pip.find = sci.GetText(findLength);
-    if (req.command.verb == SearchCommand::Replace) {
+    if (req.command.verb == SearchCommand::ReplaceAll) {
         plugin.getScintillaPointers(req.sciRepl);
         Scintilla::Position replLength = sci.Length();
         pip.repl = replLength ? sci.GetText(replLength) : "";
     }
     plugin.getScintillaPointers(req.sciText);
-    if (auto cp = sci.CodePage() != CP_UTF8) {
-        pip.find = fromWide(utf8to16(pip.find), cp);
-        if (req.command.verb == SearchCommand::Replace) pip.repl = fromWide(utf8to16(pip.repl), cp);
-    }
     Scintilla::FindOption searchFlags = Scintilla::FindOption::None;
     if (data.wholeWord) searchFlags |= Scintilla::FindOption::WholeWord;
     if (data.matchCase) searchFlags |= Scintilla::FindOption::MatchCase;
@@ -202,7 +206,46 @@ SearchResult multipleSearch(SearchRequest& req) {
     sci.SetIndicatorValue(1);
     pip.hitSet = std::make_unique<ProgressInfo::HitSet>();
     pip.hitSet->searchString = "(Text): " + pip.find;
+    if (auto cp = sci.CodePage() != CP_UTF8) {
+        pip.find = fromWide(utf8to16(pip.find), cp);
+        if (req.command.verb == SearchCommand::ReplaceAll) pip.repl = fromWide(utf8to16(pip.repl), cp);
+    }
     pip.exec(progressiveSearch);
+    return pip.result;
+}
+
+
+void openDocumentsPrepare(ProgressInfo& pi) {
+    ProgressOpenDocumentsPlain& pip = static_cast<ProgressOpenDocumentsPlain&>(pi);
+    pip.offset = 0;
+    if (auto cp = sci.CodePage() != CP_UTF8) {
+        pip.find = fromWide(utf8to16(pip.originalFind), cp);
+        pip.repl = fromWide(utf8to16(pip.originalRepl), cp);
+    }
+    else {
+        pip.find = pip.originalFind;
+        pip.repl = pip.originalRepl;
+    }
+    sci.SetSearchFlags(pip.searchFlags);
+}
+
+
+SearchResult openDocumentsSearch(SearchRequest& req) {
+    plugin.getScintillaPointers(req.sciFind);
+    Scintilla::Position findLength = sci.Length();
+    if (findLength < 1) return req.error(L"Nothing to find.");
+    ProgressOpenDocumentsPlain pip(req);
+    pip.originalFind = sci.GetText(findLength);
+    if (req.command.verb == SearchCommand::ReplaceAll) {
+        plugin.getScintillaPointers(req.sciRepl);
+        Scintilla::Position replLength = sci.Length();
+        pip.originalRepl = replLength ? sci.GetText(replLength) : "";
+    }
+    if (data.wholeWord) pip.searchFlags |= Scintilla::FindOption::WholeWord;
+    if (data.matchCase) pip.searchFlags |= Scintilla::FindOption::MatchCase;
+    pip.hitSet = std::make_unique<ProgressInfo::HitSet>();
+    pip.hitSet->searchString = "(Text): " + pip.originalFind;
+    pip.openDocuments(progressiveSearch, openDocumentsPrepare);
     return pip.result;
 }
 
@@ -212,32 +255,35 @@ SearchResult multipleSearch(SearchRequest& req) {
 SearchResult searchPlain(SearchRequest& req) {
     switch (req.command.verb) {
     case SearchCommand::Find:
-        switch (req.command.direction) {
+        switch (req.command.extent) {
         case SearchCommand::Forward:
         case SearchCommand::Backward:
             return singleFind(req);
-        case SearchCommand::All:
-        case SearchCommand::Before:
-        case SearchCommand::After:
-            return multipleSearch(req);
+        default:
+            return SearchResult(L"Command not implemented.");
+        }
+    case SearchCommand::Replace:
+    case SearchCommand::ReplStop:
+        switch (req.command.extent) {
+        case SearchCommand::Forward:
+        case SearchCommand::Backward:
+            return singleReplace(req);
         default:
             return SearchResult(L"Command not implemented.");
         }
     case SearchCommand::Count:
+    case SearchCommand::FindAll:
     case SearchCommand::Mark:
     case SearchCommand::Select:
     case SearchCommand::Show:
-        return multipleSearch(req);
-    case SearchCommand::Replace:
-    case SearchCommand::FindRepl:
-        switch (req.command.direction) {
-        case SearchCommand::Forward:
-        case SearchCommand::Backward:
-            return singleReplace(req);
+    case SearchCommand::ReplaceAll:
+        switch (req.command.extent) {
         case SearchCommand::All:
         case SearchCommand::Before:
         case SearchCommand::After:
             return multipleSearch(req);
+        case SearchCommand::Open:
+            return openDocumentsSearch(req);
         default:
             return SearchResult(L"Command not implemented.");
         }
