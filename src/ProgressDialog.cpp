@@ -20,6 +20,16 @@
 
 void showHitlist(ProgressInfo& pi);
 
+namespace {
+    struct OpenDocument {
+        UINT_PTR bufferID;
+        int index;
+        int view;
+        OpenDocument(UINT_PTR bufferID, int index, int view) : bufferID(bufferID), index(index), view(view) {}
+    };
+}
+class ProgressiveDocumentsList : public std::vector<OpenDocument> {};
+
 
 namespace {
 
@@ -72,12 +82,27 @@ namespace {
         {
             SetTimer(hwndDlg, 1, 0, 0);
             auto before = GetTickCount64();
-            while (pi.task(pi)) {
+            for (;;) {
+                if (!pi.task(pi)) {
+                    if (++pi.documentIndex >= pi.documentCount) break;
+                    pi.nextDocument();
+                    continue;
+                }
                 if (GetTickCount64() - before > 250) {
-                    SendDlgItemMessage(hwndDlg, IDC_SEARCH_PROGRESS_BAR, PBM_SETPOS,
-                        static_cast<LPARAM>((pi.position << 12) / (pi.rangeEnd - pi.rangeStart)), 0);
-                    SetDlgItemText(hwndDlg, IDC_SEARCH_PROGRESS_MESSAGE,
-                        std::format(userLocale, L"{:s}: {:\u2002>10Ld}", pi.message, pi.count).data());
+                    if (pi.documentCount < 2) {
+                        SendDlgItemMessage(hwndDlg, IDC_SEARCH_PROGRESS_BAR, PBM_SETPOS,
+                            static_cast<LPARAM>((pi.position << 12) / (pi.rangeEnd - pi.rangeStart)), 0);
+                        SetDlgItemText(hwndDlg, IDC_SEARCH_PROGRESS_MESSAGE,
+                            std::format(userLocale, L"{:s}: {:\u2002>10Ld}", pi.message, pi.count).data());
+                    }
+                    else {
+                        SendDlgItemMessage(hwndDlg, IDC_SEARCH_PROGRESS_BAR, PBM_SETPOS,
+                            static_cast<LPARAM>( ((pi.documentIndex * (pi.rangeEnd - pi.rangeStart) + pi.position) << 12)
+                                               / ((pi.rangeEnd - pi.rangeStart) * pi.documentCount)), 0);
+                        SetDlgItemText(hwndDlg, IDC_SEARCH_PROGRESS_MESSAGE,
+                            std::format(userLocale, L"{:s}: {:\u2002>10Ld} in {:d}/{:d} documents",
+                                pi.message, pi.count, pi.documentIndex + 1, pi.documentCount).data());
+                    }
                     return TRUE;
                 }
             }
@@ -179,22 +204,38 @@ SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
 }
 
 
+void ProgressInfo::nextDocument() {
+    if (documentIndex > 0 && req.command.verb == SearchCommand::ReplaceAll) sci.EndUndoAction();
+    npp(NPPM_ACTIVATEDOC, (*pdl)[documentIndex].view, (*pdl)[documentIndex].index);
+    plugin.getScintillaPointers();
+    Scintilla::Position length = sci.Length();
+    req.ranges.clear();
+    req.ranges.emplace_back(Scintilla::CharacterRangeFull(0, length));
+    position = rangeIndex = rangeStart = 0;
+    rangeEnd = length;
+    result   = SearchResult(SearchResult::Success, L"");
+    prep(*this);
+    if (req.command.verb == SearchCommand::ReplaceAll) sci.BeginUndoAction();
+}
+
+
 SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*prepare)(ProgressInfo&)) {
 
-    struct OpenDocument {
-        UINT_PTR bufferID;
-        int index;
-        int view;
-        OpenDocument(UINT_PTR bufferID, int index, int view) : bufferID(bufferID), index(index), view(view) {}
-    };
-
+    ProgressiveDocumentsList documents;
     task = worker;
+    prep = prepare;
+    pdl  = &documents;
+
+    message = req.command.verb == SearchCommand::ReplaceAll ? L"Matches replaced"
+            : req.command.verb == SearchCommand::Select     ? L"Matches selected"
+            : req.command.verb == SearchCommand::Show       ? L"Matches shown"
+            : req.command.verb == SearchCommand::Mark       ? L"Matches marked"
+                                                            : L"Matches found";
 
     int originalDocIndex0 = static_cast<int>(npp(NPPM_GETCURRENTDOCINDEX, 0, 0));
     int originalDocIndex1 = static_cast<int>(npp(NPPM_GETCURRENTDOCINDEX, 0, 1));
     int originalView      = static_cast<int>(npp(NPPM_GETCURRENTVIEW, 0, 0));
 
-    std::vector<OpenDocument> documents;
     {
         std::set<UINT_PTR> alreadyHaveBuffer;
         int documentCount0 = originalDocIndex0 < 0 ? 0 : static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, 1));
@@ -211,48 +252,34 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
         }
     }
 
-    for (documentIndex = 0; documentIndex < documents.size(); ++documentIndex) {
+    documentCount = documents.size();
+    nextDocument();
 
-        npp(NPPM_ACTIVATEDOC, documents[documentIndex].view, documents[documentIndex].index);
-        plugin.getScintillaPointers();
-        Scintilla::Position length = sci.Length();
-        req.ranges.clear();
-        req.ranges.emplace_back(Scintilla::CharacterRangeFull(0, length));
-        position = rangeIndex = rangeStart = 0;
-        rangeEnd = length;
-        result   = SearchResult(SearchResult::Success, L"");
-        message  = req.command.verb == SearchCommand::ReplaceAll ? L"Matches replaced"
-                 : req.command.verb == SearchCommand::Select     ? L"Matches selected"
-                 : req.command.verb == SearchCommand::Show       ? L"Matches shown"
-                 : req.command.verb == SearchCommand::Mark       ? L"Matches marked"
-                                                                 : L"Matches found";
-
-        prepare(*this);
-        
-        if (req.command.verb == SearchCommand::ReplaceAll) sci.BeginUndoAction();
-        
-        unsigned long long tickBefore, tickAfter;
-        Scintilla::Position posBefore = rangeStart;
-        tickBefore = GetTickCount64();
-        double tickLimit = 2;
-        while (task(*this)) {
-            tickAfter = GetTickCount64();
-            if (tickAfter - tickBefore < 20 || position == posBefore) continue;
-            double projected =
-                static_cast<double>(rangeEnd - position) * static_cast<double>(tickAfter - tickBefore)
-                / (1000 * static_cast<double>(position - posBefore));
-            if (projected > tickLimit) {
-                DialogBoxParam(plugin.dllInstance, MAKEINTRESOURCE(IDD_SEARCH_PROGRESS), plugin.nppData._nppHandle,
-                    progressDialogProc, reinterpret_cast<LPARAM>(this));
-                break;
-            }
-            posBefore = position;
-            tickBefore = tickAfter;
+    unsigned long long tickBefore, tickAfter;
+    Scintilla::Position posBefore = rangeStart;
+    tickBefore = GetTickCount64();
+    double tickLimit = 2;
+    for (;;) {
+        if (!task(*this)) {
+            if (++documentIndex >= documentCount) break;
+            nextDocument();
+            continue;
         }
-
-        if (req.command.verb == SearchCommand::ReplaceAll) sci.EndUndoAction();
-
+        tickAfter = GetTickCount64();
+        if (tickAfter - tickBefore < 20 || position == posBefore) continue;
+        double projected =
+            static_cast<double>(rangeEnd - position) * static_cast<double>(tickAfter - tickBefore)
+            / (1000 * static_cast<double>(position - posBefore));
+        if (projected > tickLimit) {
+            DialogBoxParam(plugin.dllInstance, MAKEINTRESOURCE(IDD_SEARCH_PROGRESS), plugin.nppData._nppHandle,
+                progressDialogProc, reinterpret_cast<LPARAM>(this));
+            break;
+        }
+        posBefore = position;
+        tickBefore = tickAfter;
     }
+
+    if (req.command.verb == SearchCommand::ReplaceAll) sci.EndUndoAction();
 
     if (originalView == 0) {
         if (originalDocIndex1 >= 0) npp(NPPM_ACTIVATEDOC, 1, originalDocIndex1);

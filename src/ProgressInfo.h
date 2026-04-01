@@ -18,6 +18,8 @@
 #include "Framework/UnicodeFormatTranslation.h"
 #include "Search.h"
 
+class ProgressiveDocumentsList;
+
 struct ProgressInfo {
 
     // A HitLine contains a list of every hit that begins in that line.
@@ -57,6 +59,8 @@ struct ProgressInfo {
 
     std::unique_ptr<HitSet> hitSet;
 
+    ProgressiveDocumentsList* pdl = 0;
+
     SearchRequest& req;
     SearchResult   result;
     std::wstring   message;
@@ -66,14 +70,17 @@ struct ProgressInfo {
     Scintilla::Position rangeEnd      = 0;
     size_t              rangeIndex    = 0;
     size_t              documentIndex = 0;
+    size_t              documentCount = 0;
     intptr_t            count         = 0;
     bool                timerStarted  = false;
 
     bool (*task)(ProgressInfo&) = 0;
+    void (*prep)(ProgressInfo&) = 0;
 
     ProgressInfo(SearchRequest& req) : req(req) {}
 
     SearchResult exec(bool (*worker)(ProgressInfo&));
     SearchResult openDocuments(bool (*worker)(ProgressInfo&), void (*prepare)(ProgressInfo&));
+    void nextDocument();
 
 };
