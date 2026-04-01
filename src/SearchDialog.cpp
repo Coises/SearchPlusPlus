@@ -49,14 +49,15 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Count, SearchCommand::Before), {L"Count &Before", L"&Count🡩"  } },
     { SearchCommand(SearchCommand::Count, SearchCommand::After ), {L"Count &After" , L"&Count🡫"  } },
 
-    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Selection), {L"Count in &Selection"            , L"▣ &Count↕" } },
-    { SearchCommand(SearchCommand::Count, SearchCommand::Open                            ), {L"Count in &Open Documents"       , L"&Count 🗐" } },
-    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Region   ), {L"Count in &Marked Text"          , L"▤ &Count↕" } },
-    { SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Region   ), {L"Count Before in Mar&ked Text"   , L"▤ &Count🡩"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Region   ), {L"Count After in Marked &Text"    , L"▤ &Count🡫"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Whole    ), {L"Count in &Whole Document"       , L"▯ &Count↕" } },
-    { SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Whole    ), {L"Count Before in W&hole Document", L"▯ &Count🡩"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Whole    ), {L"Count After in Whole &Document" , L"▯ &Count🡫"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Selection), {L"Count in &Selection"             , L"▣ &Count↕"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::Open                            ), {L"Count in &Open Documents"        , L"&Count 🗐"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::View                            ), {L"Count in Documents in this &View", L"&Count 🗟"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Region   ), {L"Count in &Marked Text"           , L"▤ &Count↕"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Region   ), {L"Count Before in Mar&ked Text"    , L"▤ &Count🡩"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Region   ), {L"Count After in Marked &Text"     , L"▤ &Count🡫"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Whole    ), {L"Count in &Whole Document"        , L"▯ &Count↕"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Whole    ), {L"Count Before in W&hole Document" , L"▯ &Count🡩"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Whole    ), {L"Count After in Whole &Document"  , L"▯ &Count🡫"} },
 
 
     { SearchCommand(SearchCommand::FindAll, SearchCommand::All), {L"&Find All", L"Find &All↕"} },
@@ -64,8 +65,10 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Select , SearchCommand::All), {L"&Select"  , L"&Select↕"  } },
     { SearchCommand(SearchCommand::Show   , SearchCommand::All), {L"S&how"    , L"&Show↕"    } },
 
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::Open), {L"Find All in &Open Documents", L"Find &All 🗐"} },
-    { SearchCommand(SearchCommand::Mark   , SearchCommand::Open), {L"Mark in O&pen Documents"    , L"M&ark 🗐"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::Open), {L"Find All in &Open Documents"        , L"Find &All 🗐"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::View), {L"Find All in Documents in this &View", L"Find &All 🗟"} },
+    { SearchCommand(SearchCommand::Mark   , SearchCommand::Open), {L"Mark in O&pen Documents"            , L"M&ark 🗐"} },
+    { SearchCommand(SearchCommand::Mark   , SearchCommand::View), {L"Mark in Documents in this Vie&w"    , L"M&ark 🗟"} },
 
     { SearchCommand(SearchCommand::FindAll, SearchCommand::Before                          ), {L"Find All &Before"                  , L"Find &All🡩"  } },
     { SearchCommand(SearchCommand::FindAll, SearchCommand::After                           ), {L"Find All &After"                   , L"Find &All🡫"  } },
@@ -97,13 +100,13 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Whole    ), {L"Select Before in W&hole Document"  , L"▯ &Select🡩"} },
     { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Whole    ), {L"Select After in Whole &Document"   , L"▯ &Select🡫"} },
 
-    { SearchCommand(SearchCommand::Show, SearchCommand::Before                          ), {L"Show &Before"                    , L"&Show🡩"  } },
-    { SearchCommand(SearchCommand::Show, SearchCommand::After                           ), {L"Show &After"                     , L"&Show🡫"  } },
-    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Selection), {L"Show in &Selection"              , L"▣ &Show↕" } },
-    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Region   ), {L"Show in &Marked Text"            , L"▤ &Show↕" } },
+    { SearchCommand(SearchCommand::Show, SearchCommand::Before                          ), {L"Show &Before"                    , L"&Show🡩"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::After                           ), {L"Show &After"                     , L"&Show🡫"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Selection), {L"Show in &Selection"              , L"▣ &Show↕"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Region   ), {L"Show in &Marked Text"            , L"▤ &Show↕"} },
     { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Region   ), {L"Show Before in Mar&ked Text"     , L"▤ &Show🡩"} },
     { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Region   ), {L"Show After in Marked &Text"      , L"▤ &Show🡫"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole    ), {L"Show in &Whole Document"         , L"▯ &Show↕" } },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole    ), {L"Show in &Whole Document"         , L"▯ &Show↕"} },
     { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Whole    ), {L"Show Before in W&hole Document"  , L"▯ &Show🡩"} },
     { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole    ), {L"Show After in Whole &Document"   , L"▯ &Show🡫"} },
 
@@ -131,8 +134,9 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Before), {L"Replace All &Before", L"R&eplace All🡩"} },
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::After ), {L"Replace All &After" , L"R&eplace All🡫"} },
 
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All, SearchCommand::Selection), {L"Replace All in &Selection"     , L"▣ R&eplace All↕" } },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Open                         ), {L"Replace All in &Open Documents", L"Replace &All 🗐"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All, SearchCommand::Selection), {L"Replace All in &Selection"             , L"▣ R&eplace All↕"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Open                         ), {L"Replace All in &Open Documents"        , L"R&eplace All 🗐"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::View                         ), {L"Replace All in Documents in this &View", L"R&eplace All 🗟"} },
 
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All   , SearchCommand::Region   ), {L"Replace All in &Marked Text"          , L"▤ R&eplace All↕" } },
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Before, SearchCommand::Region   ), {L"Replace All Before in Mar&ked Text"   , L"▤ R&eplace All🡩"} },
@@ -1105,6 +1109,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 AppendMenu(pum, MF_SEPARATOR, 0, 0);
                 addButtonItem(pum, SearchCommand(SearchCommand::Count, SearchCommand::All, SearchCommand::Selection));
                 addButtonItem(pum, SearchCommand(SearchCommand::Count, SearchCommand::Open));
+                addButtonItem(pum, SearchCommand(SearchCommand::Count, SearchCommand::View));
                 AppendMenu(pum, MF_SEPARATOR, 0, 0);
                 addButtonItem(pum, SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Region));
                 addButtonItem(pum, SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Region));
@@ -1121,60 +1126,60 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 pum = CreatePopupMenu();
 
                 HMENU subFind = CreatePopupMenu();
-                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::Before                          ));
-                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::After                           ));
+                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::Before));
+                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::After ));
                 AppendMenu(subFind, MF_SEPARATOR, 0, 0);
-                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Selection));
+                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::All, SearchCommand::Selection));
                 AppendMenu(subFind, MF_SEPARATOR, 0, 0);
-                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Region   ));
-                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::Before, SearchCommand::Region   ));
-                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::After , SearchCommand::Region   ));
+                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Region));
+                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::Before, SearchCommand::Region));
+                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::After , SearchCommand::Region));
                 AppendMenu(subFind, MF_SEPARATOR, 0, 0);
-                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Whole    ));
-                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::Before, SearchCommand::Whole    ));
-                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::After , SearchCommand::Whole    ));
+                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Whole));
+                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::Before, SearchCommand::Whole));
+                addButtonItem(subFind, SearchCommand(SearchCommand::FindAll, SearchCommand::After , SearchCommand::Whole));
 
                 HMENU subMark = CreatePopupMenu();
-                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::Before                          ));
-                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::After                           ));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::Before));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::After ));
                 AppendMenu(subMark, MF_SEPARATOR, 0, 0);
-                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Selection));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::All, SearchCommand::Selection));
                 AppendMenu(subMark, MF_SEPARATOR, 0, 0);
-                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Region   ));
-                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Region   ));
-                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Region   ));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Region));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Region));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Region));
                 AppendMenu(subMark, MF_SEPARATOR, 0, 0);
-                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Whole    ));
-                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Whole    ));
-                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Whole    ));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Whole));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Whole));
+                addButtonItem(subMark, SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Whole));
 
                 HMENU subSlct = CreatePopupMenu();
-                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::Before                          ));
-                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::After                           ));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::Before));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::After ));
                 AppendMenu(subSlct, MF_SEPARATOR, 0, 0);
-                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Selection));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::All, SearchCommand::Selection));
                 AppendMenu(subSlct, MF_SEPARATOR, 0, 0);
-                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Region   ));
-                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Region   ));
-                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Region   ));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Region));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Region));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Region));
                 AppendMenu(subSlct, MF_SEPARATOR, 0, 0);
-                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Whole    ));
-                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Whole    ));
-                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Whole    ));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Whole));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Whole));
+                addButtonItem(subSlct, SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Whole));
 
                 HMENU subShow = CreatePopupMenu();
-                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::Before                          ));
-                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::After                           ));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::Before));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::After ));
                 AppendMenu(subShow, MF_SEPARATOR, 0, 0);
-                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Selection));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::All, SearchCommand::Selection));
                 AppendMenu(subShow, MF_SEPARATOR, 0, 0);
-                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Region   ));
-                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Region   ));
-                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Region   ));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Region));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Region));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Region));
                 AppendMenu(subShow, MF_SEPARATOR, 0, 0);
-                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole    ));
-                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Whole    ));
-                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole    ));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Whole));
+                addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole));
 
                 addButtonItem(pum, SearchCommand(SearchCommand::FindAll, SearchCommand::All));
                 addButtonItem(pum, SearchCommand(SearchCommand::Mark   , SearchCommand::All));
@@ -1182,7 +1187,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 addButtonItem(pum, SearchCommand(SearchCommand::Show   , SearchCommand::All));
                 AppendMenu(pum, MF_SEPARATOR, 0, 0);
                 addButtonItem(pum, SearchCommand(SearchCommand::FindAll, SearchCommand::Open));
+                addButtonItem(pum, SearchCommand(SearchCommand::FindAll, SearchCommand::View));
                 addButtonItem(pum, SearchCommand(SearchCommand::Mark   , SearchCommand::Open));
+                addButtonItem(pum, SearchCommand(SearchCommand::Mark   , SearchCommand::View));
                 AppendMenu(pum, MF_SEPARATOR, 0, 0);
                 AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subFind), L"Find &All");
                 AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subMark), L"Mar&k");
@@ -1231,6 +1238,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 AppendMenu(pum, MF_SEPARATOR, 0, 0);
                 addButtonItem(pum, SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All, SearchCommand::Selection));
                 addButtonItem(pum, SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Open));
+                addButtonItem(pum, SearchCommand(SearchCommand::ReplaceAll, SearchCommand::View));
                 AppendMenu(pum, MF_SEPARATOR, 0, 0);
                 addButtonItem(pum, SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All   , SearchCommand::Region));
                 addButtonItem(pum, SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Before, SearchCommand::Region));

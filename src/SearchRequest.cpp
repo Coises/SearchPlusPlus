@@ -36,7 +36,7 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
         sci.IndicatorClearRange(0, sci.Length());
     }
 
-    if (command.extent != SearchCommand::Open) {
+    if (command.extent != SearchCommand::View && command.extent != SearchCommand::Open) {
 
         if (documentLength == 0) {
             plugin.bypassNotifications = false;

@@ -28,7 +28,7 @@ void scrollIntoView(Scintilla::Position foundStart, Scintilla::Position foundEnd
 
 struct SearchCommand {
     enum Verb   : uint8_t { None, Find, Replace, ReplStop, Count, FindAll, Mark, Select, Show, ReplaceAll } verb;
-    enum Extent : uint8_t { Forward, Backward, All, Before, After, Open } extent;
+    enum Extent : uint8_t { Forward, Backward, All, Before, After, View, Open } extent;
     enum Scope  : uint8_t { Smart, Region, Selection, Whole } scope;
     uint8_t unused = 0;
     constexpr SearchCommand() : verb(None), extent(Forward), scope(Smart) {}

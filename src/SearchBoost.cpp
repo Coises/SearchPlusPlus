@@ -282,6 +282,7 @@ SearchResult searchBoost(SearchRequest& req) {
         case SearchCommand::Before:
         case SearchCommand::After:
             return multipleSearch(req);
+        case SearchCommand::View:
         case SearchCommand::Open:
             return openDocumentsSearch(req);
         default:

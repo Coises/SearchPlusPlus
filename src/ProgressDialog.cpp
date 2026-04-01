@@ -245,7 +245,7 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
     int originalDocIndex1 = static_cast<int>(npp(NPPM_GETCURRENTDOCINDEX, 0, 1));
     int originalView      = static_cast<int>(npp(NPPM_GETCURRENTVIEW, 0, 0));
 
-    {
+    if (req.command.extent == SearchCommand::Open) {
         std::set<UINT_PTR> alreadyHaveBuffer;
         int documentCount0 = originalDocIndex0 < 0 ? 0 : static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, 1));
         int documentCount1 = originalDocIndex1 < 0 ? 0 : static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, 2));
@@ -259,6 +259,11 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
             if (alreadyHaveBuffer.contains(buffer)) continue;
             documents.emplace_back(buffer, pos, 1);
         }
+    }
+    else {
+        int documentsInView = static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, originalView + 1));
+        for (int pos = 0; pos < documentsInView; ++pos)
+            documents.emplace_back(npp(NPPM_GETBUFFERIDFROMPOS, pos, originalView), pos, originalView);
     }
 
     documentCount = documents.size();
@@ -291,11 +296,11 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
     if (req.command.verb == SearchCommand::ReplaceAll) sci.EndUndoAction();
 
     if (originalView == 0) {
-        if (originalDocIndex1 >= 0) npp(NPPM_ACTIVATEDOC, 1, originalDocIndex1);
+        if (req.command.extent == SearchCommand::Open && originalDocIndex1 >= 0) npp(NPPM_ACTIVATEDOC, 1, originalDocIndex1);
         npp(NPPM_ACTIVATEDOC, 0, originalDocIndex0);
     }
     else {
-        if (originalDocIndex0 >= 0) npp(NPPM_ACTIVATEDOC, 0, originalDocIndex0);
+        if (req.command.extent == SearchCommand::Open && originalDocIndex0 >= 0) npp(NPPM_ACTIVATEDOC, 0, originalDocIndex0);
         npp(NPPM_ACTIVATEDOC, 1, originalDocIndex1);
     }
 
@@ -307,7 +312,11 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
                           : req.command.verb == SearchCommand::Mark       ? L"Marked "
                                                                           : L"Found ";
 
-        std::wstring suffix = std::format(userLocale, L" in {:Ld} of {:Ld} open documents.", pdl->fileHits, documentCount);
+        std::wstring suffix =
+            documentCount == 1 ? (req.command.extent == SearchCommand::Open ? L" in 1 open document." : L" in 1 document in this view.")
+            : (count > 1 ? std::format(userLocale, L" in {:Ld} of {:Ld}", pdl->fileHits, documentCount)
+                         : std::format(userLocale, L" in {:Ld}", documentCount))
+            + (req.command.extent == SearchCommand::Open ? L" open documents." : L" documents in this view.");
         result = !count     ? SearchResult(SearchResult::Failure, L"No matches found" + suffix)
                : count == 1 ? SearchResult(SearchResult::Success, verb + L"1 match" + suffix)
                             : SearchResult(SearchResult::Success, verb + std::format(userLocale, L"{:Ld} matches", count) + suffix);
