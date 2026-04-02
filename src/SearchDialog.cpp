@@ -709,6 +709,17 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
 
         layoutDialog(hwndDlg);
 
+        HWND hwndTip = CreateWindowEx(0, TOOLTIPS_CLASS, 0, WS_POPUP | TTS_ALWAYSTIP | TTS_BALLOON, 0, 0, 0, 0,
+                                      hwndDlg, 0, plugin.dllInstance, 0);
+        TOOLINFO toolInfo = {};
+        toolInfo.cbSize = sizeof(toolInfo);
+        toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
+        toolInfo.hwnd = hwndDlg;
+        toolInfo.uId = reinterpret_cast<UINT_PTR>(GetDlgItem(hwndDlg, IDC_SEARCH_MESSAGE));
+        toolInfo.lpszText = LPSTR_TEXTCALLBACK;
+        SendMessage(hwndTip, TTM_ADDTOOL, 0, reinterpret_cast<LPARAM>(&toolInfo));
+        SendMessage(hwndTip, TTM_SETDELAYTIME, TTDT_AUTOPOP, 32767);
+
         npp(NPPM_MODELESSDIALOG, MODELESSDIALOGADD, hwndDlg);
         if (data.dialogLayout != DialogLayout::Docking) {
             placement.put(hwndDlg);
@@ -1069,7 +1080,6 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
 
         switch (reinterpret_cast<NMHDR*>(lParam)->code) {
 
-
         case BCN_DROPDOWN:
         {
             const NMBCDROPDOWN& bd = *reinterpret_cast<NMBCDROPDOWN*>(lParam);
@@ -1265,6 +1275,26 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 showMessage(hwndDlg, result);
             }
             return TRUE;
+        }
+
+        case TTN_GETDISPINFO:
+        {
+            static std::wstring tipText;
+            NMTTDISPINFO& di = *reinterpret_cast<LPNMTTDISPINFO>(lParam);
+            di.hinst = 0;
+            SIZE textSize;
+            RECT messageRect;
+            HWND hMsg = GetDlgItem(hwndDlg, IDC_SEARCH_MESSAGE);
+            GetClientRect(hMsg, &messageRect);
+            tipText = GetWindowString(hMsg);
+            HDC hdc = GetDC(hMsg);
+            HFONT hFont = reinterpret_cast<HFONT>(SendMessage(hMsg, WM_GETFONT, 0, 0));
+            HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+            GetTextExtentPoint32(hdc, tipText.data(), static_cast<int>(tipText.length()), &textSize);
+            SelectObject(hdc, hOldFont);
+            ReleaseDC(hMsg, hdc);
+            di.lpszText = textSize.cx > (messageRect.right - messageRect.left) ? tipText.data() : 0;
+            break;
         }
 
         case SCN_MODIFIED:
