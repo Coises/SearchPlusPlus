@@ -303,7 +303,7 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <section id=commands><h2>Search commands</h2>
 
-<p>Search commands are issued by clicking one of the command buttons in the search dialog or by selecting one the entries from the drop-down menus for those buttons. There are three parts to a search command: the <em>action</em>, the <em>direction</em> and the <em>scope</em>.</p>
+<p>Search commands are issued by clicking one of the command buttons in the search dialog or by selecting one the entries from the drop-down menus for those buttons. There are three parts to a search command: the <em>action</em>, the <em>extent</em> and the <em>scope</em>.</p>
 
 <h3 id="commands-actions">Search actions</h3>
 
@@ -311,7 +311,7 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <ul>
 
-<li><strong>Find</strong> finds one occurrence of the search string. The default direction for find commands is forward, starting from the current position or selected text. For plain text searches, Find can also have the <strong>Backward</strong> direction.
+<li><strong>Find</strong> finds one occurrence of the search string. The default direction for find commands is forward, starting from the current position or selected text. For plain text searches, Find can also have the <strong>Backward</strong> extent.
 
 <li><strong>Count</strong> shows a message at the bottom of the search dialog telling how many occurrences of the search string can be found.
 
@@ -331,9 +331,9 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 </ul>
 
-<h3 id="commands-directions">Search directions</h3>
+<h3 id="commands-extent">Search extents</h3>
 
-<p>Search directions describe the direction of motion through the document. Command actions which take a single step at a time (<strong>Find</strong>, <strong>Replace and Find</strong> and <strong>Find or Replace</strong>) can search <strong>Forward</strong> (the default) or (for Plain text searches) <strong>Backward</strong>. All the other command actions, which search for multiple occurrences at one time, can search <strong>Everywhere</strong> (the default), <strong>Before</strong> or <strong>After</strong>:</p>
+<p>Search extents describe how the search “extends” from the current position or selection. Command actions which take a single step at a time (<strong>Find</strong>, <strong>Replace and Find</strong> and <strong>Find or Replace</strong>) can search <strong>Forward</strong> (the default) or (for Plain text searches) <strong>Backward</strong>. Other command actions, which search for multiple occurrences at one time, can search throughout the current document, <strong>Before</strong> or <strong>After</strong> the current position, in all <strong>Open documents</strong> or in all documents in the current <strong>View</strong>:</p>
 
 <ul>
 
@@ -341,11 +341,15 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <li><strong>Backward</strong> is available for <strong>Find</strong>, <strong>Replace and Find</strong> and <strong>Find or Replace</strong> actions only when searching for <strong>Plain</strong> text. It means moving to the left and upward through the document. When a Backward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the end of the search scope (unless you already started from the end).
 
-<li><strong>Everywhere</strong> is the default direction for command actions that search for multiple occurrences at one time. It just means that the entire scope (selected text, marked text or the whole document) is searched.
+<li>Searching throughout the current document is the default extension for command actions that search for multiple occurrences at one time. It just means that the entire scope (selected text, marked text or the whole document) is searched.
 
 <li><strong>Before</strong> applies the command action only to matches that occur earlier in the active document that the current position or selection. The action is not applied to matches which overlap the current position or selection.
 
 <li><strong>After</strong> applies the command action only to matches that occur later in the active document that the current position or selection. The action is not applied to matches which overlap the current position or selection.
+
+<li><strong>Open documents</strong> searches all documents that are open on any tab in Notepad++.
+
+<li><strong>Documents in this View</strong> searches all documents that are open on any tab in the active view. Notepad++ has one or two views. If there is only one view open, this is no different than <strong>Open documents</strong>.
 
 </ul>
 

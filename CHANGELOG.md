@@ -1,5 +1,11 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.5 -- April 2nd, 2026
+
+* Add "in Open Documents" and "in Documents in this View" variants of Count, Find All, Mark and Replace All.
+* Some small improvements in the status messages.
+* Miscellaneous changes to documentation and wording on menus to try to make it make more sense.
+
 ## Version 0.4 -- March 30th, 2026
 
 * Add wide layout for better top/bottom docking. Improve layout handling and make sure non-docking dialogs aren't sized too small.
