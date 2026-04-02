@@ -335,7 +335,9 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <li><strong>Select</strong> searches for occurrences of the find string and creates a multiple selection with one selection corresponding to each match. By default, any existing selection (including rectangular and multiple selections) is cleared before the search begins; you can change this behavior in the <a href="#settings">Settings</a> dialog.
 
-<li><strong>Mark</strong> searches for occurrences of the find string and marks the found text. By default, marks already in the document are not cleared first; you can change this behavior, and choose which marker is used, in the <a href="#settings">Settings</a> dialog.
+<li><p><strong>Mark</strong> searches for occurrences of the find string and marks the found text. By default, marks already in the document are not cleared first; you can change this behavior, and choose which marker is used, in the <a href="#settings">Settings</a> dialog.</p>
+
+<p class=note>It is possible to <strong>Mark in Marked Text</strong>. After determining which text is marked, all text is unmarked before starting a <strong>Mark in Marked Text</strong> command regardless of the <strong>Always unmark all text before a mark command</strong> setting, since the command could accomplish nothing otherwise.</p>
 
 <li><strong>Show</strong> unhides lines containing matches and marks the matches. If no lines are hidden before the command is given, <strong>Show</strong> first hides all lines. By default, if any lines are already hidden, <strong>Show</strong> doesn’t hide anything, and it doesn’t unmark existing marked text; you can change this behavior in the <a href="#settings">Settings</a> dialog.
 
@@ -363,9 +365,9 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <li><strong>After</strong> applies the command action only to matches that occur later in the active document that the current position or selection. The action is not applied to matches which overlap the current position or selection.
 
-<li><strong>Open documents</strong> searches all documents that are open on any tab in Notepad++.
+<li><strong>Open Documents</strong> searches all documents that are open in any tab in Notepad++.
 
-<li><strong>Documents in this View</strong> searches all documents that are open on any tab in the active view. Notepad++ has one or two views. If there is only one view open, this is no different than <strong>Open documents</strong>.
+<li><strong>Documents in this View</strong> searches all documents that are open in any tab in the active view. Notepad++ has one or two views. If there is only one view open, <strong>Documents in this View</strong> is the same as <strong>Open Documents</strong>.
 
 </ul>
 
@@ -377,7 +379,7 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <ul>
 
-<li><strong>Whole Document</strong> means selections and marks are ignored; everything in the document (subject to any <em>direction</em> constraint) is searched.
+<li><strong>Whole Document</strong> means selections and marks are ignored; everything in the document (subject to any <em>extent</em> constraint) is searched.
 
 <li><p><strong>Selection</strong>: If there is a non-empty selection — single, rectangular or multiple — the search will be confined to the selected text. If there is no selection, the search will encompass the entire document.</p>
 
@@ -385,16 +387,19 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <p class=note>For a regular expression search, each line in a rectangular selection and each selection in a multiple selection is searched independently; the search in any line or selection cannot “see” outside that selection. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>).</p>
 
-<li><strong>Marked Text</strong>: If there is any marked text, only marked text will be searched; if the document contains no marked text, the whole document will be searched. The considerations above concerning selections apply to marked text as well: regular expressions treat each span of marked text independently from other spans and from the surrounding unmarked text.
+<li><p><strong>Marked Text</strong>: If there is any marked text, only marked text will be searched; if the document contains no marked text, the whole document will be searched.</p>
+
+<p class=note>For a regular expression search, each run of marked text is searched independently; the search in any span of marked text cannot “see” outside that span. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>).</p>
 
 <li>Default (“smart”) scope attempts to infer what you probably want to search based on whether anything is already marked or selected. The default rules are these:
 <ol>
-<li>Marked text takes precedence. If any text is marked, then the search is confined to marked text.
+<li>Marked text takes precedence, except for <strong>Mark</strong> commands: if any text is marked, then the search is confined to marked text. <strong>Mark</strong> commands that don’t specify a scope are not restricted to already marked text when some text is marked; you must explicitly choose <strong>Mark</strong> | <strong>Mark in Marked Text</strong> if that is what you want. 
 <li>Otherwise, if there is a multiple selection or a rectangular selection, the selection is searched.
 <li>Otherwise, if there is a single selection encompassing at least 80 characters <em>and</em> three lines, it will be searched.
 <li>Otherwise, the whole document is searched.
 </ol>
-You can make adjustments to those rules in the <a href="#settings">Settings</a> dialog.
+
+You can make some adjustments to the “smart scope” rules in the <a href="#settings">Settings</a> dialog. “Smart scope” does not apply to search commands with <strong>Open Documents</strong> or <strong>Documents in this View</strong> as the extent; <strong>Marked text</strong> can be an explicit part of those commands, otherwise the scope is the whole of each document examined.
 
 </ul>
 

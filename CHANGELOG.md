@@ -4,7 +4,9 @@
 
 * Add "in Open Documents" and "in Documents in this View" variants of Count, Find All, Mark and Replace All.
 * Add ellipsis and balloon tip on hover for status messages that don't fit; some improvements in the text of status messages.
-* Miscellaneous changes to documentation and wording on command button menus to try to make it make more sense.
+* Don't restrict default ("smart") Mark commands to marked text.
+* Miscellaneous changes to wording and layout on command button menus to try to make it make more sense.
+* Documentation updates.
 
 ## Version 0.4 -- March 30th, 2026
 

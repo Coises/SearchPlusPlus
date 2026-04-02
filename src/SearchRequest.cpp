@@ -44,7 +44,7 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
         }
 
         if (command.scope == SearchCommand::Smart) {
-            if (data.autoSearchMarked) {
+            if (data.autoSearchMarked && command.verb != SearchCommand::Mark) {
                 if (sci.IndicatorValueAt(data.indicator, 0)) command.scope = SearchCommand::Region;
                 else {
                     Scintilla::Position p = sci.IndicatorEnd(data.indicator, 0);

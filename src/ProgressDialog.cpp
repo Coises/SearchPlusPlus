@@ -214,15 +214,30 @@ void ProgressInfo::nextDocument() {
         ++pdl->fileHits;
         pdl->priorCount = count;
     }
+    if (result.error()) return;
     if (documentIndex > 0 && req.command.verb == SearchCommand::ReplaceAll) sci.EndUndoAction();
     npp(NPPM_ACTIVATEDOC, (*pdl)[documentIndex].view, (*pdl)[documentIndex].index);
     plugin.getScintillaPointers();
     Scintilla::Position length = sci.Length();
     req.ranges.clear();
-    req.ranges.emplace_back(Scintilla::CharacterRangeFull(0, length));
+    if (req.command.scope == SearchCommand::Region) {
+        for (Scintilla::Position cpMin = 0;;) {
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+            if (cpMax == cpMin) break;
+            if (sci.IndicatorValueAt(data.indicator, cpMin)) req.ranges.push_back(Scintilla::CharacterRangeFull{ cpMin, cpMax });
+            if (cpMax == length) break;
+            cpMin = cpMax;
+        }
+    }
+    else req.ranges.emplace_back(Scintilla::CharacterRangeFull(0, length));
     position = rangeIndex = rangeStart = 0;
     rangeEnd = length;
-    result   = SearchResult(SearchResult::Success, L"");
+    if (req.command.verb == SearchCommand::Mark) {
+        if (data.clearMarked || req.command.scope == SearchCommand::Region) {
+            sci.SetIndicatorCurrent(data.indicator);
+            sci.IndicatorClearRange(0, length);
+        }
+    }
     prep(*this);
     if (req.command.verb == SearchCommand::ReplaceAll) sci.BeginUndoAction();
 }
@@ -235,6 +250,7 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
     prep = prepare;
     pdl  = &documents;
 
+    result = SearchResult(SearchResult::Success, L"");
     message = req.command.verb == SearchCommand::ReplaceAll ? L"Matches replaced"
             : req.command.verb == SearchCommand::Select     ? L"Matches selected"
             : req.command.verb == SearchCommand::Show       ? L"Matches shown"
