@@ -123,11 +123,15 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
             if (data.clearSelections || command.scope == SearchCommand::Selection) sci.ClearSelections();
         }
         else if (command.verb == SearchCommand::Mark) {
-            if (data.clearMarked || command.scope == SearchCommand::Region) sci.IndicatorClearRange(0, documentLength);
+            if (data.clearMarked || command.scope == SearchCommand::Region) {
+                sci.SetIndicatorCurrent(data.indicator);
+                sci.IndicatorClearRange(0, documentLength);
+            }
         }
         else if (command.verb == SearchCommand::Show) {
             if (data.hideBeforeShow) {
-                sci.IndicatorClearRange(0, sci.Length());
+                sci.SetIndicatorCurrent(data.indicator);
+                sci.IndicatorClearRange(0, documentLength);
                 sci.HideLines(0, sci.LineCount() - 1);
             }
             else if (sci.AllLinesVisible()) sci.HideLines(0, sci.LineCount() - 1);

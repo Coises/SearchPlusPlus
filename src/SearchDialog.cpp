@@ -61,8 +61,8 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
 
 
     { SearchCommand(SearchCommand::FindAll, SearchCommand::All), {L"&Find All", L"Find &All↕"} },
-    { SearchCommand(SearchCommand::Mark   , SearchCommand::All), {L"&Mark"    , L"M&ark↕"    } },
     { SearchCommand(SearchCommand::Select , SearchCommand::All), {L"&Select"  , L"&Select↕"  } },
+    { SearchCommand(SearchCommand::Mark   , SearchCommand::All), {L"&Mark"    , L"M&ark↕"    } },
     { SearchCommand(SearchCommand::Show   , SearchCommand::All), {L"S&how"    , L"&Show↕"    } },
 
     { SearchCommand(SearchCommand::FindAll, SearchCommand::Open), {L"Find All in &Open Documents"        , L"Find &All 🗐"} },
@@ -80,6 +80,16 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::FindAll, SearchCommand::Before, SearchCommand::Whole    ), {L"Find All Before in W&hole Document", L"▯ Find &All🡩"} },
     { SearchCommand(SearchCommand::FindAll, SearchCommand::After , SearchCommand::Whole    ), {L"Find All After in Whole &Document" , L"▯ Find &All🡫"} },
 
+    { SearchCommand(SearchCommand::Select, SearchCommand::Before                          ), {L"Select &Before"                  , L"&Select🡩"  } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::After                           ), {L"Select &After"                   , L"&Select🡫"  } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Selection), {L"Select in &Selection"            , L"▣ &Select↕" } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Region   ), {L"Select in &Marked Text"          , L"▤ &Select↕" } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Region   ), {L"Select Before in Mar&ked Text"   , L"▤ &Select🡩"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Region   ), {L"Select After in Marked &Text"    , L"▤ &Select🡫"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Whole    ), {L"Select in &Whole Document"       , L"▯ &Select↕" } },
+    { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Whole    ), {L"Select Before in W&hole Document", L"▯ &Select🡩"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Whole    ), {L"Select After in Whole &Document" , L"▯ &Select🡫"} },
+
     { SearchCommand(SearchCommand::Mark, SearchCommand::Before                          ), {L"Mark &Before"                  , L"M&ark🡩"  } },
     { SearchCommand(SearchCommand::Mark, SearchCommand::After                           ), {L"Mark &After"                   , L"M&ark🡫"  } },
     { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Selection), {L"Mark in &Selection"            , L"▣ M&ark↕" } },
@@ -90,16 +100,6 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Whole    ), {L"Mark Before in W&hole Document", L"▯ M&ark🡩"} },
     { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Whole    ), {L"Mark After in Whole &Document" , L"▯ M&ark🡫"} },
 
-    { SearchCommand(SearchCommand::Select, SearchCommand::Before                          ), {L"Select &Before"                    , L"&Select🡩"  } },
-    { SearchCommand(SearchCommand::Select, SearchCommand::After                           ), {L"Select &After"                     , L"&Select🡫"  } },
-    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Selection), {L"Select in &Selection"              , L"▣ &Select↕" } },
-    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Region   ), {L"Select in &Marked Text"            , L"▤ &Select↕" } },
-    { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Region   ), {L"Select Before in Mar&ked Text"     , L"▤ &Select🡩"} },
-    { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Region   ), {L"Select After in Marked &Text"      , L"▤ &Select🡫"} },
-    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Whole    ), {L"Select in &Whole Document"         , L"▯ &Select↕" } },
-    { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Whole    ), {L"Select Before in W&hole Document"  , L"▯ &Select🡩"} },
-    { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Whole    ), {L"Select After in Whole &Document"   , L"▯ &Select🡫"} },
-
     { SearchCommand(SearchCommand::Show, SearchCommand::Before                          ), {L"Show &Before"                    , L"&Show🡩"} },
     { SearchCommand(SearchCommand::Show, SearchCommand::After                           ), {L"Show &After"                     , L"&Show🡫"} },
     { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Selection), {L"Show in &Selection"              , L"▣ &Show↕"} },
@@ -109,6 +109,7 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole    ), {L"Show in &Whole Document"         , L"▯ &Show↕"} },
     { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Whole    ), {L"Show Before in W&hole Document"  , L"▯ &Show🡩"} },
     { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole    ), {L"Show After in Whole &Document"   , L"▯ &Show🡫"} },
+
 
     { SearchCommand(SearchCommand::Replace , SearchCommand::Forward ), {L"&Replace and Find"         , L"&Replace🡪"} },
     { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward ), {L"&Find or Replace"          , L"&Replace🡪❚"} },
@@ -1192,8 +1193,8 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 addButtonItem(subShow, SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole));
 
                 addButtonItem(pum, SearchCommand(SearchCommand::FindAll, SearchCommand::All));
-                addButtonItem(pum, SearchCommand(SearchCommand::Mark   , SearchCommand::All));
                 addButtonItem(pum, SearchCommand(SearchCommand::Select , SearchCommand::All));
+                addButtonItem(pum, SearchCommand(SearchCommand::Mark   , SearchCommand::All));
                 addButtonItem(pum, SearchCommand(SearchCommand::Show   , SearchCommand::All));
                 AppendMenu(pum, MF_SEPARATOR, 0, 0);
                 addButtonItem(pum, SearchCommand(SearchCommand::FindAll, SearchCommand::Open));
@@ -1202,8 +1203,8 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 addButtonItem(pum, SearchCommand(SearchCommand::Mark   , SearchCommand::View));
                 AppendMenu(pum, MF_SEPARATOR, 0, 0);
                 AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subFind), L"Find &All");
-                AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subMark), L"Mar&k");
                 AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subSlct), L"Selec&t");
+                AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subMark), L"Mar&k");
                 AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subShow), L"Sho&w");
                 break;
             }

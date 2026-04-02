@@ -120,6 +120,8 @@ li > p.note:last-child {padding-bottom: 0.5em;}
 
 div.standout {margin: 1em 0; padding: .5em 1em; border: 5px double #000;}
 
+.nowrap {white-space: nowrap;}
+
 </style>
 <script>
 function doPageLoad() {
@@ -230,11 +232,21 @@ window.addEventListener("load", doPageLoad);
 
 <p>The Find and Replace boxes display centered dots for blanks, a right arrow for a tab, and a symbols for each possible line ending: 🠇 for a new line (Unix style line ending), 🠄 for a carriage return (Macintosh style line ending) and ↩ for a carriage return / new line combination (Windows style line ending). The color of these will be the one specified in your Notepad++ Global Styles for the White space symbol. Other invisible characters will be shown as black boxes with the control character code inside (the same way as in Notepad++ when <strong>View</strong> | <strong>Show Symbol</strong> | <strong>Show All Characters</strong> is checked).</p>
 
-<p>Right-click in the Find or Replace box, or use the <strong>Apps</strong> key or <strong>Shift+F10</strong>, to bring up a context menu. A number of useful commands can be found there, along with their keyboard shortcuts. The bottom section of the context menu lets you select from a history of the last ten strings you have used for searches.</p>
+<p>Right-click in the Find or Replace box, or use the <strong>Apps</strong> key or <strong>Shift+F10</strong>, to bring up a context menu. A number of useful commands can be found there, along with their keyboard shortcuts:</p>
 
-<p>By default, the text in the Find and Replace boxes wraps without regard to word boundaries; you can change that by pressing <strong>Ctrl+W</strong> to cycle through the choices (character wrap, word wrap and no wrapping) or by using the <em>Wrap</em> commands from the context menu.</p>
+<ul>
 
-<p>You can change the size of text in the Find and Replace boxes by zooming (Ctrl with the mouse wheel, Ctrl with the plus and minus keys on the numeric keypad, or the Zoom commands from the context menu).</p>
+<li>Ordinary editing commands (Undo, Redo, Cut, Copy, Paste, Delete, Select All) are available with their customary keyboard shortcuts.
+
+<li><strong>Wrap</strong> submenu: By default, the text in the Find and Replace boxes wraps without regard to word boundaries; you can change that by pressing <strong>Ctrl+W</strong> to cycle through the choices (character wrap, word wrap and no wrapping) or by using the <strong>Wrap</strong> commands from the context menu.
+
+<li><strong>Zoom</strong> submenu: You can change the size of text in the Find and Replace boxes by zooming; you can use the Ctrl key with the mouse wheel, Ctrl with the plus and minus keys on the numeric keypad, or the <strong>Zoom</strong> commands from the context menu.
+
+<li><strong>Insert/Exchange</strong> submenu: <strong>Insert selection</strong> (<strong>Ctrl+I</strong>) inserts whatever is selected in the active Notepad++ document into the Find or Replace box. <strong class=nowrap>Find 🠆 Replace</strong> (<strong>Ctrl+F</strong>) copies the Find box text to the Replace box. <strong class=nowrap>Find 🠄 Replace</strong> (<strong>Ctrl+R</strong>) copies the Replace box text to the Find box. <strong class=nowrap>Exchange Find/Replace</strong> (<strong>Ctrl+E</strong>) exchanges the contents of the Find and Replace boxes.
+
+<li>The bottom section of the context menu lets you select from a history of the last twelve strings you have used for searches.
+
+</ul>
 
 <h3 id="search-command-buttons">Search command buttons</h3>
 
@@ -321,9 +333,9 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <li><strong>Find All</strong> searches for occurrences of the find string and lists them in the <a href="results">Search results window</a>.
 
-<li><strong>Mark</strong> searches for occurrences of the find string and marks the found text. By default, marks already in the document are not cleared first; you can change this behavior, and choose which marker is used, in the <a href="#settings">Settings</a> dialog.
-
 <li><strong>Select</strong> searches for occurrences of the find string and creates a multiple selection with one selection corresponding to each match. By default, any existing selection (including rectangular and multiple selections) is cleared before the search begins; you can change this behavior in the <a href="#settings">Settings</a> dialog.
+
+<li><strong>Mark</strong> searches for occurrences of the find string and marks the found text. By default, marks already in the document are not cleared first; you can change this behavior, and choose which marker is used, in the <a href="#settings">Settings</a> dialog.
 
 <li><strong>Show</strong> unhides lines containing matches and marks the matches. If no lines are hidden before the command is given, <strong>Show</strong> first hides all lines. By default, if any lines are already hidden, <strong>Show</strong> doesn’t hide anything, and it doesn’t unmark existing marked text; you can change this behavior in the <a href="#settings">Settings</a> dialog.
 
@@ -390,19 +402,19 @@ You can make adjustments to those rules in the <a href="#settings">Settings</a> 
 
 <section id=results><h2>Search results window</h2>
 
-<p>The <strong>Find All</strong> command (and its variants, <strong>Find All Before</strong>, <strong>Find All in Marked Text</strong>, etc.) lists the matches it finds in the <strong>Search++ Results</strong> window. This is a docking dialog which, by default, appears at the bottom of the Notepad++ window. Once a search results window is initialized, its content is kept as long as Notepad++ remains open. Newer <strong>Find All</strong> commands add results to the top of the window. You can close the window, and if you later reopen it (by doing another <strong>Find All</strong> command or by pressing <strong>Ctrl+H</strong> in the search dialog) during the same Notepad++ session, the content will still be there.</p>
+<p>The <strong>Find All</strong> command and its variants, like <strong>Find All in Open Documents</strong> or <strong>Find All in Marked Text</strong>, list the matches found in the <strong>Search++ Results</strong> window. This is a docking window which, by default, appears at the bottom of the Notepad++ window. Once a search results window is initialized, its content is kept as long as Notepad++ remains open unless you explicitly clear it. Newer <strong>Find All</strong> commands add results to the top of the window. You can close the window, and if you later reopen it (by doing another <strong>Find All</strong> command or by pressing <strong>Ctrl+H</strong> in the search dialog) during the same Notepad++ session, the content will still be there.</p>
 
-<p>Each search is headed by a gold-colored line showing the number of matches and the find string. Below that is another header line giving the file name searched and the number of lines in that file that contain matches. Below that, each line which has any matches is listed and the matches are highlighted.</p>
+<p>Each search is headed by a gold-colored line showing the number of matches and the find string. Below that is a section for each document in which matches were found, beginning with a header line giving the file name and the number of lines in that file that contain matches. Below that, each line which has any matches is listed and the matches are highlighted.</p>
 
 <p>You can double-click on a header line to “fold” the content beneath it; double-click again to open it up.</p>
 
 <p>You can double-click at any position on a match line and the corresponding document will be activated with the caret set to the corresponding position in the document. If you double-click on a highlighted selection, the corresponding selection will be highlighted in the document.</p>
 
-<p><em>Note that this only works if the document is still open in Notepad++ and has not been modified since the search. If the document is not open, Search++ will not attempt to open it. If the document has changed, positions will go “out of sync” and where you double-click will not be where the caret winds up.</em></p>
+<p class=note>Note that this only works if the document is still open in Notepad++ and has not been modified since the search. If the document is not open, Search++ will not attempt to reopen it. If the document has changed, positions will go “out of sync” and where you double-click will not be where the caret winds up.</p>
 
-<p>The same wrap and zoom options are available as in the Find and Replace boxes. You can right-click or use the <strong>Apps</strong> key or <strong>Shift+F10</strong> to open a context menu.</p>
+<p>The same wrap and zoom options are available as in the Find and Replace boxes. You can right-click or use the <strong>Apps</strong> key or <strong>Shift+F10</strong> to open a context menu, which includes navigation, wrap and zoom options as well as commands to <strong>Clear all searches in this list</strong> and <strong>Clear all searches below this one</strong> (that is, searches older than the one in which the caret is positioned).</p>
 
-<p>You can navigate the search results window by keyboard. The <strong>Tab</strong> key moves to the next match; <strong>Shift+Tab</strong> moves to the previous match. You can press the <strong>Enter</strong> key to show the position in the document corresponding to the position of the caret in the search results <em>without</em> moving focus to the document; use <strong>Shift+Enter</strong> to scroll to location and put focus in the document.</p>
+<p>You can navigate the search results window by keyboard. The <strong>Tab</strong> key moves to the next match; <strong>Shift+Tab</strong> moves to the previous match. You can press the <strong>Enter</strong> key to show the position in the document corresponding to the position of the caret in the search results <em>without</em> moving focus to the document; use <strong>Shift+Enter</strong> to scroll to location and put focus in the document. You can use <strong>Ctrl+Shift+D</strong> and <strong>Ctrl+D</strong> to move to the document headers above or below the current position, and <strong>Ctrl+Shift+S</strong> and <strong>Ctrl+S</strong> to move to the search headers above or below the current position.</p>
 
 <p>You can use the <a href="#search-keyboard">general navigation</a> keyboard shortcuts described for the search dialog in the search results window, too.</p>
 
