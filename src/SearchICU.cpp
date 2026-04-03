@@ -158,11 +158,13 @@ bool progressiveSearch(ProgressInfo& pi) {
         position = matchEnd - pii.offset2;
         if (position > scanMax) return false;
         ++count;
-        if (req.command.verb != SearchCommand::Count)
-            pii.hitSet->add(matchStart, matchEnd);
+        pii.preClear();
         switch (req.command.verb) {
+        case SearchCommand::FindAll:
+            pii.hitSet->add(matchStart, matchEnd);
+            break;
         case SearchCommand::Select:
-            if (count == 1) scrollIntoView(matchEnd, matchStart);
+            if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) scrollIntoView(matchStart, matchEnd);
             else sci.AddSelection(matchEnd, matchStart);
             break;
         case SearchCommand::Show:
@@ -175,19 +177,6 @@ bool progressiveSearch(ProgressInfo& pi) {
                 sci.IndicatorFillRange(matchStart, matchEnd - matchStart);
             }
             break;
-        // case SearchCommand::Replace:
-        // {
-        //     std::string repl = pib.req.context->calc.format(pib.rx, sci);
-        //     sci.SetTarget(Scintilla::Span(found, found + length));
-        //     sci.ReplaceTarget(repl);
-        //     if (req.command.scope == SearchCommand::Scope::Region && !repl.empty()) {
-        //         sci.SetIndicatorCurrent(data.indicator);
-        //         sci.SetIndicatorValue(1);
-        //         sci.IndicatorFillRange(found, repl.length());
-        //     }
-        //     pib.offset2 += repl.length() - length;
-        //     break;
-        // }
         }
         if (matchStart == matchEnd) ++position;
     }

@@ -144,12 +144,14 @@ bool progressiveSearch(ProgressInfo& pi) {
         Scintilla::Position length = foundEnd - found;
         position = foundEnd - offset;
         ++count;
-        if (req.command.verb != SearchCommand::Count)
-            pip.hitSet->add(found, foundEnd);
+        pip.preClear();
         switch (req.command.verb) {
+        case SearchCommand::FindAll:
+            pip.hitSet->add(found, foundEnd);
+            break;
         case SearchCommand::Select:
-            if (count == 1) scrollIntoView(position, found);
-                       else sci.AddSelection(position, found);
+            if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) scrollIntoView(found, position);
+            else sci.AddSelection(position, found);
             break;
         case SearchCommand::Show:
             sci.ShowLines(sci.LineFromPosition(found), sci.LineFromPosition(position));

@@ -73,6 +73,7 @@ struct ProgressInfo {
     size_t              documentCount = 0;
     intptr_t            count         = 0;
     bool                timerStarted  = false;
+    bool                needPreClear  = true;
 
     bool (*task)(ProgressInfo&) = 0;
     void (*prep)(ProgressInfo&) = 0;
@@ -82,5 +83,6 @@ struct ProgressInfo {
     SearchResult exec(bool (*worker)(ProgressInfo&));
     SearchResult openDocuments(bool (*worker)(ProgressInfo&), void (*prepare)(ProgressInfo&));
     void nextDocument();
+    void preClear();
 
 };

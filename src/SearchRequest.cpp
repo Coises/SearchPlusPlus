@@ -119,24 +119,6 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
             command.scope = SearchCommand::Whole;
         }
 
-        if (command.verb == SearchCommand::Select) {
-            if (data.clearSelections || command.scope == SearchCommand::Selection) sci.ClearSelections();
-        }
-        else if (command.verb == SearchCommand::Mark) {
-            if (data.clearMarked || command.scope == SearchCommand::Region) {
-                sci.SetIndicatorCurrent(data.indicator);
-                sci.IndicatorClearRange(0, documentLength);
-            }
-        }
-        else if (command.verb == SearchCommand::Show) {
-            if (data.hideBeforeShow) {
-                sci.SetIndicatorCurrent(data.indicator);
-                sci.IndicatorClearRange(0, documentLength);
-                sci.HideLines(0, sci.LineCount() - 1);
-            }
-            else if (sci.AllLinesVisible()) sci.HideLines(0, sci.LineCount() - 1);
-        }
-
     }
 
     SearchResult result;

@@ -134,6 +134,31 @@ namespace {
 }
 
 
+void ProgressInfo::preClear() {
+    if (!needPreClear) return;
+    switch (req.command.verb) {
+    case SearchCommand::Select:
+        if (data.clearSelections || req.command.scope == SearchCommand::Selection) sci.ClearSelections();
+        break;
+    case SearchCommand::Mark:
+        if (data.clearMarked || req.command.scope == SearchCommand::Region) {
+            sci.SetIndicatorCurrent(data.indicator);
+            sci.IndicatorClearRange(0, sci.Length());
+        }
+        break;
+    case SearchCommand::Show:
+        if (data.hideBeforeShow) {
+            sci.SetIndicatorCurrent(data.indicator);
+            sci.IndicatorClearRange(0, sci.Length());
+            sci.HideLines(0, sci.LineCount() - 1);
+        }
+        else if (sci.AllLinesVisible()) sci.HideLines(0, sci.LineCount() - 1);
+        break;
+    }
+    needPreClear = false;
+}
+
+
 SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
 
     task = worker;
@@ -232,12 +257,8 @@ void ProgressInfo::nextDocument() {
     else req.ranges.emplace_back(Scintilla::CharacterRangeFull(0, length));
     position = rangeIndex = rangeStart = 0;
     rangeEnd = length;
-    if (req.command.verb == SearchCommand::Mark) {
-        if (data.clearMarked || req.command.scope == SearchCommand::Region) {
-            sci.SetIndicatorCurrent(data.indicator);
-            sci.IndicatorClearRange(0, length);
-        }
-    }
+    needPreClear = true; // This only affects Mark (in Open Documents or in this View): clearing is not contingent on finding a match
+    preClear();          // in a particular document; for consistency, any clearing is applied to all documents in the extent.
     prep(*this);
     if (req.command.verb == SearchCommand::ReplaceAll) sci.BeginUndoAction();
 }

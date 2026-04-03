@@ -142,12 +142,14 @@ bool progressiveSearch(ProgressInfo& pi) {
         position = found + length - pib.offset2;
         if (position > scanMax) return false;
         ++count;
-        if (req.command.verb != SearchCommand::Count)
-            pib.hitSet->add(found, found + length);
+        pib.preClear();
         switch (req.command.verb) {
+        case SearchCommand::FindAll:
+            pib.hitSet->add(found, found + length);
+            break;
         case SearchCommand::Select:
-            if (count == 1) scrollIntoView(position, found);
-                       else sci.AddSelection(position, found);
+            if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) scrollIntoView(found, position);
+            else sci.AddSelection(position, found);
             break;
         case SearchCommand::Show:
             sci.ShowLines(sci.LineFromPosition(found), sci.LineFromPosition(position));
