@@ -881,12 +881,19 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             case MarkToSel:
             {
                 plugin.getScintillaPointers();
-                sci.ClearSelections();
+                bool first = true;
                 Scintilla::Position documentLength = sci.Length();
                 for (Scintilla::Position cpMin = 0;;) {
                     Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
                     if (cpMax == cpMin) break;
-                    if (sci.IndicatorValueAt(data.indicator, cpMin)) sci.AddSelection(cpMax, cpMin);
+                    if (sci.IndicatorValueAt(data.indicator, cpMin)) {
+                        if (first) {
+                            sci.ClearSelections();
+                            sci.SetSelection(cpMax, cpMin);
+                            first = false;
+                        }
+                        else sci.AddSelection(cpMax, cpMin);
+                    }
                     if (cpMax == documentLength) break;
                     cpMin = cpMax;
                 }

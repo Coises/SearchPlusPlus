@@ -4,6 +4,7 @@
 
 * Fix Select Before and After not working.
 * Enhance clearing behavior (whether implicit or checked in Settings dialog): don't clear selections, unmark text or hide lines if no matches are found.
+* Fix Mark -> Selections including an extra, empty selection.
 
 ## Version 0.5 -- April 2nd, 2026
 
