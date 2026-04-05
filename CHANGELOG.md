@@ -1,10 +1,11 @@
 # Search++: An enhanced search plugin for Notepad++
 
-## Version 0.5.1 -- 
+## Version 0.5.1 -- April 5th, 2026
 
 * Fix Select Before and After not working.
 * Enhance clearing behavior (whether implicit or checked in Settings dialog): don't clear selections, unmark text or hide lines if no matches are found.
-* Fix Mark -> Selections including an extra, empty selection.
+* Fix Select Marked Text (formerly Mark -> Selections) on Tools menu including an extra, empty selection.
+* Add items to the Tools menu to copy marked text and to remove marks from open documents and documents in this view. Rename some items, hopefully making them more clear. Disable some items when there is nothing to which to apply them.
 
 ## Version 0.5 -- April 2nd, 2026
 

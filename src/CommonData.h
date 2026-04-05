@@ -40,6 +40,15 @@ NLOHMANN_JSON_SERIALIZE_ENUM(SearchEngine, {
     {SearchEngine::ICU  , "ICU"   }
 })
 
+enum class CopyMarkedSeparator {None, Blank, Tab, Line, Custom};
+NLOHMANN_JSON_SERIALIZE_ENUM(CopyMarkedSeparator, {
+    {CopyMarkedSeparator::None  , "none"   },
+    {CopyMarkedSeparator::Blank , "blank"  },
+    {CopyMarkedSeparator::Tab   , "tab"    },
+    {CopyMarkedSeparator::Line  , "line"   },
+    {CopyMarkedSeparator::Custom, "custom" }
+})
+
 NLOHMANN_JSON_SERIALIZE_ENUM(Scintilla::Wrap, {
     {Scintilla::Wrap::None      , "none"},
     {Scintilla::Wrap::Word      , "word"},
@@ -83,6 +92,9 @@ inline struct CommonData {
     config<bool> clearSelections       = { "clear selections before select", true  }; // IDC_SETTINGS_CLEARSELECTIONS
     config<bool> clearMarked           = { "unmark before mark"            , false }; // IDC_SETTINGS_CLEARMARKED
     config<bool> hideBeforeShow        = { "hide before show"              , false }; // IDC_SETTINGS_HIDEBEFORESHOW
+
+    config<CopyMarkedSeparator> copyMarkedSeparator     = { "copy marked separator"     , CopyMarkedSeparator::Line };
+    config<std::string>         copyMarkedSeparatorText = { "copy marked separator text", ""                        };
 
     config_history historyFind = { "find history"   , {}, 12, config_history::Blank };
     config_history historyRepl = { "replace history", {}, 12, config_history::Blank };

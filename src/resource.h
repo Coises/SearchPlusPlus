@@ -6,8 +6,9 @@
 #define IDD_SEARCH                      102
 #define IDD_DOCKINGSEARCH               103
 #define IDD_SEARCH_PROGRESS             104
-#define IDD_HITLIST                     105
-#define IDD_SETTINGS                    106
+#define IDD_SETTINGS                    105
+#define IDD_HITLIST                     106
+#define IDD_TOOLS_COPYMARKED            107
 #define IDR_SEARCH_CONTEXT              111
 #define IDC_ABOUT_VERSION               1001
 #define IDC_ABOUT_HELP                  1002
@@ -52,14 +53,19 @@
 #define IDC_SETTINGS_MARKSTYLE          5019
 #define IDC_SETTINGS_AUTOSEARCH_MARKS   5020
 #define IDC_SETTINGS_AUTOCLEAR_MARKS    5021
-#define IDC_SETTINGS_FOCUS_STEPWISE     5022
-#define IDC_SETTINGS_FOCUS_RESULTS      5023
-#define IDC_SETTINGS_CLEARSELECTIONS    5024
-#define IDC_SETTINGS_CLEARMARKED        5025
-#define IDC_SETTINGS_HIDEBEFORESHOW     5026
-#define IDC_SETTINGS_FOCUS_SELECT       5027
-#define IDC_SETTINGS_FOCUS_STEPWISE3    5028
-#define IDC_SETTINGS_FOCUS_SHOW         5028
+#define IDC_SETTINGS_FOCUS_SELECT       5022
+#define IDC_SETTINGS_FOCUS_STEPWISE     5023
+#define IDC_SETTINGS_FOCUS_SHOW         5024
+#define IDC_SETTINGS_FOCUS_RESULTS      5025
+#define IDC_SETTINGS_CLEARSELECTIONS    5026
+#define IDC_SETTINGS_CLEARMARKED        5027
+#define IDC_SETTINGS_HIDEBEFORESHOW     5028
+#define IDC_COPYMARKED_NONE             7001
+#define IDC_COPYMARKED_BLANK            7002
+#define IDC_COPYMARKED_TAB              7003
+#define IDC_COPYMARKED_LINE             7004
+#define IDC_COPYMARKED_CUSTOM           7005
+#define IDC_COPYMARKED_TEXT             7006
 #define ID_SCMSCI_UNDO                  40001
 #define ID_SCMSCI_REDO                  40002
 #define ID_SCMSCI_CUT                   40003
@@ -90,9 +96,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        115
+#define _APS_NEXT_RESOURCE_VALUE        117
 #define _APS_NEXT_COMMAND_VALUE         40026
-#define _APS_NEXT_CONTROL_VALUE         5027
+#define _APS_NEXT_CONTROL_VALUE         5033
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

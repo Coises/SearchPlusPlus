@@ -280,23 +280,28 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <p>The <strong>Tools</strong> button opens a menu that offers some convenient actions you might want to use in conjunction with searching:
 
+<table>
+<tr><th>Hide All Lines</th><td>hides all lines in the active document.</td></tr>
+<tr><th>Show All Lines</th><td>shows all lines in the active document.</td></tr>
+<tr><th>Add Selection to Marked Text</th><td>marks all text currently selected in the active document with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog. The default marker is the <em>Find Mark Style</em>, the same marker used by the built-in <strong>Search</strong>|<strong>Mark</strong> dialog in Notepad++.</td></tr>
+<tr><th>Select Marked Text</th><td>selects all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog. Note that this does not add to the current selection; the current selection is lost.</td></tr>
+<tr><th>Copy Marked Text
 <ul>
-
-<li><strong>Hide All Lines</strong> hides all lines in the active document.
-
-<li><strong>Show All Lines</strong> unhides all lines in the active document.
-
-<li><strong>Selections 🡪 Marked Text</strong> marks all text that is currently selected in the active document. (By default, <strong>Search++</strong> uses the “Find Mark Style” marker, the same one used by the <strong>Mark</strong> tab of the Search dialog in Notepad++. You can change the marker in the Search++ settings.)
-
-<li><strong>Marked Text 🡪 Selections</strong> selects all text that is currently marked in the active document.
-
-<li><strong>Unmark All Text</strong> removes the marker <strong>Search++</strong> is using from all text in the active document.
-
-<li><strong>Clear search results list</strong> removes all results currently accumulated in the search results list.
-
-<li><strong>Settings...</strong> opens the Search++ <a href="#settings">Settings</a> dialog.
-
-</ul>
+<li>with no separators
+<li>separated by blanks
+<li>separated by tabs
+<li>separated by line breaks
+<li>separated by custom string
+</ul></th><td>copies to the clipboard all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog as if it were a single selection. The separator, if any, that will be added between separate runs of marked text is indicated; the default is <strong>line breaks</strong>, which you can change using the next menu option.</td></tr>
+<tr><th>Copy Marked Text...</th><td><p>opens a dialog in which you can choose how you would like separate runs of marked text to be separated, and then copies all marked text in the same way as the option above. The separator you choose becomes the new separator for the menu option above.</p>
+<p class=note>If you choose <strong>Custom</strong>, you can enter a string of text you prefer: for example, you might want to use a comma followed by a blank to separate items that will go into a list. You can use <code>\t</code>, <code>\r</code> and <code>\n</code> for tabs, returns and new lines; use <code>\\</code> for a backslash before <code>t</code>, <code>r</code> or <code>n</code>. Note that in practice, you don’t need to worry about how you code a line ending unless you will be pasting somewhere other than Notepad++; when pasting in Notepad++ line endings are always converted to the line ending type set for the current document.</p></td></tr>
+<tr><th>Copy Marked Text as multiple selections</th><td>copies to the clipboard all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog as if it were a multiple selection. This affects how the copied text pastes, since it will paste like a column or multiple selection rather than like a single selection. The separator for multiple selections is always a line break.</td></tr>
+<tr><th>Remove Marks from active document</th><td>removes from the current document all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog.</td></tr>
+<tr><th>Remove Marks from all open documents</th><td>removes from all open documents all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog. You might want to use this along with the <strong>Mark in Open Documents</strong> command.</td></tr>
+<tr><th>Remove Marks from documents in this view</th><td>removes from all documents in the currently active view all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog. You might want to use this or the next option along with the <strong>Mark in Documents in this View</strong> command.</td></tr>
+<tr><th>Clear search results list</th><td></td></tr>
+<tr><th>Settings...</th><td></td></tr>
+</table>
 
 <h3 id="search-keyboard">Keyboard navigation</h3>
 

@@ -170,6 +170,89 @@ const wchar_t* Command_Menu(unsigned int command) {
 config_rect placement("Search dialog placement");
 
 
+// Dialog procedure for Tools | Copy Marked Text...
+
+INT_PTR CALLBACK copyMarkedDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM) {
+
+    switch (uMsg) {
+
+    case WM_DESTROY:
+        return TRUE;
+
+    case WM_INITDIALOG:
+    {
+        config_rect::show(hwndDlg);  // centers dialog on owner client area, without saving position
+        switch (data.copyMarkedSeparator) {
+        case CopyMarkedSeparator::None  : CheckRadioButton(hwndDlg, IDC_COPYMARKED_NONE, IDC_COPYMARKED_CUSTOM, IDC_COPYMARKED_NONE  ); break;
+        case CopyMarkedSeparator::Blank : CheckRadioButton(hwndDlg, IDC_COPYMARKED_NONE, IDC_COPYMARKED_CUSTOM, IDC_COPYMARKED_BLANK ); break;
+        case CopyMarkedSeparator::Tab   : CheckRadioButton(hwndDlg, IDC_COPYMARKED_NONE, IDC_COPYMARKED_CUSTOM, IDC_COPYMARKED_TAB   ); break;
+        case CopyMarkedSeparator::Custom: CheckRadioButton(hwndDlg, IDC_COPYMARKED_NONE, IDC_COPYMARKED_CUSTOM, IDC_COPYMARKED_CUSTOM); break;
+        default                         : CheckRadioButton(hwndDlg, IDC_COPYMARKED_NONE, IDC_COPYMARKED_CUSTOM, IDC_COPYMARKED_LINE  );
+        }
+        std::wstring wText = utf8to16(data.copyMarkedSeparatorText.get());
+        std::wstring showText;
+        for (const wchar_t& wc : wText) switch (wc) {
+        case L'\t': showText += L"\\t";  break;
+        case L'\n': showText += L"\\n";  break;
+        case L'\r': showText += L"\\r";  break;
+        case L'\\': showText += L"\\\\"; break;
+        default   : showText += wc;
+        }
+        HWND hText = GetDlgItem(hwndDlg, IDC_COPYMARKED_TEXT);
+        SetWindowText(hText, showText.data());
+        EnableWindow(hText, data.copyMarkedSeparator == CopyMarkedSeparator::Custom);
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);
+        return TRUE;
+    }
+
+    case WM_COMMAND:
+
+        switch (LOWORD(wParam)) {
+
+        case IDCANCEL:
+            EndDialog(hwndDlg, 1);
+            return TRUE;
+
+        case IDOK:
+        {
+            data.copyMarkedSeparator = 
+                  IsDlgButtonChecked(hwndDlg, IDC_COPYMARKED_NONE  ) == BST_CHECKED ? CopyMarkedSeparator::None
+                : IsDlgButtonChecked(hwndDlg, IDC_COPYMARKED_BLANK ) == BST_CHECKED ? CopyMarkedSeparator::Blank
+                : IsDlgButtonChecked(hwndDlg, IDC_COPYMARKED_TAB   ) == BST_CHECKED ? CopyMarkedSeparator::Tab
+                : IsDlgButtonChecked(hwndDlg, IDC_COPYMARKED_CUSTOM) == BST_CHECKED ? CopyMarkedSeparator::Custom
+                                                                                    : CopyMarkedSeparator::Line;
+            std::wstring showText = GetDlgItemString(hwndDlg, IDC_COPYMARKED_TEXT);
+            std::wstring wText;
+            for (size_t i = 0; i < showText.length(); ++i) {
+                if (showText[i] == L'\\' && i + 1 < showText.length()) switch (showText[i + 1]) {
+                case L't' : wText += L'\t'; ++i; continue;
+                case L'n' : wText += L'\n'; ++i; continue;
+                case L'r' : wText += L'\r'; ++i; continue;
+                case L'\\': wText += L'\\'; ++i; continue;
+                }
+                wText += showText[i];
+            }
+            data.copyMarkedSeparatorText = utf16to8(wText);
+            EndDialog(hwndDlg, 0);
+            return TRUE;
+        }
+
+        case IDC_COPYMARKED_NONE:
+        case IDC_COPYMARKED_BLANK:
+        case IDC_COPYMARKED_TAB:
+        case IDC_COPYMARKED_LINE:
+        case IDC_COPYMARKED_CUSTOM:
+            EnableWindow(GetDlgItem(hwndDlg, IDC_COPYMARKED_TEXT), 
+                         IsDlgButtonChecked(hwndDlg, IDC_COPYMARKED_CUSTOM) == BST_CHECKED ? TRUE : FALSE);
+            return TRUE;
+        }
+
+    }
+
+    return FALSE;
+}
+
+
 // Subclass procedure for Scintilla controls: implement keyboard shortcuts not built in to Scintilla
 
 LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
@@ -833,19 +916,46 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             return TRUE;
         case IDC_SEARCH_TOOLS:
         {
-            enum ToolCommands {NoCommand, HideAll, ShowAll, SelToMark, MarkToSel, ClearMarks, ClearHitlist, Settings};
+            enum ToolCommands {NoCommand, HideAll, ShowAll, SelToMark, MarkToSel, CopyMarked, CopyMarkedDialog, CopyMarkedMultiple,
+                               ClearMarks, ClearMarksOpen, ClearMarksView, ClearHitlist, Settings};
             HMENU pum = CreatePopupMenu();
             AppendMenu(pum, MF_STRING, HideAll, L"&Hide All Lines");
             AppendMenu(pum, MF_STRING, ShowAll, L"Show &All Lines");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, SelToMark, L"&Selections 🡪 Marked Text");
-            AppendMenu(pum, MF_STRING, MarkToSel, L"&Marked Text 🡪 Selections");
-            AppendMenu(pum, MF_STRING, ClearMarks, L"&Unmark All Text");
+            AppendMenu(pum, MF_STRING, SelToMark, L"Add Selection to &Marked Text");
+            AppendMenu(pum, MF_STRING, MarkToSel, L"&Select Marked Text");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, ClearHitlist, L"&Clear search results list");
+            AppendMenu(pum, MF_STRING, CopyMarked, 
+                  data.copyMarkedSeparator == CopyMarkedSeparator::None   ? L"&Copy Marked Text with no separators"
+                : data.copyMarkedSeparator == CopyMarkedSeparator::Blank  ? L"&Copy Marked Text separated by blanks"
+                : data.copyMarkedSeparator == CopyMarkedSeparator::Tab    ? L"&Copy Marked Text separated by tabs"
+                : data.copyMarkedSeparator == CopyMarkedSeparator::Line   ? L"&Copy Marked Text separated by line breaks"
+                                                                          : L"&Copy Marked Text separated by custom string"
+                );
+            AppendMenu(pum, MF_STRING, CopyMarkedDialog, L"Cop&y Marked Text...");
+            AppendMenu(pum, MF_STRING, CopyMarkedMultiple, L"Copy Marked &Text as multiple selections");
+            AppendMenu(pum, MF_SEPARATOR, 0, 0);
+            AppendMenu(pum, MF_STRING, ClearMarks, L"&Remove marks from active document");
+            AppendMenu(pum, MF_STRING, ClearMarksOpen, L"Remove marks from all &open documents");
+            AppendMenu(pum, MF_STRING, ClearMarksView, L"Remove marks from documents in this &view");
+            AppendMenu(pum, MF_SEPARATOR, 0, 0);
+            AppendMenu(pum, MF_STRING, ClearHitlist, L"Clear search results list");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, Settings, L"S&ettings...");
-            EnableMenuItem(pum, 7, MF_BYPOSITION | (hitlistEmpty() ? MF_GRAYED : MF_ENABLED));
+            plugin.getScintillaPointers();
+            bool hasMarks = false;
+            if (sci.IndicatorValueAt(data.indicator, 0)) hasMarks = true;
+            else {
+                Scintilla::Position p = sci.IndicatorEnd(data.indicator, 0);
+                if (p != 0 && p != sci.Length()) hasMarks = true;
+            }
+            EnableMenuItem(pum, SelToMark         , (sci.SelectionEmpty() ? MF_GRAYED : MF_ENABLED));
+            EnableMenuItem(pum, MarkToSel         , (hasMarks ? MF_ENABLED : MF_GRAYED));
+            EnableMenuItem(pum, CopyMarked        , (hasMarks ? MF_ENABLED : MF_GRAYED));
+            EnableMenuItem(pum, CopyMarkedDialog  , (hasMarks ? MF_ENABLED : MF_GRAYED));
+            EnableMenuItem(pum, CopyMarkedMultiple, (hasMarks ? MF_ENABLED : MF_GRAYED));
+            EnableMenuItem(pum, ClearMarks        , (hasMarks ? MF_ENABLED : MF_GRAYED));
+            EnableMenuItem(pum, ClearHitlist      , (hitlistEmpty() ? MF_GRAYED : MF_ENABLED));
             RECT rect;
             GetWindowRect(reinterpret_cast<HWND>(lParam), &rect);
             int choice = TrackPopupMenu(pum, TPM_RIGHTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD,
@@ -859,11 +969,6 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             case ShowAll:
                 plugin.getScintillaPointers();
                 sci.ShowLines(0, sci.LineCount() - 1);
-                break;
-            case ClearMarks:
-                plugin.getScintillaPointers();
-                sci.SetIndicatorCurrent(data.indicator);
-                sci.IndicatorClearRange(0, sci.Length());
                 break;
             case SelToMark:
             {
@@ -896,6 +1001,111 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                     }
                     if (cpMax == documentLength) break;
                     cpMin = cpMax;
+                }
+                break;
+            }
+            case CopyMarkedDialog:
+                if (DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_TOOLS_COPYMARKED), hwndDlg, copyMarkedDialogProc)) break;
+            [[fallthrough]];
+            case CopyMarked:
+            {
+                plugin.getScintillaPointers();
+                std::string text;
+                bool first = true;
+                Scintilla::Position documentLength = sci.Length();
+                std::string sep;
+                switch (data.copyMarkedSeparator.get()) {
+                case CopyMarkedSeparator::None  : sep = ""  ; break;
+                case CopyMarkedSeparator::Blank : sep = " " ; break;
+                case CopyMarkedSeparator::Tab   : sep = "\t"; break;
+                case CopyMarkedSeparator::Custom: sep = data.copyMarkedSeparatorText; break;
+                default:
+                {
+                    Scintilla::EndOfLine eolm = sci.EOLMode();
+                    sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
+                }
+                }
+                for (Scintilla::Position cpMin = 0;;) {
+                    Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+                    if (cpMax == cpMin) break;
+                    if (sci.IndicatorValueAt(data.indicator, cpMin)) {
+                        if (first) first = false;
+                        else text += sep;
+                        text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
+                    }
+                    if (cpMax == documentLength) break;
+                    cpMin = cpMax;
+                }
+                sci.CopyText(text.length(), text.data());
+                break;
+            }
+            case CopyMarkedMultiple:
+            {
+                plugin.getScintillaPointers();
+                std::string text;
+                Scintilla::Position documentLength = sci.Length();
+                Scintilla::EndOfLine eolm = sci.EOLMode();
+                std::string sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
+                int count = 0;
+                for (Scintilla::Position cpMin = 0;;) {
+                    Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+                    if (cpMax == cpMin) break;
+                    if (sci.IndicatorValueAt(data.indicator, cpMin)) {
+                        if (++count > 1) text += sep;
+                        text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
+                    }
+                    if (cpMax == documentLength) break;
+                    cpMin = cpMax;
+                }
+                if (count < 1) break;
+                if (count == 1) sci.CopyText(text.length(), text.data());
+                else {
+                    static CLIPFORMAT ClipFormatColumn = static_cast<CLIPFORMAT>(RegisterClipboardFormat(L"MSDEVColumnSelect"));
+                    UINT codepage = sci.CodePage();
+                    std::wstring cliptext = codepage == CP_UTF8 ? utf8to16(text) : toWide(text, codepage);
+                    if (!OpenClipboard(hwndDlg)) break;
+                    EmptyClipboard();
+                    HGLOBAL hg = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, (1 + cliptext.length()) * 2);
+                    if (!hg) {
+                        CloseClipboard();
+                        break;
+                    }
+                    void* pg = ::GlobalLock(hg);
+                    if (!pg) {
+                        GlobalFree(hg);
+                        CloseClipboard();
+                        break;
+                    }
+                    memcpy(pg, cliptext.data(), (1 + cliptext.length()) * 2);
+                    GlobalUnlock(hg);
+                    SetClipboardData(CF_UNICODETEXT, hg);
+                    SetClipboardData(ClipFormatColumn, {});
+                    CloseClipboard();
+                }
+                break;
+            }
+            case ClearMarks:
+                plugin.getScintillaPointers();
+                sci.SetIndicatorCurrent(data.indicator);
+                sci.IndicatorClearRange(0, sci.Length());
+                break;
+            case ClearMarksOpen:
+            case ClearMarksView:
+            {
+                int originalView = static_cast<int>(npp(NPPM_GETCURRENTVIEW, 0, 0));
+                for (int view = choice == ClearMarksView ? originalView : 1 - originalView; ; view = originalView) {
+                    int originalDocIndex = static_cast<int>(npp(NPPM_GETCURRENTDOCINDEX, 0, view));
+                    if (originalDocIndex >= 0) {
+                        int documentCount = static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, view + 1));
+                        for (int pos = 0; pos < documentCount; ++pos) {
+                            npp(NPPM_ACTIVATEDOC, view, pos);
+                            plugin.getScintillaPointers();
+                            sci.SetIndicatorCurrent(data.indicator);
+                            sci.IndicatorClearRange(0, sci.Length());
+                        }
+                        npp(NPPM_ACTIVATEDOC, view, originalDocIndex);
+                    }
+                    if (view == originalView) break;
                 }
                 break;
             }
