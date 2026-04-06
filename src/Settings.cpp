@@ -22,6 +22,23 @@ void changeDialogLayout();
 
 namespace {
 
+struct {
+    COLORREF background       = 0;
+    COLORREF softerBackground = 0;   // ctrl background color
+    COLORREF hotBackground    = 0;
+    COLORREF pureBackground   = 0;   // dlg background color
+    COLORREF errorBackground  = 0;
+    COLORREF text             = 0;
+    COLORREF darkerText       = 0;
+    COLORREF disabledText     = 0;
+    COLORREF linkText         = 0;
+    COLORREF edge             = 0;
+    COLORREF hotEdge          = 0;
+    COLORREF disabledEdge     = 0;
+} darkModeColors;
+
+bool isDarkMode;
+
 INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
     switch (uMsg) {
@@ -78,22 +95,42 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELLINES_SPIN             ), data.autoSearchSelect && data.autoSearchSelectLimit ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_TOMARKS                   ), data.autoSearchSelect                               ? TRUE : FALSE);
 
-        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Find Mark Style"));
-        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 1"));
-        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 2"));
-        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 3"));
-        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 4"));
-        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 5"));
+        HWND hMarkStyle = GetDlgItem(hwndDlg, IDC_SETTINGS_MARKSTYLE);
+
+        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Find Mark Style"));
+        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 1"));
+        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 2"));
+        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 3"));
+        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 4"));
+        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 5"));
+
         switch (data.indicator) {
-        case 25: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 1, 0); break;
-        case 24: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 2, 0); break;
-        case 23: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 3, 0); break;
-        case 22: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 4, 0); break;
-        case 21: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 5, 0); break;
-        default: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 0, 0); break;
+        case 25: SendMessage(hMarkStyle, CB_SETCURSEL, 1, 0); break;
+        case 24: SendMessage(hMarkStyle, CB_SETCURSEL, 2, 0); break;
+        case 23: SendMessage(hMarkStyle, CB_SETCURSEL, 3, 0); break;
+        case 22: SendMessage(hMarkStyle, CB_SETCURSEL, 4, 0); break;
+        case 21: SendMessage(hMarkStyle, CB_SETCURSEL, 5, 0); break;
+        default: SendMessage(hMarkStyle, CB_SETCURSEL, 0, 0); break;
         }
 
-        npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);  // Include to support dark mode
+        // There is no need to worry about dark mode changing during the life of the dialog, since this is a modal dialog.
+        // The owner-draw drop-down list gets messed up by dark mode sub-classing;
+        // so we temporarily remove it, sub-class, and then put it back.
+        // Calling again with dmfSetThemeChildren fixes the border and the drop-down arrow.
+        // WM_DRAWITEM uses darkModeColors when isDarkMode is true.
+
+        isDarkMode = npp(NPPM_ISDARKMODEENABLED, 0, 0);
+        if (isDarkMode) {
+            npp(NPPM_GETDARKMODECOLORS, sizeof darkModeColors, &darkModeColors);
+            constexpr ULONG dmfSetThemeChildren = 0x00000004UL;
+            HWND hPrev = GetWindow(hMarkStyle, GW_HWNDPREV);
+            HWND hParent = SetParent(hMarkStyle, 0);
+            npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);
+            SetParent(hMarkStyle, hParent);
+            SetWindowPos(hMarkStyle, hPrev, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeChildren, hwndDlg);
+        }
+
         return TRUE;
     }
 
@@ -212,6 +249,19 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             default: indicator = 31; break;
             }
             RECT rect = dis.rcItem;
+            COLORREF backColor, textColor;
+            if (isDarkMode) {
+                backColor = dis.itemState & ODS_SELECTED ? darkModeColors.hotBackground : darkModeColors.softerBackground;
+                textColor = darkModeColors.text;
+                HBRUSH backBrush = CreateSolidBrush(backColor);
+                FillRect(dis.hDC, &rect, backBrush);
+                DeleteObject(backBrush);
+            }
+            else {
+                backColor = GetSysColor(dis.itemState & ODS_SELECTED ? COLOR_HIGHLIGHT : COLOR_WINDOW);
+                textColor = GetSysColor(dis.itemState & ODS_SELECTED ? COLOR_HIGHLIGHTTEXT : COLOR_WINDOWTEXT);
+                FillRect(dis.hDC, &rect, GetSysColorBrush(dis.itemState & ODS_SELECTED ? COLOR_HIGHLIGHT : COLOR_WINDOW));
+            }
             int margin = (rect.bottom - rect.top) / 8;
             int side = rect.bottom - rect.top - 2 * margin;
             RECT square = { rect.left + margin,  rect.top + margin, rect.left + margin + side, rect.bottom - margin };
@@ -232,6 +282,8 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             HBRUSH brush = CreateSolidBrush(iColor);
             FillRect(dis.hDC, &square, brush);
             DeleteObject(brush);
+            SetTextColor(dis.hDC, textColor);
+            SetBkColor(dis.hDC, backColor);
             rect.left += side + 3 * margin;
             DrawText(dis.hDC, reinterpret_cast<LPCTSTR>(dis.itemData), -1, &rect, DT_LEFT | DT_SINGLELINE | DT_VCENTER);
             return TRUE;

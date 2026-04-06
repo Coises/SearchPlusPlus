@@ -1,5 +1,9 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.5.2 -- 
+
+* Fix display of **Settings**: **Mark style** drop-down in dark mode.
+
 ## Version 0.5.1 -- April 5th, 2026
 
 * Fix Select Before and After not working.
