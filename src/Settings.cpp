@@ -17,7 +17,6 @@
 #include "CommonData.h"
 #include "resource.h"
 #include "Shlwapi.h"
-#include "Uxtheme.h"
 
 void changeDialogLayout();
 
@@ -79,37 +78,22 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELLINES_SPIN             ), data.autoSearchSelect && data.autoSearchSelectLimit ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_TOMARKS                   ), data.autoSearchSelect                               ? TRUE : FALSE);
 
-        HWND hMarkStyle = GetDlgItem(hwndDlg, IDC_SETTINGS_MARKSTYLE);
-
-        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Find Mark Style"));
-        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 1"));
-        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 2"));
-        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 3"));
-        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 4"));
-        SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 5"));
+        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Find Mark Style"));
+        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 1"));
+        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 2"));
+        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 3"));
+        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 4"));
+        SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 5"));
         switch (data.indicator) {
-        case 25: SendMessage(hMarkStyle, CB_SETCURSEL, 1, 0); break;
-        case 24: SendMessage(hMarkStyle, CB_SETCURSEL, 2, 0); break;
-        case 23: SendMessage(hMarkStyle, CB_SETCURSEL, 3, 0); break;
-        case 22: SendMessage(hMarkStyle, CB_SETCURSEL, 4, 0); break;
-        case 21: SendMessage(hMarkStyle, CB_SETCURSEL, 5, 0); break;
-        default: SendMessage(hMarkStyle, CB_SETCURSEL, 0, 0); break;
+        case 25: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 1, 0); break;
+        case 24: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 2, 0); break;
+        case 23: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 3, 0); break;
+        case 22: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 4, 0); break;
+        case 21: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 5, 0); break;
+        default: SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_SETCURSEL, 0, 0); break;
         }
 
-        if (npp(NPPM_ISDARKMODEENABLED, 0, 0)) {
-            // There is no need to worry about dark mode changes, since this is a modal dialog.
-            // The owner-draw drop-down list gets messed up by dark mode sub-classing;
-            // so we temporarily remove it, sub-class, and then put it back.
-            // SetWindowTheme fixes the drop-down arrow; the other colors are OK except for selection
-            // from the drop-down list, which still looks awful, but it works.
-            SetParent(hMarkStyle, 0);
-            npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);  // Include to support dark mode
-            SetParent(hMarkStyle, hwndDlg);
-            SetWindowPos(hMarkStyle, GetDlgItem(hwndDlg, IDC_SETTINGS_MARKSTYLE_STATIC),
-                         0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
-            SetWindowTheme(hMarkStyle, L"DarkMode_CFD", 0);
-        }
-
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);  // Include to support dark mode
         return TRUE;
     }
 
