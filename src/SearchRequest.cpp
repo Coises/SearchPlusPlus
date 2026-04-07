@@ -81,6 +81,7 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
                     command.scope = SearchCommand::Region;
                 }
             }
+            if (command.scope == SearchCommand::Smart) command.scope = SearchCommand::Whole;
         }
 
         if (command.scope == SearchCommand::Region) {
@@ -91,32 +92,29 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
                 if (cpMax == documentLength) break;
                 cpMin = cpMax;
             }
+            if (ranges.empty()) return SearchResult(L"No marked text in which to search.");
         }
         
-        if (context->none() && (command.scope == SearchCommand::Selection)) {
-            if (!sci.SelectionEmpty()) {
-                int n = sci.Selections();
-                if (n == 1) {
-                    Scintilla::Position cpMin = sci.SelectionStart();
-                    Scintilla::Position cpMax = sci.SelectionEnd();
-                    ranges.push_back(Scintilla::CharacterRangeFull{cpMin, cpMax});
+        else if (command.scope == SearchCommand::Selection) {
+            if (sci.SelectionEmpty()) return SearchResult(L"No selection in which to search.");
+            int n = sci.Selections();
+            if (n == 1) {
+                Scintilla::Position cpMin = sci.SelectionStart();
+                Scintilla::Position cpMax = sci.SelectionEnd();
+                ranges.push_back(Scintilla::CharacterRangeFull{cpMin, cpMax});
+            }
+            else {
+                for (int i = 0; i < n; ++i) {
+                    Scintilla::Position cpMin = sci.SelectionNStart(i);
+                    Scintilla::Position cpMax = sci.SelectionNEnd(i);
+                    if (cpMin != cpMax) ranges.push_back(Scintilla::CharacterRangeFull{cpMin, cpMax});
                 }
-                else {
-                    for (int i = 0; i < n; ++i) {
-                        Scintilla::Position cpMin = sci.SelectionNStart(i);
-                        Scintilla::Position cpMax = sci.SelectionNEnd(i);
-                        if (cpMin != cpMax) ranges.push_back(Scintilla::CharacterRangeFull{cpMin, cpMax});
-                    }
-                    std::sort(ranges.begin(), ranges.end(),
-                        [](const Scintilla::CharacterRangeFull& a, const Scintilla::CharacterRangeFull& b) { return a.cpMin < b.cpMin; });
-                }
+                std::sort(ranges.begin(), ranges.end(),
+                    [](const Scintilla::CharacterRangeFull& a, const Scintilla::CharacterRangeFull& b) { return a.cpMin < b.cpMin; });
             }
         }
         
-        if (ranges.empty()) {
-            ranges.push_back(Scintilla::CharacterRangeFull{ 0, documentLength });
-            command.scope = SearchCommand::Whole;
-        }
+        else ranges.push_back(Scintilla::CharacterRangeFull{ 0, documentLength });
 
     }
 
