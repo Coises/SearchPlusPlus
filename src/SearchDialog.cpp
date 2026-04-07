@@ -1696,7 +1696,7 @@ void showSearchDialog() {
             data.regularDialog = data.searchDialog;
         }
     }
-    if (!alreadyVisible && data.fillSearch) {
+    if (data.fillSearch && (data.fillVisible || !alreadyVisible)) {
         plugin.getScintillaPointers();
         if (sci.Selections() == 1) {
             std::string text;

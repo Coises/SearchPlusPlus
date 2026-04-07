@@ -77,14 +77,17 @@ inline struct CommonData {
     config<int > fillChars             = { "maximum characters to fill"    , 79    }; // IDC_SETTINGS_FILLCHARS_EDIT/SPIN
     config<int > fillLines             = { "maximum lines to fill"         , 2     }; // IDC_SETTINGS_FILLLINES_EDIT/SPIN
     config<bool> fillNothing           = { "fill from word"                , true  }; // IDC_SETTINGS_FILL_NOTHING
+    config<bool> fillVisible           = { "fill when already visible"     , false }; // IDC_SETTINGS_FILL_VISIBLE
     config<bool> autoSearchSelect      = { "search selection"              , true  }; // IDC_SETTINGS_AUTOSEARCH_SELECTION
     config<bool> autoSearchSelectLimit = { "limit search selection"        , true  }; // IDC_SETTINGS_AUTOSEARCH_SELECTION_LIMIT
     config<int > selChars              = { "minimum characters to select"  , 80    }; // IDC_SETTINGS_SELCHARS_EDIT/SPIN
     config<int > selLines              = { "minimum lines to select"       , 3     }; // IDC_SETTINGS_SELLINES_EDIT/SPIN
     config<bool> selectionToMarks      = { "convert selection to marks"    , false }; // IDC_SETTINGS_TOMARKS
+    config<bool> selectInSelection     = { "default select in selection"   , true  }; // IDC_SETTINGS_SELECTINSELECTION
+    config<bool> selectPriority        = { "default priority is selection" , false }; // IDC_SETTINGS_SELECTPRIORITY
     config<int > indicator             = { "mark indicator"                , 31    }; // IDC_SETTINGS_MARKSTYLE
     config<bool> autoSearchMarked      = { "search marked"                 , true  }; // IDC_SETTINGS_AUTOSEARCH_MARKS
-    config<bool> autoClearMarks        = { "automatic clear marks"         , false }; // IDC_SETTINGS_AUTOCLEAR_MARKS
+    config<bool> markInMarked          = { "default mark in marked"        , false }; // IDC_SETTINGS_MARKINMARKED
     config<bool> focusStepwise         = { "focus document after step"     , false }; // IDC_SETTINGS_FOCUS_STEPWISE
     config<bool> focusSelect           = { "focus document after select"   , true  }; // IDC_SETTINGS_FOCUS_SELECT
     config<bool> focusShow             = { "focus document after show"     , true  }; // IDC_SETTINGS_FOCUS_SHOW
@@ -92,6 +95,7 @@ inline struct CommonData {
     config<bool> clearSelections       = { "clear selections before select", true  }; // IDC_SETTINGS_CLEARSELECTIONS
     config<bool> clearMarked           = { "unmark before mark"            , false }; // IDC_SETTINGS_CLEARMARKED
     config<bool> hideBeforeShow        = { "hide before show"              , false }; // IDC_SETTINGS_HIDEBEFORESHOW
+    config<bool> autoClearMarks        = { "automatic clear marks"         , false }; // IDC_SETTINGS_AUTOCLEAR_MARKS
 
     config<CopyMarkedSeparator> copyMarkedSeparator     = { "copy marked separator"     , CopyMarkedSeparator::Line };
     config<std::string>         copyMarkedSeparatorText = { "copy marked separator text", ""                        };

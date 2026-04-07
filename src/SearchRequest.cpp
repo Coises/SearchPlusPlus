@@ -44,42 +44,41 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
         }
 
         if (command.scope == SearchCommand::Smart) {
-            if (data.autoSearchMarked && command.verb != SearchCommand::Mark) {
+            if (data.autoSearchMarked && (data.markInMarked || command.verb != SearchCommand::Mark)) {
                 if (sci.IndicatorValueAt(data.indicator, 0)) command.scope = SearchCommand::Region;
                 else {
                     Scintilla::Position p = sci.IndicatorEnd(data.indicator, 0);
                     if (p != 0 && p != documentLength) command.scope = SearchCommand::Region;
                 }
             }
-            if (command.scope == SearchCommand::Smart && context->none()
-                && command.extent != SearchCommand::Before && command.extent != SearchCommand::After) {
-                if (data.autoSearchSelect && !sci.SelectionEmpty()) {
-                    if (!data.autoSearchSelectLimit || sci.Selections() > 1) command.scope = SearchCommand::Selection;
-                    else {
-                        Scintilla::Position start = sci.SelectionStart();
-                        Scintilla::Position end = sci.SelectionEnd();
-                        Scintilla::Position startLine = sci.LineFromPosition(start);
-                        Scintilla::Position endLine = sci.LineFromPosition(end);
-                        if (endLine - startLine + 1 >= data.selLines && end - start >= data.selChars) {
-                            if (end - start >= 4 * data.selChars ||
-                                sci.CountCharacters(start, end) >= data.selChars) command.scope = SearchCommand::Selection;
-                        }
+            if ( data.autoSearchSelect && (data.selectInSelection || command.verb != SearchCommand::Select)
+              && !sci.SelectionEmpty() && context->none() && (command.scope == SearchCommand::Smart || data.selectPriority)
+              && command.extent != SearchCommand::Before && command.extent != SearchCommand::After ) {
+                if (!data.autoSearchSelectLimit || sci.Selections() > 1) command.scope = SearchCommand::Selection;
+                else {
+                    Scintilla::Position start     = sci.SelectionStart();
+                    Scintilla::Position end       = sci.SelectionEnd();
+                    Scintilla::Position startLine = sci.LineFromPosition(start);
+                    Scintilla::Position endLine   = sci.LineFromPosition(end);
+                    if (endLine - startLine + 1 >= data.selLines && end - start >= data.selChars) {
+                        if (end - start >= 4 * data.selChars ||
+                            sci.CountCharacters(start, end) >= data.selChars) command.scope = SearchCommand::Selection;
                     }
-                    if (data.selectionToMarks && command.scope == SearchCommand::Selection && command.extent != SearchCommand::All) {
-                        sci.SetIndicatorCurrent(data.indicator);
-                        sci.SetIndicatorValue(1);
-                        int n = sci.Selections();
-                        Scintilla::Position smallest = documentLength;
-                        for (int i = 0; i < n; ++i) {
-                            Scintilla::Position a = sci.SelectionNStart(i);
-                            Scintilla::Position b = sci.SelectionNEnd(i);
-                            if (b > a) sci.IndicatorFillRange(a, b - a);
-                            if (a < smallest) smallest = a;
-                        }
-                        sci.SetAnchor(smallest);
-                        sci.SetCurrentPos(smallest);
-                        command.scope = SearchCommand::Region;
+                }
+                if (data.selectionToMarks && command.scope == SearchCommand::Selection && command.extent != SearchCommand::All) {
+                    sci.SetIndicatorCurrent(data.indicator);
+                    sci.SetIndicatorValue(1);
+                    int n = sci.Selections();
+                    Scintilla::Position smallest = documentLength;
+                    for (int i = 0; i < n; ++i) {
+                        Scintilla::Position a = sci.SelectionNStart(i);
+                        Scintilla::Position b = sci.SelectionNEnd(i);
+                        if (b > a) sci.IndicatorFillRange(a, b - a);
+                        if (a < smallest) smallest = a;
                     }
+                    sci.SetAnchor(smallest);
+                    sci.SetCurrentPos(smallest);
+                    command.scope = SearchCommand::Region;
                 }
             }
         }

@@ -66,14 +66,17 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         data.fillChars            .put(hwndDlg, IDC_SETTINGS_FILLCHARS_SPIN            );
         data.fillLines            .put(hwndDlg, IDC_SETTINGS_FILLLINES_SPIN            );
         data.fillNothing          .put(hwndDlg, IDC_SETTINGS_FILL_NOTHING              );
+        data.fillVisible          .put(hwndDlg, IDC_SETTINGS_FILL_VISIBLE              );
         data.autoSearchSelect     .put(hwndDlg, IDC_SETTINGS_AUTOSEARCH_SELECTION      );
         data.autoSearchSelectLimit.put(hwndDlg, IDC_SETTINGS_AUTOSEARCH_SELECTION_LIMIT);
         data.selChars             .put(hwndDlg, IDC_SETTINGS_SELCHARS_SPIN             );
         data.selLines             .put(hwndDlg, IDC_SETTINGS_SELLINES_SPIN             );
         data.selectionToMarks     .put(hwndDlg, IDC_SETTINGS_TOMARKS                   );
+        data.selectInSelection    .put(hwndDlg, IDC_SETTINGS_SELECTINSELECTION         );
+        data.selectPriority       .put(hwndDlg, IDC_SETTINGS_SELECTPRIORITY            );
         data.indicator            .put(hwndDlg, IDC_SETTINGS_MARKSTYLE                 );
         data.autoSearchMarked     .put(hwndDlg, IDC_SETTINGS_AUTOSEARCH_MARKS          );
-        data.autoClearMarks       .put(hwndDlg, IDC_SETTINGS_AUTOCLEAR_MARKS           );
+        data.markInMarked         .put(hwndDlg, IDC_SETTINGS_MARKINMARKED              );
         data.focusStepwise        .put(hwndDlg, IDC_SETTINGS_FOCUS_STEPWISE            );
         data.focusSelect          .put(hwndDlg, IDC_SETTINGS_FOCUS_SELECT              );
         data.focusShow            .put(hwndDlg, IDC_SETTINGS_FOCUS_SHOW                );
@@ -81,6 +84,7 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         data.clearSelections      .put(hwndDlg, IDC_SETTINGS_CLEARSELECTIONS           );
         data.clearMarked          .put(hwndDlg, IDC_SETTINGS_CLEARMARKED               );
         data.hideBeforeShow       .put(hwndDlg, IDC_SETTINGS_HIDEBEFORESHOW            );
+        data.autoClearMarks       .put(hwndDlg, IDC_SETTINGS_AUTOCLEAR_MARKS           );
 
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_FILL_LIMIT                ), data.fillSearch                                     ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_FILLCHARS_EDIT            ), data.fillSearch && data.fillSearchLimit             ? TRUE : FALSE);
@@ -88,12 +92,16 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_FILLLINES_EDIT            ), data.fillSearch && data.fillSearchLimit             ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_FILLLINES_SPIN            ), data.fillSearch && data.fillSearchLimit             ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_FILL_NOTHING              ), data.fillSearch                                     ? TRUE : FALSE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_FILL_VISIBLE              ), data.fillSearch                                     ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_AUTOSEARCH_SELECTION_LIMIT), data.autoSearchSelect                               ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELCHARS_EDIT             ), data.autoSearchSelect && data.autoSearchSelectLimit ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELCHARS_SPIN             ), data.autoSearchSelect && data.autoSearchSelectLimit ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELLINES_EDIT             ), data.autoSearchSelect && data.autoSearchSelectLimit ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELLINES_SPIN             ), data.autoSearchSelect && data.autoSearchSelectLimit ? TRUE : FALSE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_TOMARKS                   ), data.autoSearchSelect                               ? TRUE : FALSE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELECTINSELECTION         ), data.autoSearchSelect                               ? TRUE : FALSE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELECTPRIORITY            ), data.autoSearchSelect                               ? TRUE : FALSE);
+        EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_MARKINMARKED              ), data.autoSearchMarked                               ? TRUE : FALSE);
 
         HWND hMarkStyle = GetDlgItem(hwndDlg, IDC_SETTINGS_MARKSTYLE);
 
@@ -168,14 +176,17 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             data.fillChars            .get(hwndDlg, IDC_SETTINGS_FILLCHARS_SPIN            );
             data.fillLines            .get(hwndDlg, IDC_SETTINGS_FILLLINES_SPIN            );
             data.fillNothing          .get(hwndDlg, IDC_SETTINGS_FILL_NOTHING              );
+            data.fillVisible          .get(hwndDlg, IDC_SETTINGS_FILL_VISIBLE              );
             data.autoSearchSelect     .get(hwndDlg, IDC_SETTINGS_AUTOSEARCH_SELECTION      );
             data.autoSearchSelectLimit.get(hwndDlg, IDC_SETTINGS_AUTOSEARCH_SELECTION_LIMIT);
             data.selChars             .get(hwndDlg, IDC_SETTINGS_SELCHARS_SPIN             );
             data.selLines             .get(hwndDlg, IDC_SETTINGS_SELLINES_SPIN             );
             data.selectionToMarks     .get(hwndDlg, IDC_SETTINGS_TOMARKS                   );
+            data.selectInSelection    .get(hwndDlg, IDC_SETTINGS_SELECTINSELECTION         );
+            data.selectPriority       .get(hwndDlg, IDC_SETTINGS_SELECTPRIORITY            );
             data.indicator            .get(hwndDlg, IDC_SETTINGS_MARKSTYLE                 );
             data.autoSearchMarked     .get(hwndDlg, IDC_SETTINGS_AUTOSEARCH_MARKS          );
-            data.autoClearMarks       .get(hwndDlg, IDC_SETTINGS_AUTOCLEAR_MARKS           );
+            data.markInMarked         .get(hwndDlg, IDC_SETTINGS_MARKINMARKED              );
             data.focusStepwise        .get(hwndDlg, IDC_SETTINGS_FOCUS_STEPWISE            );
             data.focusSelect          .get(hwndDlg, IDC_SETTINGS_FOCUS_SELECT              );
             data.focusShow            .get(hwndDlg, IDC_SETTINGS_FOCUS_SHOW                );
@@ -183,6 +194,7 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             data.clearSelections      .get(hwndDlg, IDC_SETTINGS_CLEARSELECTIONS           );
             data.clearMarked          .get(hwndDlg, IDC_SETTINGS_CLEARMARKED               );
             data.hideBeforeShow       .get(hwndDlg, IDC_SETTINGS_HIDEBEFORESHOW            );
+            data.autoClearMarks       .get(hwndDlg, IDC_SETTINGS_AUTOCLEAR_MARKS           );
 
             switch (SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_GETCURSEL, 0, 0)) {
             case 1 : data.indicator = 25; break;
@@ -217,6 +229,7 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_FILLLINES_EDIT), fill && fillLimit ? TRUE : FALSE);
             EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_FILLLINES_SPIN), fill && fillLimit ? TRUE : FALSE);
             EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_FILL_NOTHING  ), fill              ? TRUE : FALSE);
+            EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_FILL_VISIBLE  ), fill              ? TRUE : FALSE);
             return TRUE;
         }
         case IDC_SETTINGS_AUTOSEARCH_SELECTION:
@@ -230,8 +243,15 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELLINES_EDIT             ), sel && selLimit ? TRUE : FALSE);
             EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELLINES_SPIN             ), sel && selLimit ? TRUE : FALSE);
             EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_TOMARKS                   ), sel             ? TRUE : FALSE);
+            EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELECTINSELECTION         ), sel             ? TRUE : FALSE);
+            EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_SELECTPRIORITY            ), sel             ? TRUE : FALSE);
             return TRUE;
         }
+
+        case IDC_SETTINGS_AUTOSEARCH_MARKS:
+            EnableWindow(GetDlgItem(hwndDlg, IDC_SETTINGS_MARKINMARKED),
+                IsDlgButtonChecked(hwndDlg, IDC_SETTINGS_AUTOSEARCH_MARKS) == BST_CHECKED ? TRUE : FALSE);
+            return TRUE;
 
         }
         return FALSE;
