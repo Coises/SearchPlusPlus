@@ -3,6 +3,7 @@
 ## Version 0.5.2 -- 
 
 * Fix display of **Settings**: **Mark style** drop-down in dark mode.
+* Add a dialog to resist accidentally clicking the Tools menu options to remove marks from documents in view or from all open documents.
 
 ## Version 0.5.1 -- April 5th, 2026
 

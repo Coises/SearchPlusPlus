@@ -963,7 +963,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             AppendMenu(pum, MF_STRING, CopyMarkedMultiple, L"Copy Marked &Text as multiple selections");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, ClearMarks, L"&Remove marks from active document");
-            AppendMenu(pum, MF_STRING, ClearMarksMultiple, L"Remove marks from multiple &documents");
+            AppendMenu(pum, MF_STRING, ClearMarksMultiple, L"Remove marks from multiple &documents...");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, ClearHitlist, L"Clear search results list");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
