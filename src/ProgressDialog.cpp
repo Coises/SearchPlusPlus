@@ -139,6 +139,7 @@ void ProgressInfo::preClear() {
     switch (req.command.verb) {
     case SearchCommand::Select:
         if (data.clearSelections || req.command.scope == SearchCommand::Selection) sci.ClearSelections();
+        else if (sci.SelectionIsRectangle()) sci.ChangeSelectionMode(Scintilla::SelectionMode::Stream);
         break;
     case SearchCommand::Mark:
         if (data.clearMarked || req.command.scope == SearchCommand::Region) {
