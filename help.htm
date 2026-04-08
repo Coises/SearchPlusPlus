@@ -194,7 +194,7 @@ window.addEventListener("load", doPageLoad);
 
 <section id=purpose><h2>Purpose</h2>
 
-<p>I wrote <strong>Search++</strong> to bring the extended search capabilites I developed for <a href="https://coises.github.io/ColumnsPlusPlus/help.htm#search">Columns++</a> to a more general-purpose and hopefully more user-friendly search. I also wanted to experiment with alternatives to some of the user interface limitations of both native Notepad++ and Columns++ search.</p>
+<p>I wrote <strong>Search++</strong> to bring the extended search capabilities I developed for <a href="https://coises.github.io/ColumnsPlusPlus/help.htm#search">Columns++</a> to a more general-purpose and hopefully more user-friendly search. I also wanted to experiment with alternatives to some of the user interface limitations of both native Notepad++ and Columns++ search.</p>
 
 <p><strong>Search++</strong> differs in several significant ways from the search built into Notepad++:</p>
 
@@ -294,9 +294,9 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 <li>separated by custom string
 </ul></th><td>copies to the clipboard all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog as if it were a single selection. The separator, if any, that will be added between separate runs of marked text is indicated; the default is <strong>line breaks</strong>, which you can change using the next menu option.</td></tr>
 <tr><th>Copy Marked Text...</th><td><p>opens a dialog in which you can choose how you would like separate runs of marked text to be separated, and then copies all marked text in the same way as the option above. The separator you choose becomes the new separator for the menu option above.</p>
-<p class=note>If you choose <strong>Custom</strong>, you can enter a string of text you prefer: for example, you might want to use a comma followed by a blank to separate items that will go into a list. You can use <code>\t</code>, <code>\r</code> and <code>\n</code> for tabs, returns and new lines; use <code>\\</code> for a backslash before <code>t</code>, <code>r</code> or <code>n</code>. Note that in practice, you don’t need to worry about how you code a line ending unless you will be pasting somewhere other than Notepad++; when pasting in Notepad++ line endings are always converted to the line ending type set for the current document.</p></td></tr>
+<p class=note>If you choose <strong>Custom</strong>, you can enter a string of text you prefer: for example, you might want to use a comma followed by a blank to separate items that will go into a list. You can use <code>\t</code>, <code>\r</code> and <code>\n</code> for tabs, returns and new lines; use <code>\\</code> for a backslash before <code>t</code>, <code>r</code> or <code>n</code>. Note that in practice, you don’t need to worry about how you code a line ending unless you will be pasting somewhere other than Notepad++; when pasting in Notepad++ line endings are always converted to the line ending type set for the active document.</p></td></tr>
 <tr><th>Copy Marked Text as multiple selections</th><td>copies to the clipboard all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog as if it were a multiple selection. This affects how the copied text pastes, since it will paste like a column or multiple selection rather than like a single selection. The separator for multiple selections is always a line break.</td></tr>
-<tr><th>Remove marks from active document</th><td>removes from the current document all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog.</td></tr>
+<tr><th>Remove marks from active document</th><td>removes from the active document all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog.</td></tr>
 <tr><th>Remove marks from multiple documents...</th><td>opens a dialog with options to remove all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog from documents in this view or from all open documents. You might want to use these options along with the <strong>Mark in Documents in this View</strong> or <strong>Mark in Open Documents</strong> commands.</td></tr>
 <tr><th>Clear search results list</th><td>removes all results currently accumulated in the search results list.</td></tr>
 <tr><th>Settings...</th><td>opens the Search++ <a href="#settings">Settings</a> dialog.</td></tr>
@@ -327,86 +327,104 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <h3 id="commands-actions">Search actions</h3>
 
-<p>Search actions define what sort of thing a command will do. The possible search actions are <strong>Find</strong>, <strong>Count</strong>, <strong>Find All</strong>, <strong>Mark</strong>, <strong>Select</strong>, <strong>Show</strong>, <strong>Replace and Find</strong>, <strong>Find or Replace</strong> and <strong>Replace All</strong>:</p>
+<p>Search actions define what sort of thing a command will do. There are two categories of search actions: <em>stepwise</em> and <em>multiple</em>. Stepwise actions find and/or replace one occurrence at a time; multiple actions search for as many occurrences as possible, under specified constraints, at once:</p>
 
-<ul>
+<table>
 
-<li><strong>Find</strong> finds one occurrence of the search string. The default direction for find commands is forward, starting from the current position or selected text. For plain text searches, Find can also have the <strong>Backward</strong> extent.
+<tr><th class="group" colspan=2>Stepwise search actions</th></tr>
 
-<li><strong>Count</strong> shows a message at the bottom of the search dialog telling how many occurrences of the search string can be found.
+<tr><th>Find</th><td>finds one occurrence of the search string. The default <a href="#commands-extent">extent</a> for find commands is forward, starting from the current position or selected text. For plain text searches, Find can also have the <strong>Backward</strong> extent.</td></tr>
 
-<li><strong>Find All</strong> searches for occurrences of the find string and lists them in the <a href="results">Search results window</a>.
+<tr><th>Replace (then find)</th><td>first finds a match (unless a match has just been found), then on subsequent clicks replaces the match and finds the next match.</td></tr>
 
-<li><strong>Select</strong> searches for occurrences of the find string and creates a multiple selection with one selection corresponding to each match. By default, any existing selection (including rectangular and multiple selections) is cleared before the search begins; you can change this behavior in the <a href="#settings">Settings</a> dialog.
+<tr><th>Replace (then wait)</th><td>first finds a match (unless a match has just been found), then the next click replaces the match, leaving the replacement location visible. The next click finds, the next click replaces, and so on. </td></tr>
 
-<li><p><strong>Mark</strong> searches for occurrences of the find string and marks the found text. By default, marks already in the document are not cleared first; you can change this behavior, and choose which marker is used, in the <a href="#settings">Settings</a> dialog.</p>
+</table>
 
-<p class=note>It is possible to <strong>Mark in Marked Text</strong>. After determining which text is marked, all text is unmarked before starting a <strong>Mark in Marked Text</strong> command regardless of the <strong>Always unmark all text before a mark command</strong> setting, since the command could accomplish nothing otherwise.</p>
+<table>
 
-<li><strong>Show</strong> unhides lines containing matches and marks the matches. If no lines are hidden before the command is given, <strong>Show</strong> first hides all lines. By default, if any lines are already hidden, <strong>Show</strong> doesn’t hide anything, and it doesn’t unmark existing marked text; you can change this behavior in the <a href="#settings">Settings</a> dialog.
+<tr><th class="group" colspan=2>Multiple search actions</th></tr>
 
-<li><strong>Replace and Find</strong> first finds a match, then on subsequent clicks replaces the match and finds the next match.
+<tr><th>Count</th><td>shows a message at the bottom of the search dialog telling how many occurrences of the search string were found.</td></tr>
 
-<li><strong>Find or Replace</strong> first finds a match, then the next click replaces the found match, leaving the replacement location visible. The next click finds, the next click replaces, and so on. 
+<tr><th>Find All</th><td>searches for occurrences of the find string and lists them in the <a href="#results">Search results window</a>.</td></tr>
 
-<li><strong>Replace All</strong> searches for occurrences of the find string and replaces them with the replace string.
+<tr><th>Select</th><td><p>searches for occurrences of the find string and creates a multiple selection with one selection corresponding to each match. By default, any existing selection is cleared if the search succeeds; you can change this behavior in the <a href="#settings-clearing">Settings</a> dialog.</p>
+<p class=note>It is possible to <strong>Select In Selection</strong>. After determining which text is selected, previous selections are cleared when a <strong>Select in Selection</strong> command succeeds, regardless of the <strong>Always clear selections before Select command</strong> setting, since the command could accomplish nothing otherwise.</p></td></tr>
 
-</ul>
+<tr><th>Mark</th><td><p>searches for occurrences of the find string and marks the found text. By default, marks already in the document are not cleared; you can change this behavior, and choose which marker is used, in the <a href="#settings-clearing">Settings</a> dialog.</p>
+<p class=note>It is possible to <strong>Mark in Marked Text</strong>. After determining which text is marked, all previously marked text is unmarked when a <strong>Mark in Marked Text</strong> command succeeds, regardless of the <strong>Always unmark all text before a mark command</strong> setting, since the command could accomplish nothing otherwise.</p></td></tr>
+
+<tr><th>Show</th><td>unhides lines containing matches and marks the matches. If no lines are hidden before the command is given, <strong>Show</strong> first hides all lines. By default, if any lines are already hidden, <strong>Show</strong> doesn’t hide anything, and it doesn’t unmark existing marked text; you can change this behavior in the <a href="#settings-clearing">Settings</a> dialog.</td></tr>
+
+<tr><th>Replace All</th><td>searches for occurrences of the find string and replaces them with the replace string.</td></tr>
+
+</table>
 
 <h3 id="commands-extent">Search extents</h3>
 
-<p>Search extents describe how the search “extends” from the current position or selection. Command actions which take a single step at a time (<strong>Find</strong>, <strong>Replace and Find</strong> and <strong>Find or Replace</strong>) can search <strong>Forward</strong> (the default) or (for Plain text searches) <strong>Backward</strong>. Other command actions, which search for multiple occurrences at one time, can search throughout the current document, <strong>Before</strong> or <strong>After</strong> the current position, in all <strong>Open documents</strong> or in all documents in the current <strong>View</strong>:</p>
+<p>Search extents describe how the search “extends” from the current position or selection. Stepwise search actions can search forward or (for <strong>Plain</strong> text searches) <strong>Backward</strong>. Multiple search actions can search throughout the active document or <strong>Before</strong> or <strong>After</strong> the current position or selection. <strong>Find All</strong> and <strong>Mark</strong> commands can also search <strong>in Open Documents</strong> or <strong>in Documents in this View</strong>:</p>
 
-<ul>
+<table>
 
-<li><strong>Forward</strong> is the default for <strong>Find</strong>, <strong>Replace and Find</strong> and <strong>Find or Replace</strong> actions. It means moving to the right and downward through the document.  When a Forward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the beginning of the search scope (unless you already started from the beginning).
+<tr><th class="group" colspan=2>Search extents for stepwise search actions</th></tr>
 
-<li><strong>Backward</strong> is available for <strong>Find</strong>, <strong>Replace and Find</strong> and <strong>Find or Replace</strong> actions only when searching for <strong>Plain</strong> text. It means moving to the left and upward through the document. When a Backward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the end of the search scope (unless you already started from the end).
+<tr><td>forward</td><td>is the default for stepwise search actions: <strong>Find</strong>, <strong>Replace (then find)</strong> and <strong>Replace (then wait)</strong>. It means moving from the current position or selection to the right and downward through the document.  When a forward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the beginning of the search scope (unless you already started from the beginning).</td></tr>
 
-<li>Searching throughout the current document is the default extension for command actions that search for multiple occurrences at one time. It just means that the entire scope (selected text, marked text or the whole document) is searched.
+<tr><th>Backward</th><td>is available for stepwise search actions only when searching for <strong>Plain</strong> text. It means moving from the current position or selection to the left and upward through the document. When a Backward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the end of the search scope (unless you already started from the end).</td></tr>
 
-<li><strong>Before</strong> applies the command action only to matches that occur earlier in the active document that the current position or selection. The action is not applied to matches which overlap the current position or selection.
+</table>
 
-<li><strong>After</strong> applies the command action only to matches that occur later in the active document that the current position or selection. The action is not applied to matches which overlap the current position or selection.
+<table>
 
-<li><strong>Open Documents</strong> searches all documents that are open in any tab in Notepad++.
+<tr><th class="group" colspan=2>Search extents for multiple search actions</th></tr>
 
-<li><strong>Documents in this View</strong> searches all documents that are open in any tab in the active view. Notepad++ has one or two views. If there is only one view open, <strong>Documents in this View</strong> is the same as <strong>Open Documents</strong>.
+<tr><td>throughout the active document</td><td>is the default extension for command actions that search for multiple occurrences at one time. The entire <a href="#commands-scopes">scope</a> (the selection, marked text or the whole document) is searched. This extension is implied unless one of the other extensions is part of the command name.</td></tr>
 
-</ul>
+<tr><th>Before</th><td><p>applies the command action only to matches that occur to the left and upward in the active document relative to the current position or selection. The action is not applied to matches which overlap the current position or selection.</p>
+<p class=note>If there is a single selection which is the result of an immediately preceding stepwise find, or the find step of a stepwise replace, <strong>Replace Before</strong> <em>includes</em> the found text. This lets you do a series of stepwise backward replaces and then complete them with a Replace Before.</p>
+</td></tr>
 
-<p>There is an exception to the Before/After rules. If there is a single selection which is the result of an immediately preceding stepwise find, or the find step of a stepwise replace, <strong>Replace Before/After</strong> <em>includes</em> the found text. This lets you do a series of stepwise replaces and then complete them with a Replace After (and for Plain text searches, the same with replacing backward and Replace Before).</p>
+<tr><th>After</th><td><p>applies the command action only to matches that occur to the right and downward in the active document relative to the current position or selection. The action is not applied to matches which overlap the current position or selection.</p>
+<p class=note>If there is a single selection which is the result of an immediately preceding stepwise find, or the find step of a stepwise replace, <strong>Replace After</strong> <em>includes</em> the found text. This lets you do a series of stepwise replaces and then complete them with a Replace After.</p>
+</td></tr>
+
+<tr><th>Open Documents</th><td>searches all documents that are open in any tab in Notepad++.</td></tr>
+
+<tr><th>Documents in this View</th><td>searches all documents that are open in any tab in the active view. Notepad++ has one or two views. If there is only one view open, <strong>Documents in this View</strong> is the same as <strong>Open Documents</strong>.</td></tr>
+
+</table>
 
 <h3 id="commands-scopes">Search scopes</h3>
 
-<p>Search scopes determine what will be searched: <strong>Selection</strong>, <strong>Marked Text</strong> or <strong>Whole Document</strong>. The default is a “smart scope” which determines the effective scope based on whether there is already a selection or marked text in the document:
+<p>Search scopes determine what will be searched: the <strong>Selection</strong>, <strong>Marked Text</strong> or the <strong>Whole Document</strong>. The default is to determine the effective scope based on whether there is already a selection or marked text in the document:
 
-<ul>
+<table>
 
-<li><strong>Whole Document</strong> means selections and marks are ignored; everything in the document (subject to any <em>extent</em> constraint) is searched.
+<tr><th colspan=2 class="group">Search scopes</th></tr>
 
-<li><p><strong>Selection</strong>: If there is a non-empty selection — single, rectangular or multiple — the search will be confined to the selected text. If there is no selection, the search will encompass the entire document.</p>
+<tr><th>Selection</th><td><p>only selected text will be searched.</p>
+<p class=note>Because a <strong>Find</strong> command, or the preliminary find step in a replace command, selects the found text, subsequent commands won’t be confined to the originally-selected text, since it will no longer be selected. To avoid this, you can use <strong>Add Selection to Marked Text</strong> from the <a href="#search-tools">Tools</a> button menu before searching.</p>
+<p class=note>For a regular expression search, each line in a rectangular selection and each selection in a multiple selection is searched independently; the search in any line or selection cannot “see” outside that selection. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>).</p></td></tr>
 
-<p class=note>Because a <strong>Find</strong> command, or the preliminary find step in a replace command, selects the found text, subsequent commands won’t be confined to the originally-selected text, since it will no longer be selected. To avoid this, you can use <strong>Selections 🡪 Marked Text</strong> from the <strong>Tools</strong> button menu before searching, or check the box <strong>Convert selections to marked text before beginning a stepwise search</strong> in the <a href="#settings">Settings</a> dialog.</p>
-
-<p class=note>For a regular expression search, each line in a rectangular selection and each selection in a multiple selection is searched independently; the search in any line or selection cannot “see” outside that selection. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>).</p>
-
-<li><p><strong>Marked Text</strong>: If there is any marked text, only marked text will be searched; if the document contains no marked text, the whole document will be searched.</p>
-
+<tr><th>Marked Text</th><td><p>only marked text will be searched.</p>
 <p class=note>For a regular expression search, each run of marked text is searched independently; the search in any span of marked text cannot “see” outside that span. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>).</p>
+</td></tr>
 
-<li>Default (“smart”) scope attempts to infer what you probably want to search based on whether anything is already marked or selected. The default rules are these:
+<tr><th>Whole Document</th><td>selections and marks are ignored; everything in the document (subject to any <em>extent</em> constraint) is searched.</td></tr>
+
+<tr><td>default scope</td><td>attempts to infer what you probably want to search based on whether anything is already marked or selected. The default rules are these:
 <ol>
-<li>Marked text takes precedence, except for <strong>Mark</strong> commands: if any text is marked, then the search is confined to marked text. <strong>Mark</strong> commands that don’t specify a scope are not restricted to already marked text when some text is marked; you must explicitly choose <strong>Mark</strong> | <strong>Mark in Marked Text</strong> if that is what you want. 
-<li>Otherwise, if there is a multiple selection or a rectangular selection, the selection is searched.
-<li>Otherwise, if there is a single selection encompassing at least 80 characters <em>and</em> three lines, it will be searched.
+<li>Scope is not inferred for commands <strong>in Open Documents</strong> or <strong>in Documents in this View</strong>. A command with one of these qualifiers can also indicate that it is <strong>in Marked Text</strong>; otherwise it is <strong>in Whole Document</strong>.
+<li>If there is any marked text in the active document, only marked text is searched, except for the default <strong>Mark</strong> command; an unqualified <strong>Mark</strong> command adds to the marked text instead of searching within it.
+<li>If there is no marked text, but there is a multiple selection or a rectangular selection, the selection is searched.
+<li>If there is no marked text, but there is a single selection encompassing at least 80 characters <em>and</em> three lines, it will be searched.
 <li>Otherwise, the whole document is searched.
 </ol>
+<p>You can make various adjustments to the default scope rules in the <a href="#settings">Settings</a> dialog.</p>
 
-You can make some adjustments to the “smart scope” rules in the <a href="#settings">Settings</a> dialog. “Smart scope” does not apply to search commands with <strong>Open Documents</strong> or <strong>Documents in this View</strong> as the extent; <strong>Marked text</strong> can be an explicit part of those commands, otherwise the scope is the whole of each document examined.
-
-</ul>
-
+</td></tr>
+</table>
 </section>
 
 <section id=results><h2>Search results window</h2>
@@ -786,27 +804,33 @@ Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer tha
 
 <table id="settings-selections">
 <tr><th colspan=2 class=group>Selections</th></tr>
-<tr><th>Fill the find box from a single selection in the document when showing the search dialog.</th><td>If this box is checked and there is a single selection (not a column selection or a multiple selection) in the active document when you open the search dialog, the selection will be copied into the Find box — subject to the constraints indicated below, if enabled.</td></tr>
+<tr><td colspan=2>The first part of this section controls when and if the Find box in the search dialog is filled in automatically with a selection from the active document. Only single selections are considered; columns selections and multiple selections are never used to fill the Find box.</td></tr>
+<tr><th>Fill the find box from a single selection in the document when showing the search dialog.</th><td>If this box is checked and there is a single selection in the active document when you open the search dialog, the selection will be copied into the Find box — subject to the constraints indicated below, if enabled.</td></tr>
 <tr><th>Only if the selection has no more than: ___ characters and ___ lines.</th><td>If this box is checked, selections are only copied into the Find box if they contain no more than the specified number of characters <em>and also</em> contain no more than the specified number of lines. Use this to avoid filling the search box with text from a selection when you meant to search <em>within</em> the selection.</td></tr>
 <tr><th>Fill with the word containing the caret if nothing is selected.</th><td>If this box is checked when you open the search dialog and there is no selection in the document, the word the caret is within or next to will be used to fill the Find box.</td></tr>
-<tr><th>Automatically search within selections.</th><td>When this box is checked, commands with default (“smart”) <a href="#commands-scopes">scope</a> will search within the selection (single, column or multiple) if one is present. (However, if the selection is the result of a stepwise Find or Replace command, repeating the same search will not search within the selection regardless of this setting.)</td></tr>
+<tr><th>Fill after Search... menu command or shortcut even if search dialog is already visible.</th><td>Normally the Find box is only filled when you use the <strong>Search...</strong> command on the <strong>Plugins</strong> | <strong>Search++</strong> menu, or a shortcut you’ve assigned to that command, if the search dialog is not already visible; when the search dialog is visible, the command or its shortcut just switch keyboard focus to the search dialog. If this box is checked, an eligible selection will be used to fill the Find box whenever you use the <strong>Search...</strong> command or shortcut.</td></tr>
+<tr><td colspan=2>The second part of this section controls when and if default search commands (those that don’t specify a <a href="#commands-scopes">scope</a>, such as <strong>in Selection</strong> or <strong>in Whole Document</strong>) use a selection as the scope if a non-empty selection exists.</td></tr>
+<tr><th>Default commands automatically search within selections.</th><td>When this box is checked, commands with default <a href="#commands-scopes">scope</a> will search within the selection (single, column or multiple) if one is present. (However, if the selection is the result of a stepwise Find or Replace command, repeating the same search will not search within the selection regardless of this setting.)</td></tr>
 <tr><th>Single selections must have at least: ___ characters and ___ lines.</th><td>If this box is checked, single selections will not cause the search to be restricted to the selection unless the selection contains at least the specified number of characters <em>and</em> the specified number of lines. Columns selections and multiple selections are not subject to these limitations.</td></tr>
-<tr><th>Convert selections to marked text before beginning a stepwise search.</th><td>Since a stepwise search selects the match it finds, the original selection is lost after the first match when searching within a selection. If this box is checked, whenever a stepwise search command begins a search within a selection, the text included in the selection is marked, so subsequent searches can search within marked text to preserve the intended scope of the search.</td></tr>
+<tr><th>Allow default Select command to Select in Selection.</th><td>When this box is checked (the default), a <strong>Select</strong> command with no qualifiers will be treated as <strong>Select in Selection</strong> if an eligible selection is present, in the same way other default commands are handled. If this box is not checked, default <strong>Select</strong> commands will never be interpreted as <strong>Select in Selection</strong>.</td></tr>
+<tr><th>Convert selections to marked text when beginning a default stepwise search.</th><td>Since a stepwise search selects the match it finds, the original selection is lost after the first match when searching within a selection. If this box is checked, whenever a default stepwise search within a selection finds a match, any existing marks in the active document are removed and the text included in the selection is marked, so subsequent searches can search within marked text to preserve the intended scope of the search.</td></tr>
+<tr><th><p>When eligible selection and marks are present, default search is within selection.</th><td>When this box is checked, if a default command is issued when a selection meeting the criteria in this section is present and marked text is also present, the search will be performed within the selection. When this box is unchecked (the default), marked text takes precedence.</p>
+<p class=note>You might want to check this box and the box above it (<strong>Convert selections to marked text when beginning a default stepwise search</strong>) if you frequently use stepwise searches in selections, such as column selections, and you want to be able to change the scope of the search conveniently without needing to manipulate marked text with the <a href="#search-tools">Tools</a> menu options.</p></td></tr>
 </table>
 
 <table id="settings-marked-text">
 <tr><th colspan=2 class=group>Marked Text</th></tr>
 <tr><th>Mark style</th><td>When <strong>Search++</strong> marks text or searches within marked text, it uses one of the mark styles available in Notepad++. This drop-down lets you choose which one.</td></tr>
-<tr><th>Automatically search within marked text.</th><td>When this box is checked, commands with default (“smart”) <a href="#commands-scopes">scope</a> will search within marked text if any text within the active document is marked.</td></tr>
-<tr><th>Unmark all text when closing the search dialog. (Does not apply to docking dialog.)</th><td>Check this box if you use one of the regular (non-docking) layouts and you want <strong>Search++</strong> to unmark any text in the active document marked in the chosen mark style when you close the dialog. (This isn’t useful or reliable, and hence is not honored, for docking dialogs as docking dialogs “close” when you switch to another tab in the same dock, even though you wouldn’t think of that as closing the dialog.)</td></tr>
+<tr><th>Default commands automatically search within marked text.</th><td>When this box is checked, commands with default <a href="#commands-scopes">scope</a> will search within marked text if any text within the active document is marked.</td></tr>
+<tr><th>Allow default Mark command to Mark in Marked Text.</th><td>When this box is checked, a <strong>Mark</strong> command with no qualifiers will be treated as <strong>Mark in Marked Text</strong> if any text in the active document is marked, in the same way other default commands are handled. If this box is not checked (the default), default <strong>Mark</strong> commands will never be interpreted as <strong>Mark in Marked Text</strong>.</td></tr>
 </table>
 
 <table id="settings-focus">
 <tr><th colspan=3 class=group>Focus</th></tr>
-<tr><th rowspan=3>Focus the document after:<th>stepwise find or replace commands</th><td>If this box is checked, when you perform a stepwise find or replace which finds a match, keyboard focus will be placed in the active document, so you can immediately begin typing at or navigating from the match location. (If this box is not checked, keyboard focus remains in the search dialog. You can focus the active document with <strong>Ctrl+N</strong>.)</td></tr>
-<tr><th>Select commands</th><td>If this box is checked, keyboard focus is placed in the active document after any Select command that finds at least one match.</td></tr>
-<tr><th>Show commands</th><td>If this box is checked, keyboard focus is placed in the active document after any Show command that finds at least one match.</td></tr>
-<tr><th colspan=2>Focus the search results window after commands that use it.</th><td>If this box is checked, successful commands which add lines to the search results window (currently only <strong>Find All</strong> commands) will place keyboard focus at the beginning of the new search results. (If this box is not checked, keyboard focus remains in the search dialog. You can focus the search results window with <strong>Ctrl+H</strong>.)</td></tr>
+<tr><th rowspan=3>Focus the document after:<th>stepwise Find or Replace commands</th><td>If this box is checked, when you perform a stepwise find or replace which finds a match, keyboard focus will be placed in the active document, so you can immediately begin typing at or navigating from the match location. If this box is not checked (the default), keyboard focus remains in the search dialog. (You can focus the active document with <strong>Ctrl+N</strong>.)</td></tr>
+<tr><th>Select commands</th><td>If this box is checked (the default), keyboard focus is placed in the active document after any <strong>Select</strong> command that finds at least one match.</td></tr>
+<tr><th>Show commands</th><td>If this box is checked (the default), keyboard focus is placed in the active document after any <strong>Show</strong> command that finds at least one match.</td></tr>
+<tr><th colspan=2>Focus the search results window after Find All commands.</th><td>If this box is checked (the default), keyboard focus is placed at the beginning of the new search results after a successful <strong>Find All</strong> command. If this box is not checked, keyboard focus remains in the search dialog. (You can focus the search results window with <strong>Ctrl+H</strong>.)</td></tr>
 </table>
 
 <table id="settings-clearing">
@@ -814,6 +838,7 @@ Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer tha
 <tr><th>Always clear selections before Select command. (Otherwise add to existing selections.)</th><td>When this box is checked (the default), existing selections are de-selected before beginning one of the <strong>Select</strong> commands. If you want Select commands to add to any existing selection, uncheck this box. If you are selecting <em>within a selection</em>, the original selection will be de-selected regardless of this setting.</td></tr>
 <tr><th>Always unmark all text before Mark command. (Otherwise add to existing marked text.)</th><td>When this box is checked, <strong>Mark</strong> commands remove all marks from the text before beginning the search. If this box is unchecked (the default), marks “accumulate” until you clear them. If you are marking <em>within marked text</em>, existing marks are removed regardless of this setting.</td></tr>
 <tr><th>Always hide all lines and unmark all text before Show command.</th><td>Normally <strong>Show</strong> commands only hide lines if no lines are hidden, and do not unmark text; this makes different Show commands run in succession effectively “cumulative.” Check this box if you want each Show command to “start over” by hiding all lines and unmarking all text before searching.</td></tr>
+<tr><th>Unmark all text when closing the search dialog. (Does not apply to docking dialog.)</th><td>Check this box if you use one of the regular (non-docking) layouts and you want <strong>Search++</strong> to unmark any text in the active document marked in the chosen mark style when you close the dialog. (This isn’t useful or reliable, and hence is not honored, for docking dialogs as docking dialogs “close” when you switch to another tab in the same dock, even though you wouldn’t think of that as closing the dialog.)</td></tr>
 </table>
 
 </section>

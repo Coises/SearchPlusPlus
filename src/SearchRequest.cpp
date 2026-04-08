@@ -26,6 +26,7 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
 
     command = cmd;
     ranges.clear();
+    bool convertSelectionToMarks = false;
     
     plugin.bypassNotifications = true;
     plugin.getScintillaPointers(sciText);
@@ -65,21 +66,9 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
                             sci.CountCharacters(start, end) >= data.selChars) command.scope = SearchCommand::Selection;
                     }
                 }
-                if (data.selectionToMarks && command.scope == SearchCommand::Selection && command.extent != SearchCommand::All) {
-                    sci.SetIndicatorCurrent(data.indicator);
-                    sci.SetIndicatorValue(1);
-                    int n = sci.Selections();
-                    Scintilla::Position smallest = documentLength;
-                    for (int i = 0; i < n; ++i) {
-                        Scintilla::Position a = sci.SelectionNStart(i);
-                        Scintilla::Position b = sci.SelectionNEnd(i);
-                        if (b > a) sci.IndicatorFillRange(a, b - a);
-                        if (a < smallest) smallest = a;
-                    }
-                    sci.SetAnchor(smallest);
-                    sci.SetCurrentPos(smallest);
-                    command.scope = SearchCommand::Region;
-                }
+                if (data.selectionToMarks && command.scope == SearchCommand::Selection
+                    && (command.extent == SearchCommand::Forward || command.extent == SearchCommand::Backward))
+                    convertSelectionToMarks = true;
             }
             if (command.scope == SearchCommand::Smart) command.scope = SearchCommand::Whole;
         }
@@ -143,6 +132,13 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
             if (length) data.historyRepl += utf8to16(sci.GetText(length));
         }
         if (result.success()) {
+            if (convertSelectionToMarks) {
+                plugin.getScintillaPointers(sciText);
+                sci.SetIndicatorCurrent(data.indicator);
+                sci.SetIndicatorValue(1);
+                sci.IndicatorClearRange(0, documentLength);
+                for (const Scintilla::CharacterRangeFull& r : ranges) sci.IndicatorFillRange(r.cpMin, r.cpMax - r.cpMin);
+            }
             if (data.focusStepwise && (command.extent == SearchCommand::Forward || command.extent == SearchCommand::Backward))
                 SetFocus(plugin.currentScintilla());
             else if (data.focusShow &&command.verb == SearchCommand::Show)

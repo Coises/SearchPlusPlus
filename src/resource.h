@@ -51,8 +51,8 @@
 #define IDC_SETTINGS_SELCHARS_SPIN              1516
 #define IDC_SETTINGS_SELLINES_EDIT              1517
 #define IDC_SETTINGS_SELLINES_SPIN              1518
-#define IDC_SETTINGS_TOMARKS                    1519
-#define IDC_SETTINGS_SELECTINSELECTION          1520
+#define IDC_SETTINGS_SELECTINSELECTION          1519
+#define IDC_SETTINGS_TOMARKS                    1520
 #define IDC_SETTINGS_SELECTPRIORITY             1521
 #define IDC_SETTINGS_MARKSTYLE                  1522
 #define IDC_SETTINGS_AUTOSEARCH_MARKS           1523
