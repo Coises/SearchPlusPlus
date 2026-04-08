@@ -970,10 +970,11 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             EnableMenuItem(pum, CopyMarkedMultiple, (hasMarks ? MF_ENABLED : MF_GRAYED));
             EnableMenuItem(pum, ClearMarks        , (hasMarks ? MF_ENABLED : MF_GRAYED));
             EnableMenuItem(pum, ClearHitlist      , (hitlistEmpty() ? MF_GRAYED : MF_ENABLED));
-            RECT rect;
-            GetWindowRect(reinterpret_cast<HWND>(lParam), &rect);
-            int choice = TrackPopupMenu(pum, TPM_RIGHTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD,
-                                        rect.right, rect.bottom, 0, hwndDlg, NULL);
+            TPMPARAMS tpmp;
+            tpmp.cbSize = sizeof tpmp;
+            GetWindowRect(reinterpret_cast<HWND>(lParam), &tpmp.rcExclude);
+            int choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL,
+                                          tpmp.rcExclude.left, tpmp.rcExclude.bottom, hwndDlg, &tpmp);
             DestroyMenu(pum);
             switch (choice) {
             case HideAll:
@@ -1332,10 +1333,11 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
         case BCN_DROPDOWN:
         {
             const NMBCDROPDOWN& bd = *reinterpret_cast<NMBCDROPDOWN*>(lParam);
-            POINT pt;
-            pt.x = bd.rcButton.left;
-            pt.y = bd.rcButton.bottom;
-            ClientToScreen(bd.hdr.hwndFrom, &pt);
+            TPMPARAMS tpmp;
+            tpmp.cbSize = sizeof tpmp;
+            tpmp.rcExclude = bd.rcButton;
+            ClientToScreen(bd.hdr.hwndFrom, reinterpret_cast<POINT*>(&tpmp.rcExclude.left));
+            ClientToScreen(bd.hdr.hwndFrom, reinterpret_cast<POINT*>(&tpmp.rcExclude.right));
             HMENU pum = 0;
             config<unsigned int>* searchButton;
             switch (bd.hdr.idFrom) {
@@ -1503,7 +1505,8 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             default:
                 return FALSE;
             }
-            int choice = TrackPopupMenu(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD, pt.x, pt.y, 0, hwndDlg, NULL);
+            int choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL,
+                                          tpmp.rcExclude.left, tpmp.rcExclude.bottom, hwndDlg, &tpmp);
             bool shifted = GetAsyncKeyState(VK_SHIFT) < 0;
             DestroyMenu(pum);
             if (choice) {
