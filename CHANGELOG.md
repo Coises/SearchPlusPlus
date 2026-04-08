@@ -1,9 +1,20 @@
 # Search++: An enhanced search plugin for Notepad++
 
-## Version 0.5.2 -- 
+## Version 0.5.2 -- April 8th, 2026
 
 * Fix display of **Settings**: **Mark style** drop-down in dark mode.
 * Add a dialog to resist accidentally clicking the Tools menu options to remove marks from documents in view or from all open documents.
+* Rearrange [Settings](https://coises.github.io/SearchPlusPlus/help.htm#settings) dialog and add four new settings:
+    - Fill after Search... menu command or shortcut even if search dialog is already visible.
+    - Allow default Select command to Select in Selection.
+    - When eligible selection and marks are present, default search is within selection.
+    - Allow default Mark command to Mark in Marked Text.
+* Make commands that explicitly specify in Selection or in Marked Text show a failure message (rather than fall back to Whole Document) if there is no selection or marked text.
+* Remove **Before** and **After** commands without an explicit scope from command button menus.
+* Convert active document to marks (when that setting is checked) only on successful match.
+* Change names of stepwise replace commands to **Replace (then find)** and **Replace (then wait)**.
+* Update and clarify documentation, particularly the [Search commands](https://coises.github.io/SearchPlusPlus/help.htm#commands) section.
+* Fix adding to selection not working when the selection is a rectangular selection. Add note to help regarding unexpected results when adding to existing selections.
 
 ## Version 0.5.1 -- April 5th, 2026
 
