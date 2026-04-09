@@ -359,9 +359,21 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 }
 
 
+double luminanceEstimate(Scintilla::Colour c) {
+    double backR = (c & 0xFF) / 255.0;
+    double backG = ((c >> 8) & 0xFF) / 255.0;
+    double backB = ((c >> 16) & 0xFF) / 255.0;
+    backR = backR <= 0.040405 ? backR / 12.92 : std::pow((backR + 0.055) / 1.055, 2.4);
+    backG = backG <= 0.040405 ? backG / 12.92 : std::pow((backG + 0.055) / 1.055, 2.4);
+    backB = backB <= 0.040405 ? backB / 12.92 : std::pow((backB + 0.055) / 1.055, 2.4);
+    return (0.2126 * backR + 0.7152 * backG + 0.0722 * backB);
+}
+
+
 void configureSciHits() {
 
     plugin.getScintillaPointers();
+    Scintilla::ColourAlpha caret          = sci.ElementColour(Scintilla::Element::Caret);
     Scintilla::ColourAlpha caretLineBack  = sci.ElementColour(Scintilla::Element::CaretLineBack);
     Scintilla::ColourAlpha selectionBack  = sci.ElementColour(Scintilla::Element::SelectionBack);
     Scintilla::ColourAlpha whiteSpace     = sci.ElementColour(Scintilla::Element::WhiteSpace);
@@ -375,8 +387,6 @@ void configureSciHits() {
     Scintilla::Colour      searchBack     = 0x10C0D4;
     Scintilla::Colour      documentFore   = 0xC0FFFF;
     Scintilla::Colour      documentBack   = 0xC0A040;
-    Scintilla::Colour      foundFore      = 0xFF0000;
-    Scintilla::Colour      foundBack      = 0xC08080;
 
     plugin.getScintillaPointers(sciHits);
 
@@ -392,6 +402,7 @@ void configureSciHits() {
     sci.UsePopUp(Scintilla::PopUp::Never);
     sci.SetUndoCollection(0);
 
+    sci.SetElementColour(Scintilla::Element::Caret                , caret        );
     sci.SetElementColour(Scintilla::Element::CaretLineBack        , caretLineBack);
     sci.SetElementColour(Scintilla::Element::SelectionBack        , selectionBack);
     sci.SetElementColour(Scintilla::Element::SelectionInactiveBack, selectionBack);
@@ -440,20 +451,20 @@ void configureSciHits() {
     sci.MarkerSetBack(Marker_Document, documentBack);
 
     sci.IndicSetStyle(Indicator_Found, Scintilla::IndicatorStyle::RoundBox);
-    sci.IndicSetFore (Indicator_Found, foundBack);
+    sci.IndicSetFore (Indicator_Found, caret);
     sci.IndicSetUnder(Indicator_Found, true);
-    sci.IndicSetAlpha(Indicator_Found, Scintilla::Alpha(64));
+    sci.IndicSetAlpha(Indicator_Found, Scintilla::Alpha(40));
     sci.IndicSetOutlineAlpha(Indicator_Found, Scintilla::Alpha(0));
 
     sci.IndicSetStyle(Indicator_NullMatch, Scintilla::IndicatorStyle::Point);
-    sci.IndicSetFore(Indicator_NullMatch, foundFore);
+    sci.IndicSetFore(Indicator_NullMatch, caret);
 
     sci.StyleClearAll();
 
     sci.StyleSetFore(STYLE_LINENUMBER, lineNumberFore);
     sci.StyleSetBack(STYLE_LINENUMBER, lineNumberBack);
 
-    sci.StyleSetFore(Style_Found, foundFore);
+    sci.StyleSetFore(Style_Found, caret);
     sci.StyleSetBold(Style_Found, true);
     sci.StyleSetFore(Style_Search, searchFore);
     sci.StyleSetBack(Style_Search, searchBack);

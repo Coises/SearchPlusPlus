@@ -406,6 +406,7 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 void configureSearchBox(HWND sciBox) {
 
     plugin.getScintillaPointers();
+    Scintilla::ColourAlpha caret          = sci.ElementColour(Scintilla::Element::Caret);
     Scintilla::ColourAlpha caretLineBack  = sci.ElementColour(Scintilla::Element::CaretLineBack);
     Scintilla::ColourAlpha selectionBack  = sci.ElementColour(Scintilla::Element::SelectionBack);
     Scintilla::ColourAlpha whiteSpace     = sci.ElementColour(Scintilla::Element::WhiteSpace);
@@ -416,10 +417,11 @@ void configureSearchBox(HWND sciBox) {
 
     plugin.getScintillaPointers(sciBox);
 
+    sci.SetElementColour(Scintilla::Element::Caret                , caret        );
     sci.SetElementColour(Scintilla::Element::CaretLineBack        , caretLineBack);
     sci.SetElementColour(Scintilla::Element::SelectionBack        , selectionBack);
     sci.SetElementColour(Scintilla::Element::SelectionInactiveBack, selectionBack);
-    sci.SetElementColour(Scintilla::Element::WhiteSpace           , whiteSpace);
+    sci.SetElementColour(Scintilla::Element::WhiteSpace           , whiteSpace   );
     sci.StyleSetFont(STYLE_DEFAULT, defaultFont.data());
     sci.StyleSetSize(STYLE_DEFAULT, defaultSize);
     sci.StyleSetFore(STYLE_DEFAULT, defaultFore);
