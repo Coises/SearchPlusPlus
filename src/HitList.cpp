@@ -359,11 +359,16 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 }
 
 
-HWND setupScintilla() {
+void configureSciHits() {
 
     plugin.getScintillaPointers();
+    Scintilla::ColourAlpha caretLineBack  = sci.ElementColour(Scintilla::Element::CaretLineBack);
+    Scintilla::ColourAlpha selectionBack  = sci.ElementColour(Scintilla::Element::SelectionBack);
     Scintilla::ColourAlpha whiteSpace     = sci.ElementColour(Scintilla::Element::WhiteSpace);
-//    Scintilla::ColourAlpha caretLine      = sci.ElementColour(Scintilla::Element::CaretLineBack);
+    std::string            defaultFont    = sci.StyleGetFont(STYLE_DEFAULT);
+    int                    defaultSize    = sci.StyleGetSize(STYLE_DEFAULT);
+    Scintilla::Colour      defaultFore    = sci.StyleGetFore(STYLE_DEFAULT);
+    Scintilla::Colour      defaultBack    = sci.StyleGetBack(STYLE_DEFAULT);
     Scintilla::Colour      lineNumberFore = sci.StyleGetFore(STYLE_LINENUMBER);
     Scintilla::Colour      lineNumberBack = sci.StyleGetBack(STYLE_LINENUMBER);
     Scintilla::Colour      searchFore     = 0x000000;
@@ -373,12 +378,6 @@ HWND setupScintilla() {
     Scintilla::Colour      foundFore      = 0xFF0000;
     Scintilla::Colour      foundBack      = 0xC08080;
 
-    RECT r;
-    GetClientRect(hitlist, &r);
-    sciHits = reinterpret_cast<HWND>(npp(NPPM_CREATESCINTILLAHANDLE, 0, hitlist));
-    SetWindowPos(sciHits, 0, 0, 0, r.right, r.bottom, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-    SetWindowLong(sciHits, GWL_ID, SCIHITS);
-    SetWindowLong(sciHits, GWL_STYLE, GetWindowLong(sciHits, GWL_STYLE) | WS_BORDER);
     plugin.getScintillaPointers(sciHits);
 
     sci.SetModEventMask(Scintilla::ModificationFlags::None);
@@ -393,8 +392,15 @@ HWND setupScintilla() {
     sci.UsePopUp(Scintilla::PopUp::Never);
     sci.SetUndoCollection(0);
 
-    sci.SetElementColour(Scintilla::Element::SelectionInactiveBack, sci.ElementColour(Scintilla::Element::SelectionBack));
-    sci.SetElementColour(Scintilla::Element::WhiteSpace, whiteSpace);
+    sci.SetElementColour(Scintilla::Element::CaretLineBack        , caretLineBack);
+    sci.SetElementColour(Scintilla::Element::SelectionBack        , selectionBack);
+    sci.SetElementColour(Scintilla::Element::SelectionInactiveBack, selectionBack);
+    sci.SetElementColour(Scintilla::Element::WhiteSpace           , whiteSpace   );
+    sci.StyleSetFont(STYLE_DEFAULT, defaultFont.data());
+    sci.StyleSetSize(STYLE_DEFAULT, defaultSize);
+    sci.StyleSetFore(STYLE_DEFAULT, defaultFore);
+    sci.StyleSetBack(STYLE_DEFAULT, defaultBack);
+
     sci.SetRepresentation("\n", reinterpret_cast<const char*>(u8"\u240A"));
     sci.SetRepresentation("\r", reinterpret_cast<const char*>(u8"\u240D"));
     sci.SetRepresentation("\r\n", reinterpret_cast<const char*>(u8"\u21A9"));
@@ -455,6 +461,17 @@ HWND setupScintilla() {
     sci.StyleSetFore(Style_Document, documentFore);
     sci.StyleSetBack(Style_Document, documentBack);
 
+}
+
+
+HWND setupScintilla() {
+    RECT r;
+    GetClientRect(hitlist, &r);
+    sciHits = reinterpret_cast<HWND>(npp(NPPM_CREATESCINTILLAHANDLE, 0, hitlist));
+    SetWindowPos(sciHits, 0, 0, 0, r.right, r.bottom, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+    SetWindowLong(sciHits, GWL_ID, SCIHITS);
+    SetWindowLong(sciHits, GWL_STYLE, GetWindowLong(sciHits, GWL_STYLE) | WS_BORDER);
+    configureSciHits();
     SetWindowSubclass(sciHits, subclassScintilla, 0, 0);
     return sciHits;
 }
@@ -574,6 +591,15 @@ void clearHitlist() { if (hitlist) clearAll(); }
 bool hitlistEmpty() { if (!hitlist) return true; plugin.getScintillaPointers(sciHits); return sci.Length() == 0; }
 void hideHitlist () { if (hitlist) npp(NPPM_DMMHIDE, 0, hitlist); }
 void showHitlist () { if (hitlist) npp(NPPM_DMMSHOW, 0, hitlist); }
+
+void colorHitlist() {
+    if (hitlist) {
+        constexpr ULONG dmfSetThemeDirectly = 0x00000010UL;
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, sciHits);
+        configureSciHits();
+    }
+}
+
 
 void showHitlist(ProgressInfo& pi) {
 

@@ -403,20 +403,29 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 }
 
 
-HWND setupSearchBox(HWND hwndDlg, int box) {
-    HWND customBox = GetDlgItem(hwndDlg, box);
-    RECT rectBox;
-    GetWindowRect(customBox, &rectBox);
-    MapWindowPoints(0, hwndDlg, reinterpret_cast<LPPOINT>(&rectBox), 2);
-    DestroyWindow(customBox);
-    HWND sciBox = reinterpret_cast<HWND>(npp(NPPM_CREATESCINTILLAHANDLE, 0, hwndDlg));
-    SetWindowPos(sciBox, 0, rectBox.left, rectBox.top, rectBox.right - rectBox.left, rectBox.bottom - rectBox.top,
-                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-    SetWindowLong(sciBox, GWL_ID, box);
-    SetWindowLong(sciBox, GWL_STYLE, GetWindowLong(sciBox, GWL_STYLE) | WS_BORDER | WS_TABSTOP);
+void configureSearchBox(HWND sciBox) {
+
     plugin.getScintillaPointers();
-    Scintilla::ColourAlpha hints = sci.ElementColour(Scintilla::Element::WhiteSpace);
+    Scintilla::ColourAlpha caretLineBack  = sci.ElementColour(Scintilla::Element::CaretLineBack);
+    Scintilla::ColourAlpha selectionBack  = sci.ElementColour(Scintilla::Element::SelectionBack);
+    Scintilla::ColourAlpha whiteSpace     = sci.ElementColour(Scintilla::Element::WhiteSpace);
+    std::string            defaultFont    = sci.StyleGetFont(STYLE_DEFAULT);
+    int                    defaultSize    = sci.StyleGetSize(STYLE_DEFAULT);
+    Scintilla::Colour      defaultFore    = sci.StyleGetFore(STYLE_DEFAULT);
+    Scintilla::Colour      defaultBack    = sci.StyleGetBack(STYLE_DEFAULT);
+
     plugin.getScintillaPointers(sciBox);
+
+    sci.SetElementColour(Scintilla::Element::CaretLineBack        , caretLineBack);
+    sci.SetElementColour(Scintilla::Element::SelectionBack        , selectionBack);
+    sci.SetElementColour(Scintilla::Element::SelectionInactiveBack, selectionBack);
+    sci.SetElementColour(Scintilla::Element::WhiteSpace           , whiteSpace);
+    sci.StyleSetFont(STYLE_DEFAULT, defaultFont.data());
+    sci.StyleSetSize(STYLE_DEFAULT, defaultSize);
+    sci.StyleSetFore(STYLE_DEFAULT, defaultFore);
+    sci.StyleSetBack(STYLE_DEFAULT, defaultBack);
+    sci.StyleClearAll();
+
     sci.SetModEventMask(Scintilla::ModificationFlags::DeleteText | Scintilla::ModificationFlags::InsertText);
     sci.SetMargins(0);
     sci.SetWrapMode(Scintilla::Wrap::Char);
@@ -429,17 +438,15 @@ HWND setupSearchBox(HWND hwndDlg, int box) {
     sci.SetMultipleSelection(false);
     sci.SetVirtualSpaceOptions(Scintilla::VirtualSpace::None);
     sci.SetAdditionalSelectionTyping(true);
-    sci.SetElementColour(Scintilla::Element::SelectionInactiveBack, sci.ElementColour(Scintilla::Element::SelectionBack));
-    sci.SetElementColour(Scintilla::Element::WhiteSpace, hints);
     sci.SetRepresentation("\n"  , reinterpret_cast<const char*>(u8"\U0001F807"));
     sci.SetRepresentation("\r"  , reinterpret_cast<const char*>(u8"\U0001F804"));
     sci.SetRepresentation("\r\n", reinterpret_cast<const char*>(u8"\u21A9"));
     sci.SetRepresentationAppearance("\n"  , Scintilla::RepresentationAppearance::Plain);
     sci.SetRepresentationAppearance("\r"  , Scintilla::RepresentationAppearance::Plain);
     sci.SetRepresentationAppearance("\r\n", Scintilla::RepresentationAppearance::Plain);
-    sci.SetRepresentationColour("\n"  , hints);
-    sci.SetRepresentationColour("\r"  , hints);
-    sci.SetRepresentationColour("\r\n", hints);
+    sci.SetRepresentationColour("\n"  , whiteSpace);
+    sci.SetRepresentationColour("\r"  , whiteSpace);
+    sci.SetRepresentationColour("\r\n", whiteSpace);
     sci.ClearCmdKey('E' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('F' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('H' + (SCMOD_CTRL << 16));
@@ -451,6 +458,22 @@ HWND setupSearchBox(HWND hwndDlg, int box) {
     sci.ClearCmdKey('H' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('N' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('O' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+
+}
+
+
+HWND setupSearchBox(HWND hwndDlg, int box) {
+    HWND customBox = GetDlgItem(hwndDlg, box);
+    RECT rectBox;
+    GetWindowRect(customBox, &rectBox);
+    MapWindowPoints(0, hwndDlg, reinterpret_cast<LPPOINT>(&rectBox), 2);
+    DestroyWindow(customBox);
+    HWND sciBox = reinterpret_cast<HWND>(npp(NPPM_CREATESCINTILLAHANDLE, 0, hwndDlg));
+    SetWindowPos(sciBox, 0, rectBox.left, rectBox.top, rectBox.right - rectBox.left, rectBox.bottom - rectBox.top,
+                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+    SetWindowLong(sciBox, GWL_ID, box);
+    SetWindowLong(sciBox, GWL_STYLE, GetWindowLong(sciBox, GWL_STYLE) | WS_BORDER | WS_TABSTOP);
+    configureSearchBox(sciBox);
     SetWindowSubclass(sciBox, subclassScintilla, 0, 0);
     return sciBox;
 }
@@ -1597,6 +1620,19 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
     return FALSE;
 }
 
+}
+
+
+void colorSearch() {
+    if (data.searchDialog) {
+        constexpr ULONG dmfSetThemeDirectly = 0x00000010UL;
+        HWND findBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
+        HWND replBox = GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX);
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, findBox);
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, replBox);
+        configureSearchBox(findBox);
+        configureSearchBox(replBox);
+    }
 }
 
 

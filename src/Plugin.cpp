@@ -35,6 +35,7 @@ void scnUpdateUI(const Scintilla::NotificationData*);
 // Routines that process Notepad++ notifications
 
 void bufferActivated();
+void darkModeChanged();
 void modifyAll(const NMHDR*);
 
 // Routines that process menu commands
@@ -118,6 +119,10 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *np) {
 
         case NPPN_CANCELSHUTDOWN:
             plugin.startupOrShutdown = false;
+            break;
+
+        case NPPN_DARKMODECHANGED:
+            darkModeChanged();
             break;
 
         case NPPN_FILEBEFOREOPEN:

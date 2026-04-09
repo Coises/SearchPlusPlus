@@ -16,6 +16,9 @@
 
 #include "CommonData.h"
 
+void colorHitlist();
+void colorSearch();
+
 void scnFocusIn(const Scintilla::NotificationData* scnp) {
     if (zlmIndicator != 0) {
         plugin.getScintillaPointers(scnp);
@@ -39,6 +42,11 @@ void scnUpdateUI(const Scintilla::NotificationData* scnp) {
 
 void bufferActivated() {
     data.context.clear();
+}
+
+void darkModeChanged() {
+    colorHitlist();
+    colorSearch();
 }
 
 void modifyAll(const NMHDR*) {
