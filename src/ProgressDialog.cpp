@@ -145,12 +145,14 @@ void ProgressInfo::preClear() {
         if (data.clearMarked || req.command.scope == SearchCommand::Region) {
             sci.SetIndicatorCurrent(data.indicator);
             sci.IndicatorClearRange(0, sci.Length());
+            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
         }
         break;
     case SearchCommand::Show:
         if (data.hideBeforeShow) {
             sci.SetIndicatorCurrent(data.indicator);
             sci.IndicatorClearRange(0, sci.Length());
+            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
             sci.HideLines(0, sci.LineCount() - 1);
         }
         else if (sci.AllLinesVisible()) sci.HideLines(0, sci.LineCount() - 1);

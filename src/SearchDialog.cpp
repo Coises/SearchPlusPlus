@@ -956,9 +956,11 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             return TRUE;
         case IDC_SEARCH_TOOLS:
         {
-            enum ToolCommands {NoCommand, HideAll, ShowAll, SelToMark, MarkToSel, CopyMarked, CopyMarkedDialog, CopyMarkedMultiple,
-                               ClearMarks, ClearMarksMultiple, ClearHitlist, Settings};
+            enum ToolCommands {NoCommand, BookmarkWhenMark, HideAll, ShowAll, SelToMark, MarkToSel, CopyMarked, CopyMarkedDialog,
+                               CopyMarkedMultiple, ClearMarks, ClearMarksMultiple, ClearHitlist, Settings};
             HMENU pum = CreatePopupMenu();
+            AppendMenu(pum, MF_STRING, BookmarkWhenMark, L"&Bookmark lines when marking text");
+            AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, HideAll, L"&Hide All Lines");
             AppendMenu(pum, MF_STRING, ShowAll, L"Show &All Lines");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
@@ -975,7 +977,8 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             AppendMenu(pum, MF_STRING, CopyMarkedDialog, L"Cop&y Marked Text...");
             AppendMenu(pum, MF_STRING, CopyMarkedMultiple, L"Copy Marked &Text as multiple selections");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, ClearMarks, L"&Remove marks from active document");
+            AppendMenu(pum, MF_STRING, ClearMarks, data.markAlsoBookmarks ? L"&Remove marks and bookmarks from active document"
+                                                                          : L"&Remove marks from active document");
             AppendMenu(pum, MF_STRING, ClearMarksMultiple, L"Remove marks from multiple &documents...");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, ClearHitlist, L"Clear search results list");
@@ -988,13 +991,23 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 Scintilla::Position p = sci.IndicatorEnd(data.indicator, 0);
                 if (p != 0 && p != sci.Length()) hasMarks = true;
             }
+            EnableMenuItem(pum, HideAll           , (sci.VisibleFromDocLine(sci.LineCount() - 1) == 0
+                                                     && !sci.LineVisible(0) ? MF_GRAYED : MF_ENABLED));
+            EnableMenuItem(pum, ShowAll           , (sci.AllLinesVisible() ? MF_GRAYED : MF_ENABLED));
             EnableMenuItem(pum, SelToMark         , (sci.SelectionEmpty() ? MF_GRAYED : MF_ENABLED));
             EnableMenuItem(pum, MarkToSel         , (hasMarks ? MF_ENABLED : MF_GRAYED));
             EnableMenuItem(pum, CopyMarked        , (hasMarks ? MF_ENABLED : MF_GRAYED));
             EnableMenuItem(pum, CopyMarkedDialog  , (hasMarks ? MF_ENABLED : MF_GRAYED));
             EnableMenuItem(pum, CopyMarkedMultiple, (hasMarks ? MF_ENABLED : MF_GRAYED));
-            EnableMenuItem(pum, ClearMarks        , (hasMarks ? MF_ENABLED : MF_GRAYED));
             EnableMenuItem(pum, ClearHitlist      , (hitlistEmpty() ? MF_GRAYED : MF_ENABLED));
+            EnableMenuItem(pum, ClearMarks,
+                (hasMarks || (data.markAlsoBookmarks && sci.MarkerNext(0, 1 << data.bookMarker) >= 0))
+                ? MF_ENABLED : MF_GRAYED);
+            MENUITEMINFO mii;
+            mii.cbSize = sizeof mii;
+            mii.fMask = MIIM_STATE;
+            mii.fState = data.markAlsoBookmarks ? MFS_CHECKED : 0;
+            SetMenuItemInfo(pum, BookmarkWhenMark, FALSE, &mii);
             TPMPARAMS tpmp;
             tpmp.cbSize = sizeof tpmp;
             GetWindowRect(reinterpret_cast<HWND>(lParam), &tpmp.rcExclude);
@@ -1002,6 +1015,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                                           tpmp.rcExclude.left, tpmp.rcExclude.bottom, hwndDlg, &tpmp);
             DestroyMenu(pum);
             switch (choice) {
+            case BookmarkWhenMark:
+                data.markAlsoBookmarks = !data.markAlsoBookmarks;
+                break;
             case HideAll:
                 plugin.getScintillaPointers();
                 sci.HideLines(0, sci.LineCount() - 1);
@@ -1133,6 +1149,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 plugin.getScintillaPointers();
                 sci.SetIndicatorCurrent(data.indicator);
                 sci.IndicatorClearRange(0, sci.Length());
+                if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
                 break;
             case ClearMarksMultiple:
             {
@@ -1149,6 +1166,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                                 plugin.getScintillaPointers();
                                 sci.SetIndicatorCurrent(data.indicator);
                                 sci.IndicatorClearRange(0, sci.Length());
+                                if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
                             }
                             npp(NPPM_ACTIVATEDOC, view, originalDocIndex);
                         }
@@ -1176,6 +1194,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             plugin.getScintillaPointers();
             sci.SetIndicatorCurrent(data.indicator);
             sci.IndicatorClearRange(0, sci.Length());
+            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
         }
         return FALSE;
 

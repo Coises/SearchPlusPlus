@@ -64,6 +64,7 @@ inline struct CommonData {
     HWND searchDialog  = 0;
     HWND dockingDialog = 0;
     HWND regularDialog = 0;
+    int  bookMarker    = 0;
     bool dockingDialogIsDocked = false;
 
     SearchContext context;
@@ -96,6 +97,7 @@ inline struct CommonData {
     config<bool> clearMarked           = { "unmark before mark"            , false }; // IDC_SETTINGS_CLEARMARKED
     config<bool> hideBeforeShow        = { "hide before show"              , false }; // IDC_SETTINGS_HIDEBEFORESHOW
     config<bool> autoClearMarks        = { "automatic clear marks"         , false }; // IDC_SETTINGS_AUTOCLEAR_MARKS
+    config<bool> markAlsoBookmarks     = { "marking also bookmarks line"   , false };
 
     config<CopyMarkedSeparator> copyMarkedSeparator     = { "copy marked separator"     , CopyMarkedSeparator::Line };
     config<std::string>         copyMarkedSeparatorText = { "copy marked separator text", ""                        };

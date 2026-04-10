@@ -160,6 +160,10 @@ bool progressiveSearch(ProgressInfo& pi) {
                 sci.SetIndicatorValue(1);
                 sci.IndicatorFillRange(found, length);
             }
+            if (data.markAlsoBookmarks) {
+                Scintilla::Line line = sci.LineFromPosition(found);
+                if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+            }
             break;
         case SearchCommand::ReplaceAll:
         {

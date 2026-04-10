@@ -176,6 +176,10 @@ bool progressiveSearch(ProgressInfo& pi) {
                 sci.SetIndicatorValue(1);
                 sci.IndicatorFillRange(matchStart, matchEnd - matchStart);
             }
+            if (data.markAlsoBookmarks) {
+                Scintilla::Line line = sci.LineFromPosition(found);
+                if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+            }
             break;
         }
         if (matchStart == matchEnd) ++position;

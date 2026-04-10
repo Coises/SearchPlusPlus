@@ -137,7 +137,18 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
                 sci.SetIndicatorCurrent(data.indicator);
                 sci.SetIndicatorValue(1);
                 sci.IndicatorClearRange(0, documentLength);
-                for (const Scintilla::CharacterRangeFull& r : ranges) sci.IndicatorFillRange(r.cpMin, r.cpMax - r.cpMin);
+                if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+                Scintilla::Line lineDone = -1;
+                for (const Scintilla::CharacterRangeFull& r : ranges) {
+                    sci.IndicatorFillRange(r.cpMin, r.cpMax - r.cpMin);
+                    if (data.markAlsoBookmarks) {
+                        Scintilla::Line line = sci.LineFromPosition(r.cpMin);
+                        if (line != lineDone) {
+                            lineDone = line;
+                            sci.MarkerAdd(line, data.bookMarker);
+                        }
+                    }
+                }
             }
             if (data.focusStepwise && (command.extent == SearchCommand::Forward || command.extent == SearchCommand::Backward))
                 SetFocus(plugin.currentScintilla());

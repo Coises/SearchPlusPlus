@@ -140,6 +140,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *np) {
         case NPPN_READY:
             npp(NPPM_ALLOCATEINDICATOR, 1, &zlmIndicator);
             npp(NPPM_ADDSCNMODIFIEDFLAGS, 0, SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT);                  
+            data.bookMarker = static_cast<int>(npp(NPPM_GETBOOKMARKID, 0, 0));
             plugin.startupOrShutdown = false;
             bufferActivated();
             break;
