@@ -131,7 +131,8 @@ bool progressiveSearch(ProgressInfo& pi) {
 
     ProgressInfoBoost& pib = static_cast<ProgressInfoBoost&>(pi);
 
-    auto r = req.ranges[pi.rangeIndex];
+    if (pi.rangeIndex >= req.ranges.size()) return false;
+    Scintilla::CharacterRangeFull r = req.ranges[pi.rangeIndex];
     Scintilla::Position scanMax = std::min(rangeEnd, r.cpMax);
     if (position > scanMax) return false;
     bool rxSuccess = pib.rx.search(std::max(position + pib.offset2, r.cpMin + pib.offset1), r.cpMax + pib.offset2, r.cpMin + pib.offset1);

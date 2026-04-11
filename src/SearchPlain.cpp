@@ -133,7 +133,8 @@ bool progressiveSearch(ProgressInfo& pi) {
     auto& find = pip.find;
     auto& offset = pip.offset;
 
-    auto r = req.ranges[pi.rangeIndex];
+    if (pi.rangeIndex >= req.ranges.size()) return false;
+    Scintilla::CharacterRangeFull r = req.ranges[pi.rangeIndex];
     Scintilla::Position scanMax = std::min(rangeEnd, r.cpMax);
     if (position >= scanMax) return false;
     sci.SetTargetRange(position + offset, scanMax + offset);
