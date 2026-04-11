@@ -1,5 +1,15 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.5.3 -- April 11th, 2026
+
+* Avoid a crash when searching **in Marked Text in Open Documents** or **in Marked Text in Documents in this View** and a document has no marked text.
+* Fix button menus overlapping the button when the button is near the bottom of the screen. This could cause inadvertent activation of the last menu option.
+* Make the Scintilla controls (Find box, Replace box and Results list) change colors when dark mode changes. Fix some visibility problems for caret and found text indicators in dark mode.
+* Make **Show All** on the **Tools** menu scroll current position or selection into view.
+* Add toggles **Bookmark lines when marking text** and **Jump to next match after Replace** to **Tools** menu.
+* Add keyboard shortcuts for most **Tools** menu items.
+* Condense the **Replace** button menu and coordinate with the new **Jump to next match after Replace** toggle.
+
 ## Version 0.5.2 -- April 8th, 2026
 
 * Fix display of **Settings**: **Mark style** drop-down in dark mode.

@@ -117,8 +117,8 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Region   ), {L"Replace Backward in Marked &Text"   , L"▤ &Replace🡨"} },
     { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Whole    ), {L"Replace Backward in Whole &Document", L"▯ &Replace🡨"} },
 
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward ), {L"Re&place"         , L"&Replace🡪❚"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward), {L"Replace B&ackward", L"&Replace❚🡨"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward ), {L"&Replace"         , L"&Replace🡪❚"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward), {L"Replace &Backward", L"&Replace❚🡨"} },
 
     { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Selection), {L"Replace in &Selection"              , L"▣ &Replace🡪❚"} },
     { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Region   ), {L"Replace in &Marked Text"            , L"▤ &Replace🡪❚"} },
@@ -313,6 +313,9 @@ bool processToolsCommand(unsigned char command) {
     case ToolsCommand::ShowAll:
         plugin.getScintillaPointers();
         sci.ShowLines(0, sci.LineCount() - 1);
+        sci.SetXCaretPolicy(Scintilla::CaretPolicy::Even, 0);
+        sci.SetYCaretPolicy(Scintilla::CaretPolicy::Slop | Scintilla::CaretPolicy::Strict, static_cast<int>(sci.LinesOnScreen() / 3));
+        sci.ScrollRange(sci.Anchor(), sci.CurrentPos());
         break;
 
     case ToolsCommand::SelToMark:

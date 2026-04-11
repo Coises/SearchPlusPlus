@@ -278,13 +278,15 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <h3 id="search-tools">Tools</h3>
 
-<p>The <strong>Tools</strong> button opens a menu that offers some convenient actions you might want to use in conjunction with searching:
+<p>The <strong>Tools</strong> button opens a menu that offers some convenient settings and actions you might want to use in conjunction with searching; you can also use the keyboard shortcuts shown when focus is in the Search dialog:
 
 <table>
-<tr><th>Hide All Lines</th><td>hides all lines in the active document.</td></tr>
-<tr><th>Show All Lines</th><td>shows all lines in the active document.</td></tr>
-<tr><th>Add Selection to Marked Text</th><td>marks all text currently selected in the active document with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog. The default marker is the <em>Find Mark Style</em>, the same marker used by the built-in <strong>Search</strong>|<strong>Mark</strong> dialog in Notepad++.</td></tr>
-<tr><th>Select Marked Text</th><td>selects all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog. Note that this does not add to the current selection; the current selection is lost.</td></tr>
+<tr><th>Bookmark lines when marking text</th><th>Ctrl+B</th><td>This is a toggle. When checked, <strong>Mark</strong> and <strong>Show</strong> commands also bookmark each line in which they find a match.</td></tr>
+<tr><th>Jump to next match after Replace</th><th>Ctrl+J</th><td>This is a toggle. When checked, <strong>Replace</strong> commands automatically select and scroll to the next occurrence of the find string after replacing text. When not checked, after text is replaced the replaced text is highlighted and the document remains scrolled to show the replacement; the next <strong>Replace</strong> command finds the next occurrence, the next replaces, and so on.</td></tr>
+<tr><th>Hide All Lines</th><th>Ctrl+Shift+Q</th><td>hides all lines in the active document.</td></tr>
+<tr><th>Show All Lines</th><th>Ctrl+Q</th><td>shows all lines in the active document.</td></tr>
+<tr><th>Add Selection to Marked Text</th><th>Ctrl+M</th><td>marks all text currently selected in the active document with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog. The default marker is the <em>Find Mark Style</em>, the same marker used by the built-in <strong>Search</strong>|<strong>Mark</strong> dialog in Notepad++.</td></tr>
+<tr><th>Select Marked Text</th><th>Ctrl+Shift+S</th><td>selects all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog. Note that this does not add to the current selection; the current selection is lost.</td></tr>
 <tr><th>Copy Marked Text
 <ul>
 <li>with no separators
@@ -292,14 +294,14 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 <li>separated by tabs
 <li>separated by line breaks
 <li>separated by custom string
-</ul></th><td>copies to the clipboard all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog as if it were a single selection. The separator, if any, that will be added between separate runs of marked text is indicated; the default is <strong>line breaks</strong>, which you can change using the next menu option.</td></tr>
-<tr><th>Copy Marked Text...</th><td><p>opens a dialog in which you can choose how you would like separate runs of marked text to be separated, and then copies all marked text in the same way as the option above. The separator you choose becomes the new separator for the menu option above.</p>
+</ul></th><th>Ctrl+Shift+C</th><td>copies to the clipboard all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog as if it were a single selection. The separator, if any, that will be added between separate runs of marked text is indicated; the default is <strong>line breaks</strong>, which you can change using the next menu option.</td></tr>
+<tr><th>Copy Marked Text...</th><th>Ctrl+Shift+Y</th><td><p>opens a dialog in which you can choose how you would like separate runs of marked text to be separated, and then copies all marked text in the same way as the option above. The separator you choose becomes the new separator for the menu option above.</p>
 <p class=note>If you choose <strong>Custom</strong>, you can enter a string of text you prefer: for example, you might want to use a comma followed by a blank to separate items that will go into a list. You can use <code>\t</code>, <code>\r</code> and <code>\n</code> for tabs, returns and new lines; use <code>\\</code> for a backslash before <code>t</code>, <code>r</code> or <code>n</code>. Note that in practice, you don’t need to worry about how you code a line ending unless you will be pasting somewhere other than Notepad++; when pasting in Notepad++ line endings are always converted to the line ending type set for the active document.</p></td></tr>
-<tr><th>Copy Marked Text as multiple selections</th><td>copies to the clipboard all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog as if it were a multiple selection. This affects how the copied text pastes, since it will paste like a column or multiple selection rather than like a single selection. The separator for multiple selections is always a line break.</td></tr>
-<tr><th>Remove marks from active document</th><td>removes from the active document all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog.</td></tr>
-<tr><th>Remove marks from multiple documents...</th><td>opens a dialog with options to remove all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog from documents in this view or from all open documents. You might want to use these options along with the <strong>Mark in Documents in this View</strong> or <strong>Mark in Open Documents</strong> commands.</td></tr>
-<tr><th>Clear search results list</th><td>removes all results currently accumulated in the search results list.</td></tr>
-<tr><th>Settings...</th><td>opens the Search++ <a href="#settings">Settings</a> dialog.</td></tr>
+<tr><th>Copy Marked Text as multiple selections</th><th>Ctrl+Shift+M</th><td>copies to the clipboard all text in the active document that is marked with the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog as if it were a multiple selection. This affects how the copied text pastes, since it will paste like a column or multiple selection rather than like a single selection. The separator for multiple selections is always a line break.</td></tr>
+<tr><th>Remove marks from active document<br>Remove marks and bookmarks from active document</th><th>Ctrl+Shift+R</th><td>removes from the active document all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog. If <strong>Bookmark lines when marking text</strong> is checked bookmarks are also removed.</td></tr>
+<tr><th>Remove marks from multiple documents...</th><th>-</th><td>opens a dialog with options to remove all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog from documents in this view or from all open documents. You might want to use these options along with the <strong>Mark in Documents in this View</strong> or <strong>Mark in Open Documents</strong> commands.</td></tr>
+<tr><th>Clear search results list</th><th>-</th><td>removes all results currently accumulated in the search results list.</td></tr>
+<tr><th>Settings...</th><th>Ctrl+Shift+E</th><td>opens the Search++ <a href="#settings">Settings</a> dialog.</td></tr>
 </table>
 
 <h3 id="search-keyboard">Keyboard navigation</h3>
@@ -335,9 +337,16 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <tr><th>Find</th><td>finds one occurrence of the search string. The default <a href="#commands-extent">extent</a> for find commands is forward, starting from the current position or selected text. For plain text searches, Find can also have the <strong>Backward</strong> extent.</td></tr>
 
-<tr><th>Replace (then find)</th><td>first finds a match (unless a match has just been found), then on subsequent clicks replaces the match and finds the next match.</td></tr>
+<tr><th>Replace</th><td><p>first finds a match (unless a match has just been found), then on subsequent clicks replaces the match with the text or expression in the Replace box. After replacing, the command can either leave the replacement highlighted and visible, or find and highlight the next match. Which of these happens when you click the <strong>Replace</strong> button (or type <strong>Alt+R</strong>) is determined by the <strong>Jump to next match after Replace</strong> toggle on the <a href="#search-tools">Tools</a> menu. You can also tell by looking at the button; the word <strong>Replace</strong> will be followed by one of these indicators:</p>
 
-<tr><th>Replace (then wait)</th><td>first finds a match (unless a match has just been found), then the next click replaces the match, leaving the replacement location visible. The next click finds, the next click replaces, and so on. </td></tr>
+<table>
+<tr><th>🡪</th><td>replace then jump to a new match forward</td></tr>
+<tr><th>🡨</th><td>replace then jump to a new match backward</td></tr>
+<tr><th>🡪❚</th><td>replace and highlight replacement; next click finds a new match forward</td></tr>
+<tr><th>❚🡨</th><td>replace and highlight replacement; next click finds a new match backward</td></tr>
+</table>
+
+<p>The drop-down menu for the <strong>Replace</strong> button offers the available commands with the same jump behavior as the direct click command on the button; a submenu at the bottom allows you to select the same commands with the opposite jump behavior. Click-selecting a command from that submenu will set it as the direct click command and toggle the <strong>Jump to next match after Replace</strong> setting.</p></td></tr>
 
 </table>
 
@@ -369,7 +378,7 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <tr><th class="group" colspan=2>Search extents for stepwise search actions</th></tr>
 
-<tr><td>forward</td><td>is the default for stepwise search actions: <strong>Find</strong>, <strong>Replace (then find)</strong> and <strong>Replace (then wait)</strong>. It means moving from the current position or selection to the right and downward through the document.  When a forward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the beginning of the search scope (unless you already started from the beginning).</td></tr>
+<tr><td>forward</td><td>is the default for stepwise search actions (<strong>Find</strong> and <strong>Replace</strong>). It means moving from the current position or selection to the right and downward through the document.  When a forward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the beginning of the search scope (unless you already started from the beginning).</td></tr>
 
 <tr><th>Backward</th><td>is available for stepwise search actions only when searching for <strong>Plain</strong> text. It means moving from the current position or selection to the left and upward through the document. When a Backward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the end of the search scope (unless you already started from the end).</td></tr>
 
@@ -404,7 +413,7 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 <tr><th colspan=2 class="group">Search scopes</th></tr>
 
 <tr><th>Selection</th><td><p>only selected text will be searched.</p>
-<p class=note>Because a <strong>Find</strong> command, or the preliminary find step in a replace command, selects the found text, subsequent commands won’t be confined to the originally-selected text, since it will no longer be selected. To avoid this, you can use <strong>Add Selection to Marked Text</strong> from the <a href="#search-tools">Tools</a> button menu before searching.</p>
+<p class=note>Because a <strong>Find</strong> command, or the preliminary find step in a replace command, selects the found text, subsequent commands won’t be confined to the originally-selected text, since it will no longer be selected. To avoid this, you can use <strong>Add Selection to Marked Text</strong> from the <a href="#search-tools">Tools</a> button menu before searching. Also see the <a href="#settings-selections">Settings</a> checkbox <strong>Convert selections to marked text when beginning a default stepwise search</strong> for an option to do this automatically.</p>
 <p class=note>For a regular expression search, each line in a rectangular selection and each selection in a multiple selection is searched independently; the search in any line or selection cannot “see” outside that selection. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>).</p></td></tr>
 
 <tr><th>Marked Text</th><td><p>only marked text will be searched.</p>
