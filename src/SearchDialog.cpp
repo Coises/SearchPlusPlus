@@ -37,15 +37,15 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Find, SearchCommand::Forward ), {L"&Find"         , L"&Find🡪"} },
     { SearchCommand(SearchCommand::Find, SearchCommand::Backward), {L"Find &Backward", L"&Find🡨"} },
 
-    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Region   ), {L"Find in &Marked Text"            , L"▤ &Find🡪"} },
     { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Selection), {L"Find in &Selection"              , L"▣ &Find🡪"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Region   ), {L"Find in &Marked Text"            , L"▤ &Find🡪"} },
     { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Whole    ), {L"Find in &Whole Document"         , L"▯ &Find🡪"} },
-    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Region   ), {L"Find Backward in Marked &Text"   , L"▤ &Find🡨"} },
     { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Selection), {L"Find Backward in S&election"     , L"▣ &Find🡨"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Region   ), {L"Find Backward in Marked &Text"   , L"▤ &Find🡨"} },
     { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Whole    ), {L"Find Backward in Whole &Document", L"▯ &Find🡨"} },
 
 
-    { SearchCommand(SearchCommand::Count, SearchCommand::All   ), {L"&Count"       , L"&Count↕"  } },
+    { SearchCommand(SearchCommand::Count, SearchCommand::All), {L"&Count", L"&Count↕"} },
 
     { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Selection), {L"Count in &Selection"                    , L"▣ &Count↕"} },
     { SearchCommand(SearchCommand::Count, SearchCommand::Open                            ), {L"Count in &Open Documents"               , L"&Count 🗐"} },
@@ -93,7 +93,7 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Region   ), {L"Mark Before in Mar&ked Text"           , L"▤ M&ark🡩"} },
     { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Region   ), {L"Mark After in Marked &Text"            , L"▤ M&ark🡫"} },
     { SearchCommand(SearchCommand::Mark, SearchCommand::Open  , SearchCommand::Region   ), {L"Mark in Marked Text in O&pen Documents", L"▤ M&ark 🗐"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::View  , SearchCommand::Region   ), {L"Mark in Marked Text in this Vie&w"     , L"▤ M&ark 🗟"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::View  , SearchCommand::Region   ), {L"Mark in Marked Text in this V&iew"     , L"▤ M&ark 🗟"} },
     { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Whole    ), {L"Mark in &Whole Document"               , L"▯ M&ark↕" } },
     { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Whole    ), {L"Mark Before in W&hole Document"        , L"▯ M&ark🡩"} },
     { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Whole    ), {L"Mark After in Whole &Document"         , L"▯ M&ark🡫"} },
@@ -107,24 +107,25 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole    ), {L"Show After in Whole &Document"   , L"▯ &Show🡫"} },
 
 
-    { SearchCommand(SearchCommand::Replace , SearchCommand::Forward ), {L"&Replace (then find)"         , L"&Replace🡪"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward ), {L"Re&place (then wait)"         , L"&Replace🡪❚"} },
-    { SearchCommand(SearchCommand::Replace , SearchCommand::Backward), {L"Replace (then find) &Backward", L"&Replace🡨"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward), {L"Replace (then wait) B&ackward", L"&Replace❚🡨"} },
+    { SearchCommand(SearchCommand::Replace , SearchCommand::Forward ), {L"&Replace"         , L"&Replace🡪"} },
+    { SearchCommand(SearchCommand::Replace , SearchCommand::Backward), {L"Replace &Backward", L"&Replace🡨"} },
 
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Region   ), {L"Replace (then find) in &Marked Text"            , L"▤ &Replace🡪"} },
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Selection), {L"Replace (then find) in &Selection"              , L"▣ &Replace🡪"} },
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Whole    ), {L"Replace (then find) in &Whole Document"         , L"▯ &Replace🡪"} },
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Region   ), {L"Replace (then find) Backward in Mar&ked Text"   , L"▤ &Replace🡨"} },
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Selection), {L"Replace (then find) Backward in Selectio&n"     , L"▣ &Replace🡨"} },
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Whole    ), {L"Replace (then find) Backward in W&hole Document", L"▯ &Replace🡨"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Selection), {L"Replace in &Selection"              , L"▣ &Replace🡪"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Region   ), {L"Replace in &Marked Text"            , L"▤ &Replace🡪"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Whole    ), {L"Replace in &Whole Document"         , L"▯ &Replace🡪"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Selection), {L"Replace Backward in S&election"     , L"▣ &Replace🡨"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Region   ), {L"Replace Backward in Marked &Text"   , L"▤ &Replace🡨"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Whole    ), {L"Replace Backward in Whole &Document", L"▯ &Replace🡨"} },
 
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Region   ), {L"Replace (then wait) in Marked &Text"            , L"▤ &Replace🡪❚"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Selection), {L"Replace (then wait) in S&election"              , L"▣ &Replace🡪❚"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Whole    ), {L"Replace (then wait) in Whole &Document"         , L"▯ &Replace🡪❚"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Region   ), {L"Replace (then wait) Backward &in Marked Text"   , L"▤ &Replace❚🡨"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Selection), {L"Replace (then wait) Backward in Se&lection"     , L"▣ &Replace❚🡨"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Whole    ), {L"Replace (then wait) Backward in Wh&ole Document", L"▯ &Replace❚🡨"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward ), {L"Re&place"         , L"&Replace🡪❚"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward), {L"Replace B&ackward", L"&Replace❚🡨"} },
+
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Selection), {L"Replace in &Selection"              , L"▣ &Replace🡪❚"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Region   ), {L"Replace in &Marked Text"            , L"▤ &Replace🡪❚"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Whole    ), {L"Replace in &Whole Document"         , L"▯ &Replace🡪❚"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Selection), {L"Replace Backward in S&election"     , L"▣ &Replace❚🡨"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Region   ), {L"Replace Backward in Marked &Text"   , L"▤ &Replace❚🡨"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Whole    ), {L"Replace Backward in Whole &Document", L"▯ &Replace❚🡨"} },
 
 
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All   ), {L"&Replace All"       , L"R&eplace All↕"} },
@@ -136,8 +137,8 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All   , SearchCommand::Region   ), {L"Replace All in &Marked Text"                  , L"▤ R&eplace All↕" } },
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Before, SearchCommand::Region   ), {L"Replace All Before in Mar&ked Text"           , L"▤ R&eplace All🡩"} },
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::After , SearchCommand::Region   ), {L"Replace All After in Marked &Text"            , L"▤ R&eplace All🡫"} },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Open  , SearchCommand::Region   ), {L"Replace All in Marked Text in &Open Documents", L"▤ R&eplace All 🗐"} },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::View  , SearchCommand::Region   ), {L"Replace All in Marked Text in this &View"     , L"▤ R&eplace All 🗟"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Open  , SearchCommand::Region   ), {L"Replace All in Marked Text in O&pen Documents", L"▤ R&eplace All 🗐"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::View  , SearchCommand::Region   ), {L"Replace All in Marked Text in this V&iew"     , L"▤ R&eplace All 🗟"} },
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All   , SearchCommand::Whole    ), {L"Replace All in &Whole Document"               , L"▯ R&eplace All↕" } },
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Before, SearchCommand::Whole    ), {L"Replace All Before in W&hole Document"        , L"▯ R&eplace All🡩"} },
     { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::After , SearchCommand::Whole    ), {L"Replace All After in Whole &Document"         , L"▯ R&eplace All🡫"} },
@@ -268,6 +269,226 @@ INT_PTR CALLBACK removeMarksDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 }
 
 
+// Tools button and shortcuts processing
+
+namespace ToolsCommand {
+    constexpr unsigned char BookmarkWhenMark   = 'b';
+    constexpr unsigned char JumpReplace        = 'j';
+    constexpr unsigned char HideAll            = 'Q';
+    constexpr unsigned char ShowAll            = 'q';
+    constexpr unsigned char SelToMark          = 'm';
+    constexpr unsigned char MarkToSel          = 'S';
+    constexpr unsigned char CopyMarked         = 'C';
+    constexpr unsigned char CopyMarkedDialog   = 'Y';
+    constexpr unsigned char CopyMarkedMultiple = 'M';
+    constexpr unsigned char ClearMarks         = 'R';
+    constexpr unsigned char ClearMarksMultiple =   1;
+    constexpr unsigned char ClearHitlist       =   2;
+    constexpr unsigned char Settings           = 'E';
+};
+
+bool processToolsCommand(unsigned char command) {
+
+    switch (command) {
+
+    case ToolsCommand::BookmarkWhenMark:
+        data.markAlsoBookmarks = !data.markAlsoBookmarks;
+        break;
+
+    case ToolsCommand::JumpReplace:
+    {
+        SearchCommand repl = SearchCommand(data.buttonReplace);
+        repl.verb = repl.verb == SearchCommand::Replace ? SearchCommand::ReplStop : SearchCommand::Replace;
+        data.buttonReplace = repl;
+        if (data.dockingDialog) SetDlgItemText(data.dockingDialog, IDC_SEARCH_REPLACE, Command_Button(repl));
+        if (data.regularDialog) SetDlgItemText(data.regularDialog, IDC_SEARCH_REPLACE, Command_Button(repl));
+        break;
+    }
+
+    case ToolsCommand::HideAll:
+        plugin.getScintillaPointers();
+        sci.HideLines(0, sci.LineCount() - 1);
+        break;
+
+    case ToolsCommand::ShowAll:
+        plugin.getScintillaPointers();
+        sci.ShowLines(0, sci.LineCount() - 1);
+        break;
+
+    case ToolsCommand::SelToMark:
+    {
+        plugin.getScintillaPointers();
+        sci.SetIndicatorCurrent(data.indicator);
+        sci.SetIndicatorValue(1);
+        int n = sci.Selections();
+        for (int i = 0; i < n; ++i) {
+            Scintilla::Position a = sci.SelectionNStart(i);
+            Scintilla::Position b = sci.SelectionNEnd(i);
+            if (b > a) sci.IndicatorFillRange(a, b - a);
+        }
+        break;
+    }
+
+    case ToolsCommand::MarkToSel:
+    {
+        plugin.getScintillaPointers();
+        bool first = true;
+        Scintilla::Position documentLength = sci.Length();
+        for (Scintilla::Position cpMin = 0;;) {
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+            if (cpMax == cpMin) break;
+            if (sci.IndicatorValueAt(data.indicator, cpMin)) {
+                if (first) {
+                    sci.ClearSelections();
+                    sci.SetSelection(cpMax, cpMin);
+                    first = false;
+                }
+                else sci.AddSelection(cpMax, cpMin);
+            }
+            if (cpMax == documentLength) break;
+            cpMin = cpMax;
+        }
+        break;
+    }
+ 
+    case ToolsCommand::CopyMarkedDialog:
+    {
+        HWND focus = GetFocus();
+        INT_PTR cancel = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_TOOLS_COPYMARKED), data.searchDialog, copyMarkedDialogProc);
+        SetFocus(focus);
+        if (cancel) break;
+    }
+    [[fallthrough]];
+
+    case ToolsCommand::CopyMarked:
+    {
+        plugin.getScintillaPointers();
+        std::string text;
+        bool first = true;
+        Scintilla::Position documentLength = sci.Length();
+        std::string sep;
+        switch (data.copyMarkedSeparator.get()) {
+        case CopyMarkedSeparator::None: sep = ""; break;
+        case CopyMarkedSeparator::Blank: sep = " "; break;
+        case CopyMarkedSeparator::Tab: sep = "\t"; break;
+        case CopyMarkedSeparator::Custom: sep = data.copyMarkedSeparatorText; break;
+        default:
+        {
+            Scintilla::EndOfLine eolm = sci.EOLMode();
+            sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
+        }
+        }
+        for (Scintilla::Position cpMin = 0;;) {
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+            if (cpMax == cpMin) break;
+            if (sci.IndicatorValueAt(data.indicator, cpMin)) {
+                if (first) first = false;
+                else text += sep;
+                text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
+            }
+            if (cpMax == documentLength) break;
+            cpMin = cpMax;
+        }
+        sci.CopyText(text.length(), text.data());
+        break;
+    }
+
+    case ToolsCommand::CopyMarkedMultiple:
+    {
+        plugin.getScintillaPointers();
+        std::string text;
+        Scintilla::Position documentLength = sci.Length();
+        Scintilla::EndOfLine eolm = sci.EOLMode();
+        std::string sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
+        int count = 0;
+        for (Scintilla::Position cpMin = 0;;) {
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+            if (cpMax == cpMin) break;
+            if (sci.IndicatorValueAt(data.indicator, cpMin)) {
+                if (++count > 1) text += sep;
+                text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
+            }
+            if (cpMax == documentLength) break;
+            cpMin = cpMax;
+        }
+        if (count < 1) break;
+        if (count == 1) sci.CopyText(text.length(), text.data());
+        else {
+            static CLIPFORMAT ClipFormatColumn = static_cast<CLIPFORMAT>(RegisterClipboardFormat(L"MSDEVColumnSelect"));
+            UINT codepage = sci.CodePage();
+            std::wstring cliptext = codepage == CP_UTF8 ? utf8to16(text) : toWide(text, codepage);
+            if (!OpenClipboard(data.searchDialog)) break;
+            EmptyClipboard();
+            HGLOBAL hg = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, (1 + cliptext.length()) * 2);
+            if (!hg) {
+                CloseClipboard();
+                break;
+            }
+            void* pg = ::GlobalLock(hg);
+            if (!pg) {
+                GlobalFree(hg);
+                CloseClipboard();
+                break;
+            }
+            memcpy(pg, cliptext.data(), (1 + cliptext.length()) * 2);
+            GlobalUnlock(hg);
+            SetClipboardData(CF_UNICODETEXT, hg);
+            SetClipboardData(ClipFormatColumn, {});
+            CloseClipboard();
+        }
+        break;
+    }
+
+    case ToolsCommand::ClearMarks:
+        plugin.getScintillaPointers();
+        sci.SetIndicatorCurrent(data.indicator);
+        sci.IndicatorClearRange(0, sci.Length());
+        if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+        break;
+
+    case ToolsCommand::ClearMarksMultiple:
+    {
+        HWND focus = GetFocus();
+        INT_PTR action = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_REMOVEMARKS), data.searchDialog, removeMarksDialogProc);
+        if (action == IDC_REMOVEMARKS_OPEN || action == IDC_REMOVEMARKS_VIEW) {
+            int originalView = static_cast<int>(npp(NPPM_GETCURRENTVIEW, 0, 0));
+            for (int view = action == IDC_REMOVEMARKS_VIEW ? originalView : 1 - originalView; ; view = originalView) {
+                int originalDocIndex = static_cast<int>(npp(NPPM_GETCURRENTDOCINDEX, 0, view));
+                if (originalDocIndex >= 0) {
+                    int documentCount = static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, view + 1));
+                    for (int pos = 0; pos < documentCount; ++pos) {
+                        npp(NPPM_ACTIVATEDOC, view, pos);
+                        plugin.getScintillaPointers();
+                        sci.SetIndicatorCurrent(data.indicator);
+                        sci.IndicatorClearRange(0, sci.Length());
+                        if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+                    }
+                    npp(NPPM_ACTIVATEDOC, view, originalDocIndex);
+                }
+                if (view == originalView) break;
+            }
+        }
+        SetFocus(focus);
+        break;
+    }
+
+    case ToolsCommand::ClearHitlist:
+        clearHitlist();
+        break;
+
+    case ToolsCommand::Settings:
+        showSettingsDialog();
+        break;
+
+    default:
+        return false;
+    }
+
+    return true;
+
+}
+
+
 // Subclass procedure for Scintilla controls: implement keyboard shortcuts not built in to Scintilla
 
 LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
@@ -275,8 +496,11 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
     case WM_GETDLGCODE:
         return DefSubclassProc(hWnd, uMsg, wParam, lParam) & ~DLGC_HASSETSEL;
     case WM_KEYDOWN:
-        if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000)) break;
-        switch (wParam) {
+        if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') break;
+        if (!processToolsCommand(static_cast<unsigned char>(
+            GetKeyState(VK_SHIFT) & 0x8000 ? std::toupper(static_cast<unsigned char>(wParam))
+                                           : std::tolower(static_cast<unsigned char>(wParam)))
+        )) switch (wParam) {
         case 'E':
         {
             if (GetKeyState(VK_SHIFT) & 0x8000) break;
@@ -375,8 +599,11 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
     switch (uMsg) {
     case WM_KEYDOWN:
-        if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000)) break;
-        switch (wParam) {
+        if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') break;
+        if (!processToolsCommand(static_cast<unsigned char>(
+            GetKeyState(VK_SHIFT) & 0x8000 ? std::toupper(static_cast<unsigned char>(wParam))
+            : std::tolower(static_cast<unsigned char>(wParam)))
+        )) switch (wParam) {
         case 'H':
             if (GetKeyState(VK_SHIFT) & 0x8000) hideHitlist();
             else                                showHitlist();
@@ -449,18 +676,28 @@ void configureSearchBox(HWND sciBox) {
     sci.SetRepresentationColour("\n"  , whiteSpace);
     sci.SetRepresentationColour("\r"  , whiteSpace);
     sci.SetRepresentationColour("\r\n", whiteSpace);
+    sci.ClearCmdKey('B' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('E' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('F' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('H' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('I' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('J' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('M' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('N' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('O' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('Q' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('R' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('W' + (SCMOD_CTRL << 16));
+    sci.ClearCmdKey('C' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    sci.ClearCmdKey('E' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('H' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    sci.ClearCmdKey('M' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('N' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('O' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-
+    sci.ClearCmdKey('Q' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    sci.ClearCmdKey('R' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    sci.ClearCmdKey('S' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    sci.ClearCmdKey('Y' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
 }
 
 
@@ -956,34 +1193,34 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             return TRUE;
         case IDC_SEARCH_TOOLS:
         {
-            enum ToolCommands {NoCommand, BookmarkWhenMark, HideAll, ShowAll, SelToMark, MarkToSel, CopyMarked, CopyMarkedDialog,
-                               CopyMarkedMultiple, ClearMarks, ClearMarksMultiple, ClearHitlist, Settings};
             HMENU pum = CreatePopupMenu();
-            AppendMenu(pum, MF_STRING, BookmarkWhenMark, L"&Bookmark lines when marking text");
+            AppendMenu(pum, MF_STRING, ToolsCommand::BookmarkWhenMark, L"&Bookmark lines when marking text\tCtrl+B");
+            AppendMenu(pum, MF_STRING, ToolsCommand::JumpReplace     , L"&Jump to next match after Replace\tCtrl+J");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, HideAll, L"&Hide All Lines");
-            AppendMenu(pum, MF_STRING, ShowAll, L"Show &All Lines");
+            AppendMenu(pum, MF_STRING, ToolsCommand::HideAll, L"&Hide All Lines\tCtrl+Shift+Q");
+            AppendMenu(pum, MF_STRING, ToolsCommand::ShowAll, L"Show &All Lines\tCtrl+Q");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, SelToMark, L"Add Selection to &Marked Text");
-            AppendMenu(pum, MF_STRING, MarkToSel, L"&Select Marked Text");
+            AppendMenu(pum, MF_STRING, ToolsCommand::SelToMark, L"Add Selection to &Marked Text\tCtrl+M");
+            AppendMenu(pum, MF_STRING, ToolsCommand::MarkToSel, L"&Select Marked Text\tCtrl+Shift+S");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, CopyMarked, 
-                  data.copyMarkedSeparator == CopyMarkedSeparator::None   ? L"&Copy Marked Text with no separators"
-                : data.copyMarkedSeparator == CopyMarkedSeparator::Blank  ? L"&Copy Marked Text separated by blanks"
-                : data.copyMarkedSeparator == CopyMarkedSeparator::Tab    ? L"&Copy Marked Text separated by tabs"
-                : data.copyMarkedSeparator == CopyMarkedSeparator::Line   ? L"&Copy Marked Text separated by line breaks"
-                                                                          : L"&Copy Marked Text separated by custom string"
+            AppendMenu(pum, MF_STRING, ToolsCommand::CopyMarked,
+                  data.copyMarkedSeparator == CopyMarkedSeparator::None   ? L"&Copy Marked Text with no separators\tCtrl+Shift+C"
+                : data.copyMarkedSeparator == CopyMarkedSeparator::Blank  ? L"&Copy Marked Text separated by blanks\tCtrl+Shift+C"
+                : data.copyMarkedSeparator == CopyMarkedSeparator::Tab    ? L"&Copy Marked Text separated by tabs\tCtrl+Shift+C"
+                : data.copyMarkedSeparator == CopyMarkedSeparator::Line   ? L"&Copy Marked Text separated by line breaks\tCtrl+Shift+C"
+                                                                          : L"&Copy Marked Text separated by custom string\tCtrl+Shift+C"
                 );
-            AppendMenu(pum, MF_STRING, CopyMarkedDialog, L"Cop&y Marked Text...");
-            AppendMenu(pum, MF_STRING, CopyMarkedMultiple, L"Copy Marked &Text as multiple selections");
+            AppendMenu(pum, MF_STRING, ToolsCommand::CopyMarkedDialog, L"Cop&y Marked Text...\tCtrl+Shift+Y");
+            AppendMenu(pum, MF_STRING, ToolsCommand::CopyMarkedMultiple, L"Copy Marked &Text as multiple selections\tCtrl+Shift+M");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, ClearMarks, data.markAlsoBookmarks ? L"&Remove marks and bookmarks from active document"
-                                                                          : L"&Remove marks from active document");
-            AppendMenu(pum, MF_STRING, ClearMarksMultiple, L"Remove marks from multiple &documents...");
+            AppendMenu(pum, MF_STRING, ToolsCommand::ClearMarks, data.markAlsoBookmarks
+                ? L"&Remove marks and bookmarks from active document\tCtrl+Shift+R"
+                : L"&Remove marks from active document\tCtrl+Shift+R");
+            AppendMenu(pum, MF_STRING, ToolsCommand::ClearMarksMultiple, L"Remove marks from multiple &documents...");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, ClearHitlist, L"Clear search results list");
+            AppendMenu(pum, MF_STRING, ToolsCommand::ClearHitlist, L"C&lear search results list");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, Settings, L"S&ettings...");
+            AppendMenu(pum, MF_STRING, ToolsCommand::Settings, L"S&ettings...\tCtrl+Shift+E");
             plugin.getScintillaPointers();
             bool hasMarks = false;
             if (sci.IndicatorValueAt(data.indicator, 0)) hasMarks = true;
@@ -991,198 +1228,31 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 Scintilla::Position p = sci.IndicatorEnd(data.indicator, 0);
                 if (p != 0 && p != sci.Length()) hasMarks = true;
             }
-            EnableMenuItem(pum, HideAll           , (sci.VisibleFromDocLine(sci.LineCount() - 1) == 0
-                                                     && !sci.LineVisible(0) ? MF_GRAYED : MF_ENABLED));
-            EnableMenuItem(pum, ShowAll           , (sci.AllLinesVisible() ? MF_GRAYED : MF_ENABLED));
-            EnableMenuItem(pum, SelToMark         , (sci.SelectionEmpty() ? MF_GRAYED : MF_ENABLED));
-            EnableMenuItem(pum, MarkToSel         , (hasMarks ? MF_ENABLED : MF_GRAYED));
-            EnableMenuItem(pum, CopyMarked        , (hasMarks ? MF_ENABLED : MF_GRAYED));
-            EnableMenuItem(pum, CopyMarkedDialog  , (hasMarks ? MF_ENABLED : MF_GRAYED));
-            EnableMenuItem(pum, CopyMarkedMultiple, (hasMarks ? MF_ENABLED : MF_GRAYED));
-            EnableMenuItem(pum, ClearHitlist      , (hitlistEmpty() ? MF_GRAYED : MF_ENABLED));
-            EnableMenuItem(pum, ClearMarks,
-                (hasMarks || (data.markAlsoBookmarks && sci.MarkerNext(0, 1 << data.bookMarker) >= 0))
-                ? MF_ENABLED : MF_GRAYED);
+            EnableMenuItem(pum, ToolsCommand::ShowAll           , sci.AllLinesVisible() ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::SelToMark         , sci.SelectionEmpty()  ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::MarkToSel         , !hasMarks             ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::CopyMarked        , !hasMarks             ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , !hasMarks             ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, !hasMarks             ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::ClearHitlist      , hitlistEmpty()        ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::HideAll,
+                sci.VisibleFromDocLine(sci.LineCount() - 1) == 0 && !sci.LineVisible(0) ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::ClearMarks,
+                hasMarks || (data.markAlsoBookmarks && sci.MarkerNext(0, 1 << data.bookMarker) >= 0) ? MF_ENABLED : MF_GRAYED);
             MENUITEMINFO mii;
             mii.cbSize = sizeof mii;
             mii.fMask = MIIM_STATE;
             mii.fState = data.markAlsoBookmarks ? MFS_CHECKED : 0;
-            SetMenuItemInfo(pum, BookmarkWhenMark, FALSE, &mii);
+            SetMenuItemInfo(pum, ToolsCommand::BookmarkWhenMark, FALSE, &mii);
+            mii.fState = SearchCommand(data.buttonReplace).verb == SearchCommand::Replace ? MFS_CHECKED : 0;
+            SetMenuItemInfo(pum, ToolsCommand::JumpReplace, FALSE, &mii);
             TPMPARAMS tpmp;
             tpmp.cbSize = sizeof tpmp;
             GetWindowRect(reinterpret_cast<HWND>(lParam), &tpmp.rcExclude);
             int choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL,
                                           tpmp.rcExclude.left, tpmp.rcExclude.bottom, hwndDlg, &tpmp);
             DestroyMenu(pum);
-            switch (choice) {
-            case BookmarkWhenMark:
-                data.markAlsoBookmarks = !data.markAlsoBookmarks;
-                break;
-            case HideAll:
-                plugin.getScintillaPointers();
-                sci.HideLines(0, sci.LineCount() - 1);
-                break;
-            case ShowAll:
-                plugin.getScintillaPointers();
-                sci.ShowLines(0, sci.LineCount() - 1);
-                break;
-            case SelToMark:
-            {
-                plugin.getScintillaPointers();
-                sci.SetIndicatorCurrent(data.indicator);
-                sci.SetIndicatorValue(1);
-                int n = sci.Selections();
-                for (int i = 0; i < n; ++i) {
-                    Scintilla::Position a = sci.SelectionNStart(i);
-                    Scintilla::Position b = sci.SelectionNEnd(i);
-                    if (b > a) sci.IndicatorFillRange(a, b - a);
-                }
-                break;
-            }
-            case MarkToSel:
-            {
-                plugin.getScintillaPointers();
-                bool first = true;
-                Scintilla::Position documentLength = sci.Length();
-                for (Scintilla::Position cpMin = 0;;) {
-                    Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
-                    if (cpMax == cpMin) break;
-                    if (sci.IndicatorValueAt(data.indicator, cpMin)) {
-                        if (first) {
-                            sci.ClearSelections();
-                            sci.SetSelection(cpMax, cpMin);
-                            first = false;
-                        }
-                        else sci.AddSelection(cpMax, cpMin);
-                    }
-                    if (cpMax == documentLength) break;
-                    cpMin = cpMax;
-                }
-                break;
-            }
-            case CopyMarkedDialog:
-            {
-                HWND focus = GetFocus();
-                INT_PTR cancel = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_TOOLS_COPYMARKED), hwndDlg, copyMarkedDialogProc);
-                SetFocus(focus);
-                if (cancel) break;
-            }
-            [[fallthrough]];
-            case CopyMarked:
-            {
-                plugin.getScintillaPointers();
-                std::string text;
-                bool first = true;
-                Scintilla::Position documentLength = sci.Length();
-                std::string sep;
-                switch (data.copyMarkedSeparator.get()) {
-                case CopyMarkedSeparator::None  : sep = ""  ; break;
-                case CopyMarkedSeparator::Blank : sep = " " ; break;
-                case CopyMarkedSeparator::Tab   : sep = "\t"; break;
-                case CopyMarkedSeparator::Custom: sep = data.copyMarkedSeparatorText; break;
-                default:
-                {
-                    Scintilla::EndOfLine eolm = sci.EOLMode();
-                    sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
-                }
-                }
-                for (Scintilla::Position cpMin = 0;;) {
-                    Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
-                    if (cpMax == cpMin) break;
-                    if (sci.IndicatorValueAt(data.indicator, cpMin)) {
-                        if (first) first = false;
-                        else text += sep;
-                        text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
-                    }
-                    if (cpMax == documentLength) break;
-                    cpMin = cpMax;
-                }
-                sci.CopyText(text.length(), text.data());
-                break;
-            }
-            case CopyMarkedMultiple:
-            {
-                plugin.getScintillaPointers();
-                std::string text;
-                Scintilla::Position documentLength = sci.Length();
-                Scintilla::EndOfLine eolm = sci.EOLMode();
-                std::string sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
-                int count = 0;
-                for (Scintilla::Position cpMin = 0;;) {
-                    Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
-                    if (cpMax == cpMin) break;
-                    if (sci.IndicatorValueAt(data.indicator, cpMin)) {
-                        if (++count > 1) text += sep;
-                        text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
-                    }
-                    if (cpMax == documentLength) break;
-                    cpMin = cpMax;
-                }
-                if (count < 1) break;
-                if (count == 1) sci.CopyText(text.length(), text.data());
-                else {
-                    static CLIPFORMAT ClipFormatColumn = static_cast<CLIPFORMAT>(RegisterClipboardFormat(L"MSDEVColumnSelect"));
-                    UINT codepage = sci.CodePage();
-                    std::wstring cliptext = codepage == CP_UTF8 ? utf8to16(text) : toWide(text, codepage);
-                    if (!OpenClipboard(hwndDlg)) break;
-                    EmptyClipboard();
-                    HGLOBAL hg = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, (1 + cliptext.length()) * 2);
-                    if (!hg) {
-                        CloseClipboard();
-                        break;
-                    }
-                    void* pg = ::GlobalLock(hg);
-                    if (!pg) {
-                        GlobalFree(hg);
-                        CloseClipboard();
-                        break;
-                    }
-                    memcpy(pg, cliptext.data(), (1 + cliptext.length()) * 2);
-                    GlobalUnlock(hg);
-                    SetClipboardData(CF_UNICODETEXT, hg);
-                    SetClipboardData(ClipFormatColumn, {});
-                    CloseClipboard();
-                }
-                break;
-            }
-            case ClearMarks:
-                plugin.getScintillaPointers();
-                sci.SetIndicatorCurrent(data.indicator);
-                sci.IndicatorClearRange(0, sci.Length());
-                if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
-                break;
-            case ClearMarksMultiple:
-            {
-                HWND focus = GetFocus();
-                INT_PTR action = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_REMOVEMARKS), hwndDlg, removeMarksDialogProc);
-                if (action == IDC_REMOVEMARKS_OPEN || action == IDC_REMOVEMARKS_VIEW) {
-                    int originalView = static_cast<int>(npp(NPPM_GETCURRENTVIEW, 0, 0));
-                    for (int view = action == IDC_REMOVEMARKS_VIEW ? originalView : 1 - originalView; ; view = originalView) {
-                        int originalDocIndex = static_cast<int>(npp(NPPM_GETCURRENTDOCINDEX, 0, view));
-                        if (originalDocIndex >= 0) {
-                            int documentCount = static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, view + 1));
-                            for (int pos = 0; pos < documentCount; ++pos) {
-                                npp(NPPM_ACTIVATEDOC, view, pos);
-                                plugin.getScintillaPointers();
-                                sci.SetIndicatorCurrent(data.indicator);
-                                sci.IndicatorClearRange(0, sci.Length());
-                                if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
-                            }
-                            npp(NPPM_ACTIVATEDOC, view, originalDocIndex);
-                        }
-                        if (view == originalView) break;
-                    }
-                }
-                SetFocus(focus);
-                break;
-            }
-            case ClearHitlist:
-                clearHitlist();
-                break;
-            case Settings:
-                showSettingsDialog();
-                break;
-            }
+            processToolsCommand(static_cast<unsigned char>(choice));
             return TRUE;
         }
         }
@@ -1497,31 +1567,45 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             case IDC_SEARCH_REPLACE:
             {
                 searchButton = &data.buttonReplace;
-                pum = CreatePopupMenu();
-                addButtonItem(pum, SearchCommand::Replace );
-                addButtonItem(pum, SearchCommand::ReplStop);
+                HMENU thenFind = CreatePopupMenu();
+                addButtonItem(thenFind, SearchCommand::Replace );
                 if (data.searchEngine == SearchEngine::Plain) {
+                    addButtonItem(thenFind, SearchCommand(SearchCommand::Replace , SearchCommand::Backward));
+                }
+                AppendMenu(thenFind, MF_SEPARATOR, 0, 0);
+                addButtonItem(thenFind, SearchCommand(SearchCommand::Replace, SearchCommand::Forward, SearchCommand::Selection));
+                addButtonItem(thenFind, SearchCommand(SearchCommand::Replace, SearchCommand::Forward, SearchCommand::Region   ));
+                addButtonItem(thenFind, SearchCommand(SearchCommand::Replace, SearchCommand::Forward, SearchCommand::Whole    ));
+                if (data.searchEngine == SearchEngine::Plain) {
+                    AppendMenu(thenFind, MF_SEPARATOR, 0, 0);
+                    addButtonItem(thenFind, SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Selection));
+                    addButtonItem(thenFind, SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Region   ));
+                    addButtonItem(thenFind, SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Whole    ));
+                }
+                HMENU thenStop = CreatePopupMenu();
+                addButtonItem(thenStop, SearchCommand::ReplStop);
+                if (data.searchEngine == SearchEngine::Plain) {
+                    addButtonItem(thenStop, SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward));
+                }
+                AppendMenu(thenStop, MF_SEPARATOR, 0, 0);
+                addButtonItem(thenStop, SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward, SearchCommand::Selection));
+                addButtonItem(thenStop, SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward, SearchCommand::Region   ));
+                addButtonItem(thenStop, SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward, SearchCommand::Whole    ));
+                if (data.searchEngine == SearchEngine::Plain) {
+                    AppendMenu(thenStop, MF_SEPARATOR, 0, 0);
+                    addButtonItem(thenStop, SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Selection));
+                    addButtonItem(thenStop, SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Region   ));
+                    addButtonItem(thenStop, SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Whole    ));
+                }
+                if (SearchCommand(data.buttonReplace) == SearchCommand::Replace) {
+                    pum = thenFind;
                     AppendMenu(pum, MF_SEPARATOR, 0, 0);
-                    addButtonItem(pum, SearchCommand(SearchCommand::Replace , SearchCommand::Backward));
-                    addButtonItem(pum, SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward));
+                    AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(thenStop), L"Do not &jump to next match");
                 }
-                AppendMenu(pum, MF_SEPARATOR, 0, 0);
-                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Forward, SearchCommand::Selection));
-                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Forward, SearchCommand::Region   ));
-                addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Forward, SearchCommand::Whole    ));
-                if (data.searchEngine == SearchEngine::Plain) {
-                    addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Selection));
-                    addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Region   ));
-                    addButtonItem(pum, SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Whole    ));
-                }
-                AppendMenu(pum, MF_SEPARATOR, 0, 0);
-                addButtonItem(pum, SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward, SearchCommand::Selection));
-                addButtonItem(pum, SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward, SearchCommand::Region   ));
-                addButtonItem(pum, SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward, SearchCommand::Whole    ));
-                if (data.searchEngine == SearchEngine::Plain) {
-                    addButtonItem(pum, SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Selection));
-                    addButtonItem(pum, SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Region   ));
-                    addButtonItem(pum, SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Whole    ));
+                else {
+                    pum = thenStop;
+                    AppendMenu(pum, MF_SEPARATOR, 0, 0);
+                    AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(thenFind), L"&Jump to next match");
                 }
                 break;
             }
