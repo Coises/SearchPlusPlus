@@ -169,7 +169,7 @@ bool progressiveSearch(ProgressInfo& pi) {
             else sci.AddSelection(matchEnd, matchStart);
             break;
         case SearchCommand::Show:
-            sci.ShowLines(sci.LineFromPosition(found), sci.LineFromPosition(position));
+            sci.ShowLines(sci.LineFromPosition(matchStart), sci.LineFromPosition(matchEnd));
             [[fallthrough]];
         case SearchCommand::Mark:
             if (matchStart != matchEnd) {
@@ -178,7 +178,7 @@ bool progressiveSearch(ProgressInfo& pi) {
                 sci.IndicatorFillRange(matchStart, matchEnd - matchStart);
             }
             if (data.markAlsoBookmarks) {
-                Scintilla::Line line = sci.LineFromPosition(found);
+                Scintilla::Line line = sci.LineFromPosition(matchStart);
                 if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
             }
             break;
