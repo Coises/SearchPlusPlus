@@ -480,8 +480,12 @@ bool processToolsCommand(unsigned char command) {
         break;
 
     case ToolsCommand::Settings:
+    {
+        HWND focus = GetFocus();
         showSettingsDialog();
+        SetFocus(focus);
         break;
+    }
 
     default:
         return false;
@@ -499,7 +503,11 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
     case WM_GETDLGCODE:
         return DefSubclassProc(hWnd, uMsg, wParam, lParam) & ~DLGC_HASSETSEL;
     case WM_KEYDOWN:
-        if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') break;
+    {
+        // Note: Passing the WM_KEYDOWN to Scintilla first, with ClearCmdKey having been performed for each combination,
+        // avoids unwanted insertion of a control character when executing commands that open a dialog.
+        LRESULT return_value = DefSubclassProc(hWnd, uMsg, wParam, lParam);
+        if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') return return_value;
         if (!processToolsCommand(static_cast<unsigned char>(
             GetKeyState(VK_SHIFT) & 0x8000 ? std::toupper(static_cast<unsigned char>(wParam))
                                            : std::tolower(static_cast<unsigned char>(wParam)))
@@ -592,6 +600,8 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
             break;
         }
         }
+        return return_value;
+    }
     }
     return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }
