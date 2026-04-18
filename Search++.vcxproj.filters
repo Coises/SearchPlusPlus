@@ -20,6 +20,9 @@
     <Filter Include="ICU x86 DLLs">
       <UniqueIdentifier>{8c8c8c3c-1523-4e84-9502-8d9020cbb794}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Symbol Font">
+      <UniqueIdentifier>{5d48a251-84f8-4108-8162-27c05cb09c96}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Host\BoostRegexSearch.h">
@@ -216,6 +219,9 @@
     </CopyFileToFolders>
     <CopyFileToFolders Include="ICU4C\bin\icuuc78.dll">
       <Filter>ICU x86 DLLs</Filter>
+    </CopyFileToFolders>
+    <CopyFileToFolders Include="src\symbols\Search++-Private-Symbols.otf">
+      <Filter>Symbol Font</Filter>
     </CopyFileToFolders>
   </ItemGroup>
   <ItemGroup>

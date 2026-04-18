@@ -1,0 +1,386 @@
+SplineFontDB: 3.2
+FontName: Search++-Private-Symbols
+FullName: Search++-Private-Symbols
+FamilyName: Search++-Private-Symbols
+Weight: Regular
+Copyright: In the author's opinion, there is not enough original design in this font to qualify as copyrightable and it may be treated as public domain. However, for clarification should it be necessary, any copyrightable elements found in this font are copyright (c) 2026 by Randy Fellmy and are released under the MIT (Expat) License:\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nApplicable copyright notices and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+UComments: "2026-4-15: Created with FontForge (http://fontforge.org)"
+Version: 001.000
+ItalicAngle: 0
+UnderlinePosition: -100
+UnderlineWidth: 50
+Ascent: 800
+Descent: 200
+InvalidEm: 0
+LayerCount: 2
+Layer: 0 0 "Back" 1
+Layer: 1 0 "Fore" 0
+XUID: [1021 412 466374923 3805]
+StyleMap: 0x0000
+FSType: 0
+OS2Version: 0
+OS2_WeightWidthSlopeOnly: 0
+OS2_UseTypoMetrics: 1
+CreationTime: 1776283697
+ModificationTime: 1776480107
+PfmFamily: 17
+TTFWeight: 400
+TTFWidth: 5
+LineGap: 0
+VLineGap: 0
+OS2TypoAscent: 800
+OS2TypoAOffset: 0
+OS2TypoDescent: -200
+OS2TypoDOffset: 0
+OS2TypoLinegap: 0
+OS2WinAscent: 800
+OS2WinAOffset: 0
+OS2WinDescent: 200
+OS2WinDOffset: 0
+HheadAscent: 800
+HheadAOffset: 0
+HheadDescent: -200
+HheadDOffset: 0
+OS2Vendor: 'PfEd'
+MarkAttachClasses: 1
+DEI: 91125
+Encoding: ISO8859-1
+UnicodeInterp: none
+NameList: AGL For New Fonts
+DisplaySize: -36
+AntiAlias: 1
+FitToEm: 0
+WinInfo: 16 16 10
+BeginPrivate: 0
+EndPrivate
+BeginChars: 256 12
+
+StartChar: C
+Encoding: 67 67 0
+Width: 716
+VWidth: 1699
+Flags: W
+VStem: 313 90<-24 624>
+LayerCount: 2
+Fore
+SplineSet
+358 -190 m 5
+ 50 118 l 5
+ 50 239 l 5
+ 313 -24 l 5
+ 313 624 l 1
+ 50 361 l 1
+ 50 482 l 1
+ 358 790 l 1
+ 666 482 l 1
+ 666 361 l 1
+ 403 624 l 1
+ 403 -24 l 5
+ 666 239 l 5
+ 666 118 l 5
+ 358 -190 l 5
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: A
+Encoding: 65 65 1
+Width: 716
+VWidth: 1699
+Flags: W
+HStem: 760 20G<313 403>
+VStem: 313 90<-24 780>
+LayerCount: 2
+Fore
+SplineSet
+403 780 m 5
+ 403 -24 l 1
+ 666 239 l 1
+ 666 118 l 1
+ 358 -190 l 1
+ 50 118 l 1
+ 50 239 l 1
+ 313 -24 l 1
+ 313 780 l 5
+ 403 780 l 5
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: B
+Encoding: 66 66 2
+Width: 716
+VWidth: 1699
+Flags: W
+VStem: 313 90<-180 624>
+LayerCount: 2
+Fore
+SplineSet
+313 -180 m 5
+ 313 624 l 1
+ 50 361 l 1
+ 50 482 l 1
+ 358 790 l 1
+ 666 482 l 1
+ 666 361 l 1
+ 403 624 l 1
+ 403 -180 l 5
+ 313 -180 l 5
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: F
+Encoding: 70 70 3
+Width: 1000
+VWidth: 1699
+Flags: W
+HStem: 255 90<20 824>
+LayerCount: 2
+Fore
+SplineSet
+20 255 m 1
+ 20 345 l 1
+ 824 345 l 5
+ 561 608 l 5
+ 682 608 l 5
+ 990 300 l 5
+ 682 -8 l 5
+ 561 -8 l 5
+ 824 255 l 5
+ 20 255 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: E
+Encoding: 69 69 4
+Width: 1000
+VWidth: 1699
+Flags: W
+HStem: 255 90<176 980>
+LayerCount: 2
+Fore
+SplineSet
+980 255 m 1
+ 176 255 l 1
+ 439 -8 l 1
+ 318 -8 l 1
+ 10 300 l 1
+ 318 608 l 1
+ 439 608 l 1
+ 176 345 l 1
+ 980 345 l 1
+ 980 255 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: e
+Encoding: 101 101 5
+Width: 1000
+VWidth: 1699
+Flags: W
+HStem: 255 90<431 980>
+VStem: 20 90<-20 620> 175 90<-20 620>
+LayerCount: 2
+Fore
+SplineSet
+265 620 m 1
+ 265 -20 l 5
+ 175 -20 l 5
+ 175 620 l 1
+ 265 620 l 1
+110 620 m 1
+ 110 -20 l 5
+ 20 -20 l 5
+ 20 620 l 1
+ 110 620 l 1
+980 255 m 1
+ 431 255 l 1
+ 694 -8 l 1
+ 573 -8 l 1
+ 266 300 l 1
+ 573 608 l 1
+ 694 608 l 1
+ 431 345 l 1
+ 980 345 l 1
+ 980 255 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: f
+Encoding: 102 102 6
+Width: 1000
+VWidth: 1699
+Flags: W
+HStem: 255 90<20 569>
+VStem: 735 90<-20 620> 890 90<-20 620>
+LayerCount: 2
+Fore
+SplineSet
+20 255 m 1
+ 20 345 l 1
+ 569 345 l 1
+ 306 608 l 1
+ 427 608 l 1
+ 734 300 l 1
+ 427 -8 l 1
+ 306 -8 l 1
+ 569 255 l 1
+ 20 255 l 1
+890 620 m 1
+ 980 620 l 1
+ 980 -20 l 5
+ 890 -20 l 5
+ 890 620 l 1
+735 620 m 1
+ 825 620 l 1
+ 825 -20 l 5
+ 735 -20 l 5
+ 735 300 l 1
+ 735 620 l 1
+EndSplineSet
+Validated: 1
+EndChar
+
+StartChar: W
+Encoding: 87 87 7
+Width: 1000
+Flags: W
+HStem: -180 90<180 820> 690 90<180 820>
+VStem: 90 90<-90 690> 820 90<-90 690>
+LayerCount: 2
+Fore
+SplineSet
+90 780 m 1
+ 910 780 l 1
+ 910 -180 l 1
+ 90 -180 l 1
+ 90 780 l 1
+180 690 m 1
+ 180 -90 l 1
+ 820 -90 l 1
+ 820 690 l 1
+ 180 690 l 1
+EndSplineSet
+EndChar
+
+StartChar: S
+Encoding: 83 83 8
+Width: 1000
+Flags: W
+HStem: -180 90<180 820> 0 21G<350 494.095> 690 90<180 820>
+VStem: 90 90<-90 690> 390 90<375.433 514.714> 520 90<74.8797 227.24> 820 90<-90 690>
+LayerCount: 2
+Fore
+SplineSet
+650 600 m 3
+ 557.581082163 600 480 518.393554688 480 450 c 3
+ 480 348.55859375 610 255.388671875 610 150 c 3
+ 610 74.1904296875 548.190429688 0 440 0 c 0
+ 350 0 l 0
+ 462.717773438 0 520 72.103515625 520 150 c 7
+ 520 255.788085938 390 349.76953125 390 450 c 3
+ 390 516.918945312 470.017059334 599.444549749 560 600 c 0
+ 650 600 l 3
+180 690 m 1
+ 180 -90 l 1
+ 820 -90 l 1
+ 820 690 l 1
+ 180 690 l 1
+90 780 m 1
+ 910 780 l 1
+ 910 -180 l 1
+ 90 -180 l 1
+ 90 780 l 1
+EndSplineSet
+EndChar
+
+StartChar: M
+Encoding: 77 77 9
+Width: 1000
+Flags: W
+HStem: -180 90<180 820> 0 21G<270 360 640 730> 690 90<180 820>
+VStem: 90 90<-90 690> 270 90<0 425.478> 640 90<0 425.478> 820 90<-90 690>
+LayerCount: 2
+Fore
+SplineSet
+180 690 m 1
+ 180 -90 l 1
+ 820 -90 l 1
+ 820 690 l 1
+ 180 690 l 1
+90 780 m 1
+ 910 780 l 1
+ 910 -180 l 1
+ 90 -180 l 1
+ 90 780 l 1
+270 600 m 1
+ 360 600 l 1
+ 500 334 l 1
+ 640 600 l 1
+ 730 600 l 1
+ 730 0 l 1
+ 640 0 l 1
+ 640 425.47826087 l 1
+ 500 154 l 1
+ 360 425.47826087 l 1
+ 360 0 l 1
+ 270 0 l 1
+ 270 600 l 1
+EndSplineSet
+EndChar
+
+StartChar: O
+Encoding: 79 79 10
+Width: 1000
+Flags: W
+HStem: -180 90<135 455 545 865> 690 90<135 455 545 865>
+VStem: 45 90<-90 690> 455 90<-90 690> 865 90<-90 690>
+CounterMasks: 1 38
+LayerCount: 2
+Fore
+SplineSet
+545 690 m 1
+ 545 -90 l 1
+ 865 -90 l 5
+ 865 690 l 5
+ 545 690 l 1
+45 780 m 1
+ 955 780 l 5
+ 955 -180 l 5
+ 45 -180 l 1
+ 45 780 l 1
+135 690 m 1
+ 135 -90 l 1
+ 455 -90 l 1
+ 455 690 l 1
+ 135 690 l 1
+EndSplineSet
+EndChar
+
+StartChar: V
+Encoding: 86 86 11
+Width: 1000
+Flags: W
+HStem: -180 90<135 500> 690 90<135 500>
+VStem: 45 90<-90 690> 500 455<-90 690>
+LayerCount: 2
+Fore
+SplineSet
+45 780 m 1
+ 955 780 l 5
+ 955 -180 l 5
+ 45 -180 l 1
+ 45 780 l 1
+135 690 m 1
+ 135 -90 l 1
+ 500 -90 l 1
+ 500 690 l 1
+ 135 690 l 1
+EndSplineSet
+EndChar
+EndChars
+EndSplineFont

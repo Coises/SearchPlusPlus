@@ -155,6 +155,11 @@
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</DeploymentContent>
     </CopyFileToFolders>
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="src\symbols\Search++-Private-Symbols.otf">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3a521e30-4808-4cc1-a450-0b4aec8c1f3f}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

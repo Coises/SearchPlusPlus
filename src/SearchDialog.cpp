@@ -34,121 +34,121 @@ namespace {
         
 const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_Text {
 
-    { SearchCommand(SearchCommand::Find, SearchCommand::Forward ), {L"&Find"         , L"&Find🡪"} },
-    { SearchCommand(SearchCommand::Find, SearchCommand::Backward), {L"Find &Backward", L"&Find🡨"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Forward ), {L"&Find"         , L"&Find  \u2003"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Backward), {L"Find &Backward", L"&Find  \u2003"} },
 
-    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Selection), {L"Find in &Selection"              , L"▣ &Find🡪"} },
-    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Region   ), {L"Find in &Marked Text"            , L"▤ &Find🡪"} },
-    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Whole    ), {L"Find in &Whole Document"         , L"▯ &Find🡪"} },
-    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Selection), {L"Find Backward in S&election"     , L"▣ &Find🡨"} },
-    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Region   ), {L"Find Backward in Marked &Text"   , L"▤ &Find🡨"} },
-    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Whole    ), {L"Find Backward in Whole &Document", L"▯ &Find🡨"} },
-
-
-    { SearchCommand(SearchCommand::Count, SearchCommand::All), {L"&Count", L"&Count↕"} },
-
-    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Selection), {L"Count in &Selection"                    , L"▣ &Count↕"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::Open                            ), {L"Count in &Open Documents"               , L"&Count 🗐"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::View                            ), {L"Count in Documents in this &View"       , L"&Count 🗟"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Region   ), {L"Count in &Marked Text"                  , L"▤ &Count↕"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Region   ), {L"Count Before in Mar&ked Text"           , L"▤ &Count🡩"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Region   ), {L"Count After in Marked &Text"            , L"▤ &Count🡫"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::Open  , SearchCommand::Region   ), {L"Count in Marked Text in O&pen Documents", L"▤ &Count 🗐"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::View  , SearchCommand::Region   ), {L"Count in Marked Text in this Vie&w"     , L"▤ &Count 🗟"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Whole    ), {L"Count in &Whole Document"               , L"▯ &Count↕"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Whole    ), {L"Count Before in W&hole Document"        , L"▯ &Count🡩"} },
-    { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Whole    ), {L"Count After in Whole &Document"         , L"▯ &Count🡫"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Selection), {L"Find in &Selection"              , L"\u2003  &Find  \u2003"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Region   ), {L"Find in &Marked Text"            , L"\u2003  &Find  \u2003"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Forward , SearchCommand::Whole    ), {L"Find in &Whole Document"         , L"\u2003  &Find  \u2003"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Selection), {L"Find Backward in S&election"     , L"\u2003  &Find  \u2003"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Region   ), {L"Find Backward in Marked &Text"   , L"\u2003  &Find  \u2003"} },
+    { SearchCommand(SearchCommand::Find, SearchCommand::Backward, SearchCommand::Whole    ), {L"Find Backward in Whole &Document", L"\u2003  &Find  \u2003"} },
 
 
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::All), {L"&Find All", L"Find &All↕"} },
-    { SearchCommand(SearchCommand::Select , SearchCommand::All), {L"&Select"  , L"&Select↕"  } },
-    { SearchCommand(SearchCommand::Mark   , SearchCommand::All), {L"&Mark"    , L"M&ark↕"    } },
-    { SearchCommand(SearchCommand::Show   , SearchCommand::All), {L"S&how"    , L"&Show↕"    } },
+    { SearchCommand(SearchCommand::Count, SearchCommand::All), {L"&Count", L"&Count\u2003"} },
 
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::Open), {L"Find All in &Open Documents"        , L"Find &All 🗐"} },
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::View), {L"Find All in Documents in this &View", L"Find &All 🗟"} },
-
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Selection), {L"Find All in &Selection"                    , L"▣ Find &All↕"} },
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Region   ), {L"Find All in &Marked Text"                  , L"▤ Find &All↕"} },
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::Before, SearchCommand::Region   ), {L"Find All Before in Mar&ked Text"           , L"▤ Find &All🡩"} },
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::After , SearchCommand::Region   ), {L"Find All After in Marked &Text"            , L"▤ Find &All🡫"} },
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::Open  , SearchCommand::Region   ), {L"Find All in Marked Text in &Open Documents", L"▤ Find &All 🗐"} },
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::View  , SearchCommand::Region   ), {L"Find All in Marked Text in this &View"     , L"▤ Find &All 🗟"} },
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Whole    ), {L"Find All in &Whole Document"               , L"▯ Find &All↕" } },
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::Before, SearchCommand::Whole    ), {L"Find All Before in W&hole Document"        , L"▯ Find &All🡩"} },
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::After , SearchCommand::Whole    ), {L"Find All After in Whole &Document"         , L"▯ Find &All🡫"} },
-
-    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Selection), {L"Select in &Selection"            , L"▣ &Select↕" } },
-    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Region   ), {L"Select in &Marked Text"          , L"▤ &Select↕" } },
-    { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Region   ), {L"Select Before in Mar&ked Text"   , L"▤ &Select🡩"} },
-    { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Region   ), {L"Select After in Marked &Text"    , L"▤ &Select🡫"} },
-    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Whole    ), {L"Select in &Whole Document"       , L"▯ &Select↕" } },
-    { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Whole    ), {L"Select Before in W&hole Document", L"▯ &Select🡩"} },
-    { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Whole    ), {L"Select After in Whole &Document" , L"▯ &Select🡫"} },
-
-    { SearchCommand(SearchCommand::Mark, SearchCommand::Open                            ), {L"Mark in &Open Documents"               , L"M&ark 🗐"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::View                            ), {L"Mark in Documents in this &View"       , L"M&ark 🗟"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Selection), {L"Mark in &Selection"                    , L"▣ M&ark↕" } },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Region   ), {L"Mark in &Marked Text"                  , L"▤ M&ark↕" } },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Region   ), {L"Mark Before in Mar&ked Text"           , L"▤ M&ark🡩"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Region   ), {L"Mark After in Marked &Text"            , L"▤ M&ark🡫"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::Open  , SearchCommand::Region   ), {L"Mark in Marked Text in O&pen Documents", L"▤ M&ark 🗐"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::View  , SearchCommand::Region   ), {L"Mark in Marked Text in this V&iew"     , L"▤ M&ark 🗟"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Whole    ), {L"Mark in &Whole Document"               , L"▯ M&ark↕" } },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Whole    ), {L"Mark Before in W&hole Document"        , L"▯ M&ark🡩"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Whole    ), {L"Mark After in Whole &Document"         , L"▯ M&ark🡫"} },
-
-    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Selection), {L"Show in &Selection"              , L"▣ &Show↕"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Region   ), {L"Show in &Marked Text"            , L"▤ &Show↕"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Region   ), {L"Show Before in Mar&ked Text"     , L"▤ &Show🡩"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Region   ), {L"Show After in Marked &Text"      , L"▤ &Show🡫"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole    ), {L"Show in &Whole Document"         , L"▯ &Show↕"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Whole    ), {L"Show Before in W&hole Document"  , L"▯ &Show🡩"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole    ), {L"Show After in Whole &Document"   , L"▯ &Show🡫"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Selection), {L"Count in &Selection"                    , L"\u2003  &Count\u2003"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::Open                            ), {L"Count in &Open Documents"               , L"&Count  \u2003"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::View                            ), {L"Count in Documents in this &View"       , L"&Count  \u2003"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Region   ), {L"Count in &Marked Text"                  , L"\u2003  &Count\u2003"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Region   ), {L"Count Before in Mar&ked Text"           , L"\u2003  &Count\u2003"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Region   ), {L"Count After in Marked &Text"            , L"\u2003  &Count\u2003"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::Open  , SearchCommand::Region   ), {L"Count in Marked Text in O&pen Documents", L"\u2003  &Count  \u2003"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::View  , SearchCommand::Region   ), {L"Count in Marked Text in this Vie&w"     , L"\u2003  &Count  \u2003"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::All   , SearchCommand::Whole    ), {L"Count in &Whole Document"               , L"\u2003  &Count\u2003"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::Before, SearchCommand::Whole    ), {L"Count Before in W&hole Document"        , L"\u2003  &Count\u2003"} },
+    { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Whole    ), {L"Count After in Whole &Document"         , L"\u2003  &Count\u2003"} },
 
 
-    { SearchCommand(SearchCommand::Replace , SearchCommand::Forward ), {L"&Replace"         , L"&Replace🡪"} },
-    { SearchCommand(SearchCommand::Replace , SearchCommand::Backward), {L"Replace &Backward", L"&Replace🡨"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::All), {L"&Find All", L"Find &All\u2003"} },
+    { SearchCommand(SearchCommand::Select , SearchCommand::All), {L"&Select"  , L"&Select\u2003"  } },
+    { SearchCommand(SearchCommand::Mark   , SearchCommand::All), {L"&Mark"    , L"M&ark\u2003"    } },
+    { SearchCommand(SearchCommand::Show   , SearchCommand::All), {L"S&how"    , L"&Show\u2003"    } },
 
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Selection), {L"Replace in &Selection"              , L"▣ &Replace🡪"} },
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Region   ), {L"Replace in &Marked Text"            , L"▤ &Replace🡪"} },
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Whole    ), {L"Replace in &Whole Document"         , L"▯ &Replace🡪"} },
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Selection), {L"Replace Backward in S&election"     , L"▣ &Replace🡨"} },
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Region   ), {L"Replace Backward in Marked &Text"   , L"▤ &Replace🡨"} },
-    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Whole    ), {L"Replace Backward in Whole &Document", L"▯ &Replace🡨"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::Open), {L"Find All in &Open Documents"        , L"Find &All  \u2003"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::View), {L"Find All in Documents in this &View", L"Find &All  \u2003"} },
 
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward ), {L"&Replace"         , L"&Replace🡪❚"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward), {L"Replace &Backward", L"&Replace❚🡨"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Selection), {L"Find All in &Selection"                    , L"\u2003  Find &All\u2003"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Region   ), {L"Find All in &Marked Text"                  , L"\u2003  Find &All\u2003"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::Before, SearchCommand::Region   ), {L"Find All Before in Mar&ked Text"           , L"\u2003  Find &All\u2003"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::After , SearchCommand::Region   ), {L"Find All After in Marked &Text"            , L"\u2003  Find &All\u2003"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::Open  , SearchCommand::Region   ), {L"Find All in Marked Text in &Open Documents", L"\u2003 Find &All \u2003"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::View  , SearchCommand::Region   ), {L"Find All in Marked Text in this &View"     , L"\u2003 Find &All \u2003"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::All   , SearchCommand::Whole    ), {L"Find All in &Whole Document"               , L"\u2003  Find &All\u2003"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::Before, SearchCommand::Whole    ), {L"Find All Before in W&hole Document"        , L"\u2003  Find &All\u2003"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::After , SearchCommand::Whole    ), {L"Find All After in Whole &Document"         , L"\u2003  Find &All\u2003"} },
 
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Selection), {L"Replace in &Selection"              , L"▣ &Replace🡪❚"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Region   ), {L"Replace in &Marked Text"            , L"▤ &Replace🡪❚"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Whole    ), {L"Replace in &Whole Document"         , L"▯ &Replace🡪❚"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Selection), {L"Replace Backward in S&election"     , L"▣ &Replace❚🡨"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Region   ), {L"Replace Backward in Marked &Text"   , L"▤ &Replace❚🡨"} },
-    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Whole    ), {L"Replace Backward in Whole &Document", L"▯ &Replace❚🡨"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Selection), {L"Select in &Selection"            , L"\u2003  &Select\u2003"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Region   ), {L"Select in &Marked Text"          , L"\u2003  &Select\u2003"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Region   ), {L"Select Before in Mar&ked Text"   , L"\u2003  &Select\u2003"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Region   ), {L"Select After in Marked &Text"    , L"\u2003  &Select\u2003"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::All   , SearchCommand::Whole    ), {L"Select in &Whole Document"       , L"\u2003  &Select\u2003"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Whole    ), {L"Select Before in W&hole Document", L"\u2003  &Select\u2003"} },
+    { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Whole    ), {L"Select After in Whole &Document" , L"\u2003  &Select\u2003"} },
+
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Open                            ), {L"Mark in &Open Documents"               , L"M&ark  \u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::View                            ), {L"Mark in Documents in this &View"       , L"M&ark  \u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Selection), {L"Mark in &Selection"                    , L"\u2003  M&ark\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Region   ), {L"Mark in &Marked Text"                  , L"\u2003  M&ark\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Region   ), {L"Mark Before in Mar&ked Text"           , L"\u2003  M&ark\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Region   ), {L"Mark After in Marked &Text"            , L"\u2003  M&ark\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Open  , SearchCommand::Region   ), {L"Mark in Marked Text in O&pen Documents", L"\u2003  M&ark  \u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::View  , SearchCommand::Region   ), {L"Mark in Marked Text in this V&iew"     , L"\u2003  M&ark  \u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Whole    ), {L"Mark in &Whole Document"               , L"\u2003  M&ark\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Whole    ), {L"Mark Before in W&hole Document"        , L"\u2003  M&ark\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Whole    ), {L"Mark After in Whole &Document"         , L"\u2003  M&ark\u2003"} },
+
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Selection), {L"Show in &Selection"              , L"\u2003  &Show\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Region   ), {L"Show in &Marked Text"            , L"\u2003  &Show\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Region   ), {L"Show Before in Mar&ked Text"     , L"\u2003  &Show\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Region   ), {L"Show After in Marked &Text"      , L"\u2003  &Show\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole    ), {L"Show in &Whole Document"         , L"\u2003  &Show\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Whole    ), {L"Show Before in W&hole Document"  , L"\u2003  &Show\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole    ), {L"Show After in Whole &Document"   , L"\u2003  &Show\u2003"} },
 
 
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All   ), {L"&Replace All"       , L"R&eplace All↕"} },
+    { SearchCommand(SearchCommand::Replace , SearchCommand::Forward ), {L"&Replace"         , L"&Replace  \u2003"} },
+    { SearchCommand(SearchCommand::Replace , SearchCommand::Backward), {L"Replace &Backward", L"&Replace  \u2003"} },
 
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All, SearchCommand::Selection), {L"Replace All in &Selection"             , L"▣ R&eplace All↕"} },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Open                         ), {L"Replace All in &Open Documents"        , L"R&eplace All 🗐"} },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::View                         ), {L"Replace All in Documents in this &View", L"R&eplace All 🗟"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Selection), {L"Replace in &Selection"              , L"\u2003  &Replace  \u2003"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Region   ), {L"Replace in &Marked Text"            , L"\u2003  &Replace  \u2003"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Forward , SearchCommand::Whole    ), {L"Replace in &Whole Document"         , L"\u2003  &Replace  \u2003"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Selection), {L"Replace Backward in S&election"     , L"\u2003  &Replace  \u2003"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Region   ), {L"Replace Backward in Marked &Text"   , L"\u2003  &Replace  \u2003"} },
+    { SearchCommand(SearchCommand::Replace, SearchCommand::Backward, SearchCommand::Whole    ), {L"Replace Backward in Whole &Document", L"\u2003  &Replace  \u2003"} },
 
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All   , SearchCommand::Region   ), {L"Replace All in &Marked Text"                  , L"▤ R&eplace All↕" } },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Before, SearchCommand::Region   ), {L"Replace All Before in Mar&ked Text"           , L"▤ R&eplace All🡩"} },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::After , SearchCommand::Region   ), {L"Replace All After in Marked &Text"            , L"▤ R&eplace All🡫"} },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Open  , SearchCommand::Region   ), {L"Replace All in Marked Text in O&pen Documents", L"▤ R&eplace All 🗐"} },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::View  , SearchCommand::Region   ), {L"Replace All in Marked Text in this V&iew"     , L"▤ R&eplace All 🗟"} },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All   , SearchCommand::Whole    ), {L"Replace All in &Whole Document"               , L"▯ R&eplace All↕" } },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Before, SearchCommand::Whole    ), {L"Replace All Before in W&hole Document"        , L"▯ R&eplace All🡩"} },
-    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::After , SearchCommand::Whole    ), {L"Replace All After in Whole &Document"         , L"▯ R&eplace All🡫"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward ), {L"&Replace"         , L"&Replace  \u2003"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward), {L"Replace &Backward", L"&Replace  \u2003"} },
+
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Selection), {L"Replace in &Selection"              , L"\u2003  &Replace  \u2003"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Region   ), {L"Replace in &Marked Text"            , L"\u2003  &Replace  \u2003"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Forward , SearchCommand::Whole    ), {L"Replace in &Whole Document"         , L"\u2003  &Replace  \u2003"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Selection), {L"Replace Backward in S&election"     , L"\u2003  &Replace  \u2003"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Region   ), {L"Replace Backward in Marked &Text"   , L"\u2003  &Replace  \u2003"} },
+    { SearchCommand(SearchCommand::ReplStop, SearchCommand::Backward, SearchCommand::Whole    ), {L"Replace Backward in Whole &Document", L"\u2003  &Replace  \u2003"} },
+
+
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All), {L"&Replace All", L"R&eplace All\u2003"} },
+
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All, SearchCommand::Selection), {L"Replace All in &Selection"             , L"\u2003  R&eplace All\u2003"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Open                         ), {L"Replace All in &Open Documents"        , L"R&eplace All  \u2003"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::View                         ), {L"Replace All in Documents in this &View", L"R&eplace All  \u2003"} },
+
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All   , SearchCommand::Region   ), {L"Replace All in &Marked Text"                  , L"\u2003  R&eplace All\u2003"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Before, SearchCommand::Region   ), {L"Replace All Before in Mar&ked Text"           , L"\u2003  R&eplace All\u2003"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::After , SearchCommand::Region   ), {L"Replace All After in Marked &Text"            , L"\u2003  R&eplace All\u2003"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Open  , SearchCommand::Region   ), {L"Replace All in Marked Text in O&pen Documents", L"\u2003  R&eplace All  \u2003"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::View  , SearchCommand::Region   ), {L"Replace All in Marked Text in this V&iew"     , L"\u2003  R&eplace All  \u2003"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::All   , SearchCommand::Whole    ), {L"Replace All in &Whole Document"               , L"\u2003  R&eplace All\u2003"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::Before, SearchCommand::Whole    ), {L"Replace All Before in W&hole Document"        , L"\u2003  R&eplace All\u2003"} },
+    { SearchCommand(SearchCommand::ReplaceAll, SearchCommand::After , SearchCommand::Whole    ), {L"Replace All After in Whole &Document"         , L"\u2003  R&eplace All\u2003"} },
 
 };
 
 // The contains check protects against a nasty crash if the configuration file contains bad data for the buttons.
 
 const wchar_t* Command_Button(unsigned int command) {
-    return (Command_Text.contains(command)) ? Command_Text.at(command).second: L"???";
+    return (Command_Text.contains(command)) ? Command_Text.at(command).second : L"???";
 }
 
 const wchar_t* Command_Menu(unsigned int command) {
@@ -967,6 +967,103 @@ void layoutDialog(HWND hwndDlg) {
 }
 
 
+struct {
+    COLORREF background       = 0;
+    COLORREF softerBackground = 0;   // ctrl background color
+    COLORREF hotBackground    = 0;
+    COLORREF pureBackground   = 0;   // dlg background color
+    COLORREF errorBackground  = 0;
+    COLORREF text             = 0;
+    COLORREF darkerText       = 0;
+    COLORREF disabledText     = 0;
+    COLORREF linkText         = 0;
+    COLORREF edge             = 0;
+    COLORREF hotEdge          = 0;
+    COLORREF disabledEdge     = 0;
+} darkModeColors;
+
+bool isDarkMode = false;
+
+
+void decorateSplitButton(const NMCUSTOMDRAW& cd) {
+    
+    static const std::map<SearchCommand::Extent, const wchar_t*> mapExtent = {
+        {SearchCommand::Forward , L"F"},
+        {SearchCommand::Backward, L"E"},
+        {SearchCommand::All     , L"C"},
+        {SearchCommand::Before  , L"B"},
+        {SearchCommand::After   , L"A"},
+        {SearchCommand::View    , L"V"},
+        {SearchCommand::Open    , L"O"}
+    };
+
+    static const std::map<SearchCommand::Scope, const wchar_t*> mapScope = {
+        {SearchCommand::Region   , L"M"},
+        {SearchCommand::Selection, L"S"},
+        {SearchCommand::Whole    , L"W"}
+    };
+
+    SearchCommand cmd;
+    switch (cd.hdr.idFrom) {
+    case IDC_SEARCH_FIND      : cmd = SearchCommand(data.buttonFind      ); break;
+    case IDC_SEARCH_COUNT     : cmd = SearchCommand(data.buttonCount     ); break;
+    case IDC_SEARCH_FINDALL   : cmd = SearchCommand(data.buttonFindAll   ); break;
+    case IDC_SEARCH_REPLACE   : cmd = SearchCommand(data.buttonReplace   ); break;
+    case IDC_SEARCH_REPLACEALL: cmd = SearchCommand(data.buttonReplaceAll); break;
+    default: return;
+    }
+
+    if (isDarkMode) {
+        SetTextColor(cd.hdc, darkModeColors.text);
+        SetBkColor(cd.hdc, darkModeColors.softerBackground);
+    }
+
+    BUTTON_SPLITINFO bsi;
+    Button_GetSplitInfo(cd.hdr.hwndFrom, &bsi);
+    RECT r = cd.rc;
+    r.right -= bsi.size.cx;
+    r.top += 1;
+
+    std::wstring text = GetWindowString(cd.hdr.hwndFrom);
+    std::erase(text, L'&');
+
+    SIZE textSize;
+    GetTextExtentPoint32(cd.hdc, text.data(), static_cast<int>(text.length()), &textSize);
+    LONG rSum = r.left + r.right;
+    r.left  = (rSum - textSize.cx) / 2;
+    r.right = (rSum + textSize.cx) / 2;
+
+    const wchar_t* prefix = mapScope.contains(cmd.scope) ? mapScope.at(cmd.scope) : L"";
+    const wchar_t* suffix = cmd.verb == SearchCommand::ReplStop ? (cmd.extent == SearchCommand::Backward ? L"e" : L"f")
+                          : mapExtent.contains(cmd.extent) ? mapExtent.at(cmd.extent) : L"";
+
+    LOGFONT symbolFontDefine;
+    symbolFontDefine.lfHeight         = textSize.cy;
+    symbolFontDefine.lfWidth          = 0;
+    symbolFontDefine.lfEscapement     = 0;
+    symbolFontDefine.lfOrientation    = 0;
+    symbolFontDefine.lfWeight         = 0;
+    symbolFontDefine.lfItalic         = FALSE;
+    symbolFontDefine.lfUnderline      = FALSE;
+    symbolFontDefine.lfStrikeOut      = FALSE;
+    symbolFontDefine.lfCharSet        = DEFAULT_CHARSET;
+    symbolFontDefine.lfOutPrecision   = OUT_DEFAULT_PRECIS;
+    symbolFontDefine.lfClipPrecision  = CLIP_DEFAULT_PRECIS;
+    symbolFontDefine.lfQuality        = CLEARTYPE_QUALITY;
+    symbolFontDefine.lfPitchAndFamily = DEFAULT_PITCH | FF_DONTCARE;
+    wcscpy(symbolFontDefine.lfFaceName, L"Search++-Private-Symbols");
+    HFONT symbolFont = CreateFontIndirect(&symbolFontDefine);
+
+    HGDIOBJ textFont = SelectObject(cd.hdc, symbolFont);
+
+    if (prefix[0]) DrawText(cd.hdc, prefix, -1, &r, DT_LEFT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+    if (suffix[0]) DrawText(cd.hdc, suffix, -1, &r, DT_RIGHT | DT_SINGLELINE | DT_VCENTER | DT_NOCLIP);
+
+    SelectObject(cd.hdc, textFont);
+
+}
+
+
 BOOL addButtonItem(HMENU menu, SearchCommand cmd) {
     return AppendMenu(menu, MF_STRING, cmd, Command_Menu(cmd));
 }
@@ -1107,6 +1204,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             placement.put(hwndDlg);
             npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);
         }
+
+        isDarkMode = npp(NPPM_ISDARKMODEENABLED, 0, 0);
+        if (isDarkMode) npp(NPPM_GETDARKMODECOLORS, sizeof darkModeColors, &darkModeColors);
 
         SetFocus(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX));
         return FALSE;
@@ -1457,6 +1557,28 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
 
         switch (reinterpret_cast<NMHDR*>(lParam)->code) {
 
+        case NM_CUSTOMDRAW:
+        {
+            const NMCUSTOMDRAW& cd = *reinterpret_cast<NMCUSTOMDRAW*>(lParam);
+            switch (cd.hdr.idFrom) {
+            case IDC_SEARCH_FIND:
+            case IDC_SEARCH_COUNT:
+            case IDC_SEARCH_FINDALL:
+            case IDC_SEARCH_REPLACE:
+            case IDC_SEARCH_REPLACEALL:
+                switch (cd.dwDrawStage) {
+                case CDDS_PREPAINT:
+                    SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, CDRF_NOTIFYPOSTPAINT);
+                    return TRUE;
+                case CDDS_POSTPAINT:
+                    decorateSplitButton(cd);
+                    SetWindowLongPtr(hwndDlg, DWLP_MSGRESULT, CDRF_DODEFAULT);
+                    return TRUE;
+                }
+            }
+            return FALSE;
+        }
+
         case BCN_DROPDOWN:
         {
             const NMBCDROPDOWN& bd = *reinterpret_cast<NMBCDROPDOWN*>(lParam);
@@ -1742,15 +1864,25 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
 
 
 void colorSearch() {
-    if (data.searchDialog) {
-        constexpr ULONG dmfSetThemeDirectly = 0x00000010UL;
-        HWND findBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
-        HWND replBox = GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX);
+    constexpr ULONG dmfSetThemeDirectly = 0x00000010UL;
+    if (data.dockingDialog) {
+        HWND findBox = GetDlgItem(data.dockingDialog, IDC_SEARCH_FINDBOX);
+        HWND replBox = GetDlgItem(data.dockingDialog, IDC_SEARCH_REPLBOX);
         npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, findBox);
         npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, replBox);
         configureSearchBox(findBox);
         configureSearchBox(replBox);
     }
+    if (data.regularDialog) {
+        HWND findBox = GetDlgItem(data.regularDialog, IDC_SEARCH_FINDBOX);
+        HWND replBox = GetDlgItem(data.regularDialog, IDC_SEARCH_REPLBOX);
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, findBox);
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, replBox);
+        configureSearchBox(findBox);
+        configureSearchBox(replBox);
+    }
+    isDarkMode = npp(NPPM_ISDARKMODEENABLED, 0, 0);
+    if (isDarkMode) npp(NPPM_GETDARKMODECOLORS, sizeof darkModeColors, &darkModeColors);
 }
 
 
@@ -1806,6 +1938,11 @@ void showSearchDialog() {
         }
     }
     else {
+        size_t pipLength = npp(NPPM_GETPLUGINHOMEPATH, 0, 0);
+        std::wstring pip(pipLength, 0);
+        npp(NPPM_GETPLUGINHOMEPATH, pipLength + 1, pip.data());
+        pip += L"\\Search++\\Search++-Private-Symbols.otf";
+        AddFontResourceEx(pip.data(), FR_PRIVATE | FR_NOT_ENUM, 0);
         data.historyFind.get();
         data.historyRepl.get();
         if (data.dialogLayout == DialogLayout::Docking) {
@@ -1884,5 +2021,6 @@ void destroySearchDialogs() {
             data.regularDialog = 0;
         }
         data.searchDialog = 0;
+        RemoveFontResourceEx(L"Search++-Private-Symbols.otf", FR_PRIVATE | FR_NOT_ENUM, 0);
     }
 }
