@@ -246,7 +246,6 @@ SearchResult searchICU(SearchRequest& req) {
     case SearchCommand::Mark:
     case SearchCommand::Select:
     case SearchCommand::Show:
-    case SearchCommand::ReplaceAll:
         switch (req.command.extent) {
         case SearchCommand::All:
         case SearchCommand::Before:
