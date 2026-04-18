@@ -1,5 +1,11 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.5.4 -- April 18th, 2026
+
+* Fix bookmarks and Show command not working with ICU search engine.
+* Fix unwanted control character inserted when focus is in Find or Replace box and a keyboard shortcut is used to activate a Tools menu command that opens a dialog.
+* Use a custom font for button symbols.
+
 ## Version 0.5.3 -- April 11th, 2026
 
 * Avoid a crash when searching **in Marked Text in Open Documents** or **in Marked Text in Documents in this View** and a document has no marked text.

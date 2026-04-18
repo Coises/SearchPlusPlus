@@ -122,6 +122,8 @@ div.standout {margin: 1em 0; padding: .5em 1em; border: 5px double #000;}
 
 .nowrap {white-space: nowrap;}
 
+.symbol {width: 1em;}
+
 </style>
 <script>
 function doPageLoad() {
@@ -340,10 +342,30 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 <tr><th>Replace</th><td><p>first finds a match (unless a match has just been found), then on subsequent clicks replaces the match with the text or expression in the Replace box. After replacing, the command can either leave the replacement highlighted and visible, or find and highlight the next match. Which of these happens when you click the <strong>Replace</strong> button (or type <strong>Alt+R</strong>) is determined by the <strong>Jump to next match after Replace</strong> toggle on the <a href="#search-tools">Tools</a> menu. You can also tell by looking at the button; the word <strong>Replace</strong> will be followed by one of these indicators:</p>
 
 <table>
-<tr><th>🡪</th><td>replace then jump to a new match forward</td></tr>
-<tr><th>🡨</th><td>replace then jump to a new match backward</td></tr>
-<tr><th>🡪❚</th><td>replace and highlight replacement; next click finds a new match forward</td></tr>
-<tr><th>❚🡨</th><td>replace and highlight replacement; next click finds a new match backward</td></tr>
+<tr><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M20 545v-90h804l-263 -263h121l308 308l-308 308h-121l263 -263h-804z" />
+</svg>
+</th><td>replace then jump to a new match forward</td></tr>
+<tr><th>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M980 545h-804l263 263h-121l-308 -308l308 -308h121l-263 263h804v90z" />
+</svg>
+</th><td>replace then jump to a new match backward</td></tr>
+<tr><th>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M20 545v-90h549l-263 -263h121l307 308l-307 308h-121l263 -263h-549zM890 180h90v640h-90v-640zM735 180h90v640h-90v-320v-320z" />
+</svg>
+</th><td>replace and highlight replacement; next click finds a new match forward</td></tr>
+<tr><th>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M265 180v640h-90v-640h90zM110 180v640h-90v-640h90zM980 545h-549l263 263h-121l-307 -308l307 -308h121l-263 263h549v90z" />
+</svg>
+</th><td>replace and highlight replacement; next click finds a new match backward</td></tr>
 </table>
 
 <p>The drop-down menu for the <strong>Replace</strong> button offers the available commands with the same jump behavior as the direct click command on the button; a submenu at the bottom allows you to select the same commands with the opposite jump behavior. Click-selecting a command from that submenu will set it as the direct click command and toggle the <strong>Jump to next match after Replace</strong> setting.</p></td></tr>
@@ -376,31 +398,79 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <table>
 
-<tr><th class="group" colspan=2>Search extents for stepwise search actions</th></tr>
+<tr><th class="group" colspan=3>Search extents for stepwise search actions</th></tr>
+<tr><td colspan=3>The symbols in the second column are used on command buttons to indicate the current click action.</td></tr>
 
-<tr><td>forward</td><td>is the default for stepwise search actions (<strong>Find</strong> and <strong>Replace</strong>). It means moving from the current position or selection to the right and downward through the document.  When a forward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the beginning of the search scope (unless you already started from the beginning).</td></tr>
+<tr><td>forward</td><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M20 545v-90h804l-263 -263h121l308 308l-308 308h-121l263 -263h-804z" />
+</svg>
+<br>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M20 545v-90h549l-263 -263h121l307 308l-307 308h-121l263 -263h-549zM890 180h90v640h-90v-640zM735 180h90v640h-90v-320v-320z" />
+</svg>
+</th><td>is the default for stepwise search actions (<strong>Find</strong> and <strong>Replace</strong>). It means moving from the current position or selection to the right and downward through the document.  When a forward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the beginning of the search scope (unless you already started from the beginning).</td></tr>
 
-<tr><th>Backward</th><td>is available for stepwise search actions only when searching for <strong>Plain</strong> text. It means moving from the current position or selection to the left and upward through the document. When a Backward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the end of the search scope (unless you already started from the end).</td></tr>
+<tr><th>Backward</th><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M980 545h-804l263 263h-121l-308 -308l308 -308h121l-263 263h804v90z" />
+</svg>
+<br>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M265 180v640h-90v-640h90zM110 180v640h-90v-640h90zM980 545h-549l263 263h-121l-307 -308l307 -308h121l-263 263h549v90z" />
+</svg>
+</th>
+<td>is available for stepwise search actions only when searching for <strong>Plain</strong> text. It means moving from the current position or selection to the left and upward through the document. When a Backward command can find nothing (or nothing more), a message at the bottom of the search dialog will indicate that. Clicking the same button again will “wrap around” to the end of the search scope (unless you already started from the end).</td></tr>
 
 </table>
 
 <table>
 
-<tr><th class="group" colspan=2>Search extents for multiple search actions</th></tr>
+<tr><th class="group" colspan=3>Search extents for multiple search actions</th></tr>
+<tr><td colspan=3>The symbols in the second column are used on command buttons to indicate the current click action.</td></tr>
 
-<tr><td>throughout the active document</td><td>is the default extension for command actions that search for multiple occurrences at one time. The entire <a href="#commands-scopes">scope</a> (the selection, marked text or the whole document) is searched. This extension is implied unless one of the other extensions is part of the command name.</td></tr>
+<tr><td>throughout the active document</td><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 726 1000">
+   <path fill="currentColor"
+d="M358 990l-308 -308v-121l263 263v-648l-263 263v-121l308 -308l308 308v121l-263 -263v648l263 -263v121z" />
+</svg>
+</th><td>is the default extension for command actions that search for multiple occurrences at one time. The entire <a href="#commands-scopes">scope</a> (the selection, marked text or the whole document) is searched. This extension is implied unless one of the other extensions is part of the command name.</td></tr>
 
-<tr><th>Before</th><td><p>applies the command action only to matches that occur to the left and upward in the active document relative to the current position or selection. The action is not applied to matches which overlap the current position or selection.</p>
+<tr><th>Before</th><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 726 1000">
+   <path fill="currentColor"
+d="M313 980v-804l-263 263v-121l308 -308l308 308v121l-263 -263v804h-90z" />
+</svg>
+</th><td><p>applies the command action only to matches that occur to the left and upward in the active document relative to the current position or selection. The action is not applied to matches which overlap the current position or selection.</p>
 <p class=note>If there is a single selection which is the result of an immediately preceding stepwise find, or the find step of a stepwise replace, <strong>Replace Before</strong> <em>includes</em> the found text. This lets you do a series of stepwise backward replaces and then complete them with a Replace Before.</p>
 </td></tr>
 
-<tr><th>After</th><td><p>applies the command action only to matches that occur to the right and downward in the active document relative to the current position or selection. The action is not applied to matches which overlap the current position or selection.</p>
+<tr><th>After</th><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 726 1000">
+   <path fill="currentColor"
+d="M403 20v804l263 -263v121l-308 308l-308 -308v-121l263 263v-804h90z" />
+</svg>
+</th><td><p>applies the command action only to matches that occur to the right and downward in the active document relative to the current position or selection. The action is not applied to matches which overlap the current position or selection.</p>
 <p class=note>If there is a single selection which is the result of an immediately preceding stepwise find, or the find step of a stepwise replace, <strong>Replace After</strong> <em>includes</em> the found text. This lets you do a series of stepwise replaces and then complete them with a Replace After.</p>
 </td></tr>
 
-<tr><th>Open Documents</th><td>searches all documents that are open in any tab in Notepad++.</td></tr>
+<tr><th>Open Documents</th><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M545 110v780h320v-780h-320zM45 20h910v960h-910v-960zM135 110v780h320v-780h-320z" />
+</svg>
+</th><td>searches all documents that are open in any tab in Notepad++.</td></tr>
 
-<tr><th>Documents in this View</th><td>searches all documents that are open in any tab in the active view. Notepad++ has one or two views. If there is only one view open, <strong>Documents in this View</strong> is the same as <strong>Open Documents</strong>.</td></tr>
+<tr><th>Documents in this View</th><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M45 20h910v960h-910v-960zM135 110v780h365v-780h-365z" />
+</svg>
+</th><td>searches all documents that are open in any tab in the active view. Notepad++ has one or two views. If there is only one view open, <strong>Documents in this View</strong> is the same as <strong>Open Documents</strong>.</td></tr>
 
 </table>
 
@@ -410,19 +480,37 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <table>
 
-<tr><th colspan=2 class="group">Search scopes</th></tr>
+<tr><th colspan=3 class="group">Search scopes</th></tr>
+<tr><td colspan=3>The symbols in the second column are used on command buttons to indicate the current click action.</td></tr>
 
-<tr><th>Selection</th><td><p>only selected text will be searched.</p>
+<tr><th>Selection</th><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M650 200c-92.4189 0 -170 81.6064 -170 150c0 101.441 130 194.611 130 300c0 75.8096 -61.8096 150 -170 150h-90c112.718 0 170 -72.1035 170 -150c0 -105.788 -130 -199.77 -130 -300c0 -66.9189 80.0166 -149.444 170 -150h90zM180 110v780h640v-780h-640zM90 20h820
+v960h-820v-960z" />
+</svg>
+</th><td><p>only selected text will be searched.</p>
 <p class=note>Because a <strong>Find</strong> command, or the preliminary find step in a replace command, selects the found text, subsequent commands won’t be confined to the originally-selected text, since it will no longer be selected. To avoid this, you can use <strong>Add Selection to Marked Text</strong> from the <a href="#search-tools">Tools</a> button menu before searching. Also see the <a href="#settings-selections">Settings</a> checkbox <strong>Convert selections to marked text when beginning a default stepwise search</strong> for an option to do this automatically.</p>
 <p class=note>For a regular expression search, each line in a rectangular selection and each selection in a multiple selection is searched independently; the search in any line or selection cannot “see” outside that selection. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>).</p></td></tr>
 
-<tr><th>Marked Text</th><td><p>only marked text will be searched.</p>
+<tr><th>Marked Text</th><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M180 110v780h640v-780h-640zM90 20h820v960h-820v-960zM270 200h90l140 266l140 -266h90v600h-90v-425.479l-140 271.479l-140 -271.479v425.479h-90v-600z" />
+</svg>
+</th><td><p>only marked text will be searched.</p>
 <p class=note>For a regular expression search, each run of marked text is searched independently; the search in any span of marked text cannot “see” outside that span. This affects the behavior of assertions (including word boundaries, lookaheads and lookbehinds, <strong>^</strong> and <strong>$</strong>).</p>
 </td></tr>
 
-<tr><th>Whole Document</th><td>selections and marks are ignored; everything in the document (subject to any <em>extent</em> constraint) is searched.</td></tr>
+<tr><th>Whole Document</th><th class=symbol>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="-10 0 1010 1000">
+   <path fill="currentColor"
+d="M90 20h820v960h-820v-960zM180 110v780h640v-780h-640z" />
+</svg>
+</th><td>selections and marks are ignored; everything in the document (subject to any <em>extent</em> constraint) is searched.</td></tr>
 
-<tr><td>default scope</td><td>attempts to infer what you probably want to search based on whether anything is already marked or selected. The default rules are these:
+<tr><td>default scope</td><th class=symbol>
+</th><td>attempts to infer what you probably want to search based on whether anything is already marked or selected. The default rules are these:
 <ol>
 <li>Scope is not inferred for commands <strong>in Open Documents</strong> or <strong>in Documents in this View</strong>. A command with one of these qualifiers can also indicate that it is <strong>in Marked Text</strong>; otherwise it is <strong>in Whole Document</strong>.
 <li>If there is any marked text in the active document, only marked text is searched, except for the default <strong>Mark</strong> command; an unqualified <strong>Mark</strong> command adds to the marked text instead of searching within it.

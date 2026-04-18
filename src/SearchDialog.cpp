@@ -1019,6 +1019,7 @@ void decorateSplitButton(const NMCUSTOMDRAW& cd) {
     }
 
     BUTTON_SPLITINFO bsi;
+    bsi.mask = BCSIF_SIZE;
     Button_GetSplitInfo(cd.hdr.hwndFrom, &bsi);
     RECT r = cd.rc;
     r.right -= bsi.size.cx;
