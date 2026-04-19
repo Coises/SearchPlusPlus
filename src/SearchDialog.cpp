@@ -646,14 +646,19 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 void configureSearchBox(HWND sciBox) {
 
     plugin.getScintillaPointers();
-    Scintilla::ColourAlpha caret          = sci.ElementColour(Scintilla::Element::Caret);
-    Scintilla::ColourAlpha caretLineBack  = sci.ElementColour(Scintilla::Element::CaretLineBack);
-    Scintilla::ColourAlpha selectionBack  = sci.ElementColour(Scintilla::Element::SelectionBack);
-    Scintilla::ColourAlpha whiteSpace     = sci.ElementColour(Scintilla::Element::WhiteSpace);
-    std::string            defaultFont    = sci.StyleGetFont(STYLE_DEFAULT);
-    int                    defaultSize    = sci.StyleGetSize(STYLE_DEFAULT);
-    Scintilla::Colour      defaultFore    = sci.StyleGetFore(STYLE_DEFAULT);
-    Scintilla::Colour      defaultBack    = sci.StyleGetBack(STYLE_DEFAULT);
+    Scintilla::ColourAlpha caret            = sci.ElementColour(Scintilla::Element::Caret);
+    Scintilla::ColourAlpha caretLineBack    = sci.ElementColour(Scintilla::Element::CaretLineBack);
+    Scintilla::ColourAlpha selectionBack    = sci.ElementColour(Scintilla::Element::SelectionBack);
+    Scintilla::ColourAlpha whiteSpace       = sci.ElementColour(Scintilla::Element::WhiteSpace);
+    std::string            defaultFont      = sci.StyleGetFont(STYLE_DEFAULT);
+    int                    defaultSize      = sci.StyleGetSize(STYLE_DEFAULT);
+    Scintilla::Colour      defaultFore      = sci.StyleGetFore(STYLE_DEFAULT);
+    Scintilla::Colour      defaultBack      = sci.StyleGetBack(STYLE_DEFAULT);
+    Scintilla::CaretStyle  caretStyle       = sci.CaretStyle();
+    int                    caretWidth       = sci.CaretWidth();
+    int                    caretPeriod      = sci.CaretPeriod();
+    int                    caretLineFrame   = sci.CaretLineFrame();
+    bool                   caretLineVisible = sci.CaretLineVisible();
 
     plugin.getScintillaPointers(sciBox);
 
@@ -667,6 +672,11 @@ void configureSearchBox(HWND sciBox) {
     sci.StyleSetFore(STYLE_DEFAULT, defaultFore);
     sci.StyleSetBack(STYLE_DEFAULT, defaultBack);
     sci.StyleClearAll();
+    sci.SetCaretStyle(caretStyle);
+    sci.SetCaretWidth(caretWidth);
+    sci.SetCaretPeriod(caretPeriod);
+    sci.SetCaretLineFrame(caretLineFrame);
+    sci.SetCaretLineVisible(caretLineVisible);
 
     sci.SetModEventMask(Scintilla::ModificationFlags::DeleteText | Scintilla::ModificationFlags::InsertText);
     sci.SetMargins(0);

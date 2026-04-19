@@ -373,20 +373,25 @@ double luminanceEstimate(Scintilla::Colour c) {
 void configureSciHits() {
 
     plugin.getScintillaPointers();
-    Scintilla::ColourAlpha caret          = sci.ElementColour(Scintilla::Element::Caret);
-    Scintilla::ColourAlpha caretLineBack  = sci.ElementColour(Scintilla::Element::CaretLineBack);
-    Scintilla::ColourAlpha selectionBack  = sci.ElementColour(Scintilla::Element::SelectionBack);
-    Scintilla::ColourAlpha whiteSpace     = sci.ElementColour(Scintilla::Element::WhiteSpace);
-    std::string            defaultFont    = sci.StyleGetFont(STYLE_DEFAULT);
-    int                    defaultSize    = sci.StyleGetSize(STYLE_DEFAULT);
-    Scintilla::Colour      defaultFore    = sci.StyleGetFore(STYLE_DEFAULT);
-    Scintilla::Colour      defaultBack    = sci.StyleGetBack(STYLE_DEFAULT);
-    Scintilla::Colour      lineNumberFore = sci.StyleGetFore(STYLE_LINENUMBER);
-    Scintilla::Colour      lineNumberBack = sci.StyleGetBack(STYLE_LINENUMBER);
-    Scintilla::Colour      searchFore     = 0x000000;
-    Scintilla::Colour      searchBack     = 0x10C0D4;
-    Scintilla::Colour      documentFore   = 0xC0FFFF;
-    Scintilla::Colour      documentBack   = 0xC0A040;
+    Scintilla::ColourAlpha caret            = sci.ElementColour(Scintilla::Element::Caret);
+    Scintilla::ColourAlpha caretLineBack    = sci.ElementColour(Scintilla::Element::CaretLineBack);
+    Scintilla::ColourAlpha selectionBack    = sci.ElementColour(Scintilla::Element::SelectionBack);
+    Scintilla::ColourAlpha whiteSpace       = sci.ElementColour(Scintilla::Element::WhiteSpace);
+    std::string            defaultFont      = sci.StyleGetFont(STYLE_DEFAULT);
+    int                    defaultSize      = sci.StyleGetSize(STYLE_DEFAULT);
+    Scintilla::Colour      defaultFore      = sci.StyleGetFore(STYLE_DEFAULT);
+    Scintilla::Colour      defaultBack      = sci.StyleGetBack(STYLE_DEFAULT);
+    Scintilla::Colour      lineNumberFore   = sci.StyleGetFore(STYLE_LINENUMBER);
+    Scintilla::Colour      lineNumberBack   = sci.StyleGetBack(STYLE_LINENUMBER);
+    Scintilla::Colour      searchFore       = 0x000000;
+    Scintilla::Colour      searchBack       = 0x10C0D4;
+    Scintilla::Colour      documentFore     = 0xC0FFFF;
+    Scintilla::Colour      documentBack     = 0xC0A040;
+    Scintilla::CaretStyle  caretStyle       = sci.CaretStyle();
+    int                    caretWidth       = sci.CaretWidth();
+    int                    caretPeriod      = sci.CaretPeriod();
+    int                    caretLineFrame   = sci.CaretLineFrame();
+    bool                   caretLineVisible = sci.CaretLineVisible();
 
     plugin.getScintillaPointers(sciHits);
 
@@ -411,6 +416,11 @@ void configureSciHits() {
     sci.StyleSetSize(STYLE_DEFAULT, defaultSize);
     sci.StyleSetFore(STYLE_DEFAULT, defaultFore);
     sci.StyleSetBack(STYLE_DEFAULT, defaultBack);
+    sci.SetCaretStyle(caretStyle);
+    sci.SetCaretWidth(caretWidth);
+    sci.SetCaretPeriod(caretPeriod);
+    sci.SetCaretLineFrame(caretLineFrame);
+    sci.SetCaretLineVisible(caretLineVisible);
 
     sci.SetRepresentation("\n", reinterpret_cast<const char*>(u8"\u240A"));
     sci.SetRepresentation("\r", reinterpret_cast<const char*>(u8"\u240D"));
