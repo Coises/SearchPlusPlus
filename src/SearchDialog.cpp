@@ -1033,7 +1033,7 @@ void decorateSplitButton(const NMCUSTOMDRAW& cd) {
     Button_GetSplitInfo(cd.hdr.hwndFrom, &bsi);
     RECT r = cd.rc;
     r.right -= bsi.size.cx;
-    r.top += 1;
+    r.top += 2;
 
     std::wstring text = GetWindowString(cd.hdr.hwndFrom);
     std::erase(text, L'&');
