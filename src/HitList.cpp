@@ -59,6 +59,8 @@ intptr_t maxMarginNumber = 999;                   // Maximum number that can be 
 
 POINT lastLButtonDown;                            // Last place the left mouse button went down -- used in double-click processing
 
+bool caretLineIsBackground = false;               // Set when caret line indicator is highlight background; used for header lines
+
 
 // Handling for double-clicks and the Enter key
 
@@ -392,6 +394,8 @@ void configureSciHits() {
     int                    caretPeriod      = sci.CaretPeriod();
     int                    caretLineFrame   = sci.CaretLineFrame();
     bool                   caretLineVisible = sci.CaretLineVisible();
+    
+    caretLineIsBackground = caretLineVisible && !caretLineFrame;
 
     plugin.getScintillaPointers(sciHits);
 
@@ -580,8 +584,18 @@ INT_PTR CALLBACK hitlistDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
     case WM_NOTIFY:
         switch (reinterpret_cast<NMHDR*>(lParam)->code) {
-        case SCN_MARGINCLICK:
-            break;
+        case SCN_UPDATEUI:
+        {
+            const Scintilla::NotificationData& scn = *reinterpret_cast<Scintilla::NotificationData*>(lParam);
+            if (Scintilla::FlagSet(scn.updated, Scintilla::Update::Selection)) {
+                if (caretLineIsBackground) {
+                    plugin.getScintillaPointers(sciHits);
+                    Scintilla::Line caretLine = sci.LineFromPosition(sci.CurrentPos());
+                    sci.SetCaretLineFrame(Scintilla::LevelIsHeader(sci.FoldLevel(caretLine)) ? 3 : 0);
+                }
+            }
+            return TRUE;
+        }
         case SCN_ZOOM:
         {
             const Scintilla::NotificationData& scn = *reinterpret_cast<Scintilla::NotificationData*>(lParam);
