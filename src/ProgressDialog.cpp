@@ -215,13 +215,20 @@ SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
     if (!result.error()) {
         std::wstring verb = req.command.verb == SearchCommand::ReplaceAll ? L"Replaced "
                           : req.command.verb == SearchCommand::Select     ? L"Selected "
-                          : req.command.verb == SearchCommand::Show       ? L"Shown "
+                          : req.command.verb == SearchCommand::Show       ? L"Showing "
                           : req.command.verb == SearchCommand::Mark       ? L"Marked "
                                                                           : L"Found ";
 
         std::wstring suffix = req.command.scope == SearchCommand::Scope::Region    ? L" in marked text"
                             : req.command.scope == SearchCommand::Scope::Selection ? L" in selection"
                                                                                    : L"";
+        if (countEmpty > 0) {
+            if (req.command.verb == SearchCommand::Mark)
+                verb = L"Found ";
+            if (req.command.verb == SearchCommand::Mark || req.command.verb == SearchCommand::Show)
+                suffix = std::format(userLocale, L" ({:Ld} marked, {:Ld} null)", count - countEmpty, countEmpty) + suffix;
+        }
+
         if (req.command.extent == SearchCommand::All) suffix += L".";
         else {
             suffix += (req.command.extent == SearchCommand::Before ? L" before " : L" after ");
@@ -276,8 +283,6 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
 
     result = SearchResult(SearchResult::Success, L"");
     message = req.command.verb == SearchCommand::ReplaceAll ? L"Matches replaced"
-            : req.command.verb == SearchCommand::Select     ? L"Matches selected"
-            : req.command.verb == SearchCommand::Show       ? L"Matches shown"
             : req.command.verb == SearchCommand::Mark       ? L"Matches marked"
                                                             : L"Matches found";
 
@@ -347,8 +352,6 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
     if (!result.error()) {
         if (count > pdl->priorCount) ++pdl->fileHits;
         std::wstring verb = req.command.verb == SearchCommand::ReplaceAll ? L"Replaced "
-                          : req.command.verb == SearchCommand::Select     ? L"Selected "
-                          : req.command.verb == SearchCommand::Show       ? L"Shown "
                           : req.command.verb == SearchCommand::Mark       ? L"Marked "
                                                                           : L"Found ";
 
@@ -357,6 +360,12 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
             : (count > 1 ? std::format(userLocale, L" in {:Ld} of {:Ld}", pdl->fileHits, documentCount)
                          : std::format(userLocale, L" in {:Ld}", documentCount))
             + (req.command.extent == SearchCommand::Open ? L" open documents." : L" documents in this view.");
+
+        if (req.command.verb == SearchCommand::Mark && countEmpty > 0) {
+            verb = L"Found ";
+            suffix = std::format(userLocale, L" ({:Ld} marked, {:Ld} null)", count - countEmpty, countEmpty) + suffix;
+        }
+
         result = !count     ? SearchResult(SearchResult::Failure, L"No matches found" + suffix)
                : count == 1 ? SearchResult(SearchResult::Success, verb + L"1 match" + suffix)
                             : SearchResult(SearchResult::Success, verb + std::format(userLocale, L"{:Ld} matches", count) + suffix);

@@ -72,6 +72,7 @@ struct ProgressInfo {
     size_t              documentIndex = 0;
     size_t              documentCount = 0;
     intptr_t            count         = 0;
+    intptr_t            countEmpty    = 0;          // Used for Mark commands, since empty matches cannot be marked
     bool                timerStarted  = false;
     bool                needPreClear  = true;
 
