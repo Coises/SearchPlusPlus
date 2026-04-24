@@ -1,5 +1,12 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.5.5 -- April 24th, 2026
+
+* Fix Replace All with ICU search engine should give "Command not implemented" message.
+* Copy current line indicator and caret settings from active document to Find and Replace box and search results list.
+* Use a more distinct symbol for "in selection" scope on command buttons.
+* Make messages for Mark and Show commands more accurate when there are null matches.
+
 ## Version 0.5.4 -- April 18th, 2026
 
 * Fix bookmarks and Show command not working with ICU search engine.
