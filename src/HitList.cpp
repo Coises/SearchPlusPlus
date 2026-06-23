@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "CommonData.h"
+#include "MatchResults.h"
 
 #include "resource.h"
 #include "Shlwapi.h"
@@ -24,6 +25,8 @@ void showSearchDialog();
 
 
 namespace {
+
+std::vector<MatchResults::LineIndex> cumulativeLineIndex;
 
 std::locale userLocale("");
 
@@ -47,13 +50,13 @@ constexpr Scintilla::FoldLevel Level_Search   = static_cast<Scintilla::FoldLevel
 constexpr Scintilla::FoldLevel Level_Document = static_cast<Scintilla::FoldLevel>(static_cast<int>(Scintilla::FoldLevel::HeaderFlag)
                                               | (static_cast<int>(Scintilla::FoldLevel::Base) - 10));
 
-std::vector<std::unique_ptr<ProgressInfo::HitSet>> hitSets;
-
-struct FoundLine {
-    uintptr_t       buffer;
-    Scintilla::Line line;
-};
-std::vector<FoundLine> foundLines = { {0, -1} };  // First entry represents no location
+// std::vector<std::unique_ptr<ProgressInfo::HitSet>> hitSets;
+// 
+// struct FoundLine {
+//     uintptr_t       buffer;
+//     Scintilla::Line line;
+// };
+// std::vector<FoundLine> foundLines = { {0, -1} };  // First entry represents no location
 
 intptr_t maxMarginNumber = 999;                   // Maximum number that can be displayed in margin; always a power of 10 minus 1
 
@@ -65,26 +68,25 @@ bool caretLineIsBackground = false;               // Set when caret line indicat
 // Handling for double-clicks and the Enter key
 
 bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position cpMax, bool switchFocus) {
-    Scintilla::Line lnMin = sci.LineFromPosition(cpMin);
+    const Scintilla::Line lnMin = sci.LineFromPosition(cpMin);
+    if (lnMin >= static_cast<Scintilla::Line>(cumulativeLineIndex.size())) return false;
     if (Scintilla::LevelIsHeader(sci.FoldLevel(lnMin))) /* a search or document header: toggle fold */ {
         sci.ToggleFold(lnMin);
         return true;
     }
-    int lineIndex = sci.LineState(lnMin);
-    if (lineIndex < 1 || lineIndex >= static_cast<int>(foundLines.size()))  // Not a found line (e.g., empty line at end of hit list).
-        return false;
-    FoundLine foundLine = foundLines[lineIndex];   // Entry in table to translate hit list lines to document lines
-    if (foundLine.buffer == 0) return false;       // Unexpected, but if it happens, the line isn't a found line.
-    Scintilla::Position cpLine = sci.PositionFromLine(lnMin);
-    int32_t docpos = static_cast<int32_t>(npp(NPPM_GETPOSFROMBUFFERID, foundLine.buffer, npp(NPPM_GETCURRENTVIEW, 0, 0)));
-    if (docpos == -1) /* Document is no longer open. (Should we try to re-open it?) */ return false;
-    npp(NPPM_ACTIVATEDOC, docpos >> 30, docpos & 0x3FFFFFFF);
+    const Scintilla::Line parentLine = sci.FoldParent(lnMin);
+    const std::string parentLineText = sci.GetLine(parentLine);
+    const size_t fn = parentLineText.find(": ");
+    if (fn == std::string::npos || fn >= parentLineText.length() - 4) return false;
+    const Scintilla::Line lineNumber = cumulativeLineIndex[lnMin].lineNumber;
+    const Scintilla::Position cpLine = sci.PositionFromLine(lnMin);
+    if (!npp(NPPM_DOOPEN, 0, utf8to16(parentLineText.substr(fn + 2, parentLineText.length() - fn - 4)).data())) return false;
     plugin.getScintillaPointers();
-    UINT codepage = sci.CodePage();
+    const UINT codepage = sci.CodePage();
     Scintilla::Position start;
     Scintilla::Position end;
     if (codepage == CP_UTF8) {
-        Scintilla::Position offset = sci.PositionFromLine(foundLine.line) - cpLine;
+        intptr_t offset = sci.PositionFromLine(lineNumber) - cpLine;
         start = cpMin + offset;
         end   = cpMax + offset;
     }
@@ -92,9 +94,9 @@ bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position
         plugin.getScintillaPointers(sciHits);
         start = cpMin == cpLine ? 0 : fromWide(utf8to16(sci.StringOfRange(Scintilla::Span(cpLine, cpMin))), codepage).length();
         Scintilla::Position length = cpMax == cpMin ? 0
-            : fromWide(utf8to16(sci.StringOfRange(Scintilla::Span(cpMin, cpMax ))), codepage).length();
+            : fromWide(utf8to16(sci.StringOfRange(Scintilla::Span(cpMin, cpMax))), codepage).length();
         plugin.getScintillaPointers();
-        start += sci.PositionFromLine(foundLine.line);
+        start += sci.PositionFromLine(lineNumber);
         end = start + length;
     }
     data.context.clear();
@@ -269,10 +271,8 @@ void clearAll() {
     plugin.getScintillaPointers(sciHits);
     sci.SetReadOnly(false);
     sci.ClearAll();
-    hitSets.clear();
-    foundLines.clear();
-    foundLines.push_back({ 0, -1 });  // First entry represents no location
     sci.SetReadOnly(true);
+    cumulativeLineIndex.clear();
 }
 
 void clearBelow() {
@@ -285,9 +285,9 @@ void clearBelow() {
         sci.DeleteRange(removeBelow, sci.Length() - removeBelow);
         sci.MarkerDelete(last + 1, -1);
         sci.SetReadOnly(true);
+        cumulativeLineIndex.resize(sci.LineCount() - 1);
     }
 }
-
 
 
 // Subclass procedure for Scintilla control
@@ -358,17 +358,6 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
         }
     }
     return DefSubclassProc(hWnd, uMsg, wParam, lParam);
-}
-
-
-double luminanceEstimate(Scintilla::Colour c) {
-    double backR = (c & 0xFF) / 255.0;
-    double backG = ((c >> 8) & 0xFF) / 255.0;
-    double backB = ((c >> 16) & 0xFF) / 255.0;
-    backR = backR <= 0.040405 ? backR / 12.92 : std::pow((backR + 0.055) / 1.055, 2.4);
-    backG = backG <= 0.040405 ? backG / 12.92 : std::pow((backG + 0.055) / 1.055, 2.4);
-    backB = backB <= 0.040405 ? backB / 12.92 : std::pow((backB + 0.055) / 1.055, 2.4);
-    return (0.2126 * backR + 0.7152 * backG + 0.0722 * backB);
 }
 
 
@@ -636,7 +625,7 @@ void colorHitlist() {
 }
 
 
-void showHitlist(ProgressInfo& pi) {
+void showHitlist(MatchResults& matchResults) {
 
     HWND focused = data.focusResults ? 0 : GetFocus();
 
@@ -652,133 +641,66 @@ void showHitlist(ProgressInfo& pi) {
         npp(NPPM_DMMREGASDCKDLG, 0, &dock);
     }
 
-    hitSets.push_back(std::move(pi.hitSet));
+    if (matchResults.index.empty()) {
+        ShowWindow(hitlist, SW_NORMAL);
+        return;
+    }
+
+    intptr_t newLines = matchResults.index.size();
+
+    plugin.getScintillaPointers(sciHits);
+    sci.SetReadOnly(false);
+    sci.SetTargetRange(0, 0);
+    sci.ReplaceTarget(matchResults.text);
+    matchResults.text.clear();
+    cumulativeLineIndex.insert(cumulativeLineIndex.begin(), std::make_move_iterator(matchResults.index.begin())
+                                                          , std::make_move_iterator(matchResults.index.end()));
 
     intptr_t newMargin = maxMarginNumber;
 
-    std::string rawFindText = hitSets.back()->searchString;
-    std::string singleLineFindText;
-    for (size_t i = 0; i < rawFindText.length(); ++i) {
-        switch (rawFindText[i]) {
-        case '\t':
-            singleLineFindText += reinterpret_cast<const char*>(u8"\u2B72");
-            break;
-        case '\n':
-            singleLineFindText += reinterpret_cast<const char*>(u8"\u240A");
-            break;
-        case '\r':
-            if (i + 1 < rawFindText.length() && rawFindText[i + 1] == '\n') {
-                singleLineFindText += reinterpret_cast<const char*>(u8"\u21A9");
-                ++i;
-            }
-            else singleLineFindText += reinterpret_cast<const char*>(u8"\u240D");
-            break;
-        default:
-            singleLineFindText += rawFindText[i];
-        }
-    }
-
-    plugin.getScintillaPointers(sciHits);
-
-    sci.SetReadOnly(false);
-    sci.SetSel(0, 0);
-
-    size_t documentCount = hitSets.back()->hitBlocks.size();
-    std::string search = utf16to8(std::format(userLocale, L" {:Ld} match{:s} in {:Ld} document{:s} ",
-        pi.count, pi.count == 1 ? L"" : L"es", documentCount, documentCount == 1 ? L"" : L"s")) + singleLineFindText + "\r\n";
-    sci.AddText(search.length(), search.data());
-    sci.StartStyling(0, 0);
-    sci.SetStyling(search.length(), Style_Search);
-    sci.MarkerAdd(0, Marker_Search);
-    sci.MarginSetText(0, "====");
+    sci.StartStyling  (0, 0);
+    sci.SetStyling    (cumulativeLineIndex[0].length, Style_Search);
+    sci.MarkerAdd     (0, Marker_Search);
+    sci.MarginSetText (0, "====");
     sci.MarginSetStyle(0, Style_Search);
-    sci.SetFoldLevel(0, Level_Search);
+    sci.SetFoldLevel  (0, Level_Search);
 
-    for (const auto& hitBlock : hitSets.back()->hitBlocks) {
-
-        Scintilla::Position position = sci.CurrentPos();
-        Scintilla::Line line = sci.LineFromPosition(position);
-        intptr_t matchesInDocument = static_cast<intptr_t>(hitBlock.count());
-        intptr_t linesMatched = static_cast<intptr_t>(hitBlock.hitLines.size());
-        std::string documentLine = utf16to8(std::format(userLocale, L"-- {:Ld} match{:s} in {:Ld} line{:s}: ",
-            matchesInDocument, matchesInDocument == 1 ? L"" : L"es", linesMatched, linesMatched == 1 ? L"" : L"s"))
-            + hitBlock.documentPath + "\r\n";
-        sci.AddText(documentLine.length(), documentLine.data());
-        sci.StartStyling(position, 0);
-        sci.SetStyling(documentLine.length(), Style_Document);
-        sci.MarkerAdd(line, Marker_Document);
-        sci.MarginSetText(line, "--");
-        sci.MarginSetStyle(line, Style_Document);
-        sci.SetFoldLevel(line, Level_Document);
-
-        // Since some matches might cross lines, we add all the lines first,
-        // then go back through again and style the matches.
-        // Document line to position (dlp) will map document lines to hit list positions
-        // so we know where to find matches when we do our second pass.
-
-        std::map<Scintilla::Line, Scintilla::Position> dlp;
-
-        for (const auto& hitLine : hitBlock.hitLines) {
-            Scintilla::Position pos = sci.CurrentPos();
-            Scintilla::Line ln = sci.LineFromPosition(pos);
-            dlp[hitLine.line] = pos;
-            std::string hitLineText = hitBlock.codepage == CP_UTF8 ? hitLine.text : utf16to8(toWide(hitLine.text, hitBlock.codepage));
-            if (hitLineText.back() != '\n' && hitLineText.back() != '\r') hitLineText += "\r\n";  // can happen for the last line in a document
-            sci.AddText(hitLineText.length(), hitLineText.data());
-            Scintilla::Line displayLine = hitLine.line + 1;
-            sci.MarginSetText(ln, (std::to_string(displayLine) + ' ').data());
-            sci.MarginSetStyle(ln, STYLE_LINENUMBER);
-            sci.SetLineState(ln, static_cast<int>(foundLines.size()));
-            newMargin = std::max(newMargin, displayLine);
-            sci.SetFoldLevel(ln, Scintilla::FoldLevel::Base);
-            foundLines.push_back({ hitBlock.bufferID, hitLine.line });
+    intptr_t position = cumulativeLineIndex[0].length;
+    for (intptr_t line = 1; line < newLines; ++line) {
+        const MatchResults::LineIndex& mld = cumulativeLineIndex[line];
+        if (mld.lineNumber < 0) /* file header line */ {
+            sci.StartStyling  (position, 0);
+            sci.SetStyling    (mld.length, Style_Document);
+            sci.MarkerAdd     (line, Marker_Document);
+            sci.MarginSetText (line, "--");
+            sci.MarginSetStyle(line, Style_Document);
+            sci.SetFoldLevel  (line, Level_Document);
         }
-
-        bool indicatorSwap = false;
-        for (size_t hitLineIndex = 0; hitLineIndex < hitBlock.hitLines.size(); ++hitLineIndex) {
-            const auto& hitLine = hitBlock.hitLines[hitLineIndex];
-            for (const auto& hit : hitLine.hits) {
+        else {
+            intptr_t lineNumber = mld.lineNumber + 1;
+            sci.MarginSetText (line, (std::to_string(lineNumber) + ' ').data());
+            sci.MarginSetStyle(line, STYLE_LINENUMBER);
+            sci.SetFoldLevel  (line, Scintilla::FoldLevel::Base);
+            if (newMargin < lineNumber) newMargin = lineNumber;
+            bool indicatorSwap = false;
+            for (const auto& hit : mld.matches) {
                 Scintilla::Position hitStart;
-                Scintilla::Position hitLength;
-                if (hitBlock.codepage == CP_UTF8) {
-                    hitStart  = hit.cpMin - hitLine.position + dlp[hitLine.line];
-                    hitLength = hit.cpMax - hit.cpMin;
-                }
-                else /* hit text and positions are in an ANSI code page, but the hit list is always UTF-8 */ {
-                    hitStart = dlp[hitLine.line] + (hit.cpMin == hitLine.position ? 0
-                        : utf16to8(toWide(hitLine.text.substr(0, hit.cpMin - hitLine.position), hitBlock.codepage)).length());
-                    if (hit.cpMax == hit.cpMin) hitLength = 0;
-                    else if (static_cast<size_t>(hit.cpMax - hitLine.position) <= hitLine.text.length())
-                        hitLength = utf16to8(toWide(hitLine.text.substr(hit.cpMin - hitLine.position, hit.cpMax - hit.cpMin),
-                                                    hitBlock.codepage)).length();
-                    else /* hit spans multiple lines */ {
-                        hitLength = utf16to8(toWide(hitLine.text.substr(hit.cpMin - hitLine.position), hitBlock.codepage)).length();
-                        size_t remainingLength = hit.cpMax - hitLine.position - hitLine.text.length();
-                        for (size_t hli = hitLineIndex + 1; remainingLength > 0; ++hli) {
-                            const auto& extLine = hitBlock.hitLines[hli];
-                            if (remainingLength <= extLine.text.length()) {
-                                hitLength += utf16to8(toWide(extLine.text.substr(0, remainingLength), hitBlock.codepage)).length();
-                                break;
-                            }
-                            hitLength += utf16to8(toWide(extLine.text, hitBlock.codepage)).length();
-                            remainingLength -= extLine.text.length();
-                        }
-                    }
-                }
-                if (hitLength == 0) {
+                hitStart = hit.offset + position;
+                if (hit.length == 0) {
                     sci.SetIndicatorCurrent(Indicator_NullMatch);
-                    sci.SetIndicatorValue(1);
-                    sci.IndicatorFillRange(hitStart, 1);
+                    sci.SetIndicatorValue  (1);
+                    sci.IndicatorFillRange (hitStart, 1);
                 }
                 else {
-                    sci.StartStyling(hitStart, 0);
-                    sci.SetStyling(hitLength, Style_Found);
+                    sci.StartStyling       (hitStart, 0);
+                    sci.SetStyling         (hit.length, Style_Found);
                     sci.SetIndicatorCurrent(Indicator_Found);
-                    sci.SetIndicatorValue((indicatorSwap = !indicatorSwap) ? 2 : 1);
-                    sci.IndicatorFillRange(hitStart, hitLength);
+                    sci.SetIndicatorValue  ((indicatorSwap = !indicatorSwap) ? 2 : 1);
+                    sci.IndicatorFillRange (hitStart, hit.length);
                 }
             }
         }
+        position += mld.length;
     }
 
     if (newMargin > maxMarginNumber) {
@@ -788,9 +710,117 @@ void showHitlist(ProgressInfo& pi) {
         sci.SetMarginWidthN(0, sci.TextWidth(STYLE_DEFAULT, (' ' + std::to_string(maxMarginNumber) + ' ').data()));
     }
 
+    sci.SetFirstVisibleLine(0);
     sci.SetSel(-1, sci.PositionFromLine(2));
     sci.SetReadOnly(true);
-
     if (focused) SetFocus(focused);
+
+}
+
+
+void showHitlist(ProgressInfo& pi) {
+
+    if (!pi.count) return showHitlist();
+
+    MatchResults matchResults;
+
+    size_t files   = pi.hitSet->hitBlocks.size();
+    size_t matches = pi.count;
+    size_t indices = 1;
+    size_t textlen = 0;  // estimate of the final textlen -- better to overestimate than underestimate!
+
+    for (const auto& hb : pi.hitSet->hitBlocks) {
+        indices += 1 + hb.hitLines.size();
+        textlen += 62 + hb.documentPath.length();
+        for (const auto& hl : hb.hitLines) textlen += hl.text.length();
+    }
+
+    std::string singleLineFindText = std::format(userLocale, " {:Ld} match{:s} in {:Ld} file{:s}: ",
+                                                 matches, matches == 1 ? "" : "es", files, files == 1 ? "" : "s");
+    for (size_t i = 0; i < pi.hitSet->searchString.length(); ++i) {
+        switch (pi.hitSet->searchString[i]) {
+        case '\t':
+            singleLineFindText += reinterpret_cast<const char*>(u8"\u2B72");
+            break;
+        case '\n':
+            singleLineFindText += reinterpret_cast<const char*>(u8"\u240A");
+            break;
+        case '\r':
+            if (i + 1 < pi.hitSet->searchString.length() && pi.hitSet->searchString[i + 1] == '\n') {
+                singleLineFindText += reinterpret_cast<const char*>(u8"\u21A9");
+                ++i;
+            }
+            else singleLineFindText += reinterpret_cast<const char*>(u8"\u240D");
+            break;
+        default:
+            singleLineFindText += pi.hitSet->searchString[i];
+        }
+    }
+    singleLineFindText += "\r\n";
+
+    matchResults.index.reserve(indices);
+    matchResults.text.reserve(singleLineFindText.length() + textlen + 2);
+    matchResults.index.emplace_back();
+    matchResults.index.back().lineNumber = -2;
+    matchResults.index.back().length = singleLineFindText.length();
+    matchResults.text = singleLineFindText;
+
+    for (const auto& hb : pi.hitSet->hitBlocks) {
+        size_t linesMatched = hb.hitLines.size();
+        size_t fileMatches = hb.count();
+        std::string fileHeader = std::format(userLocale, "-- {:Ld} match{:s} in {:Ld} line{:s}: ",
+                                                         fileMatches, fileMatches == 1 ? "" : "es",
+                                                         linesMatched, linesMatched == 1 ? "" : "s")
+                               + hb.documentPath + "\r\n";
+        matchResults.index.emplace_back();
+        matchResults.index.back().lineNumber = -1;
+        matchResults.index.back().length = fileHeader.length();
+        matchResults.text += fileHeader;
+        if (hb.codepage == CP_UTF8) for (const auto& hl : hb.hitLines) {
+            matchResults.index.emplace_back();
+            matchResults.index.back().length = hl.text.length();
+            matchResults.index.back().lineNumber = hl.line;
+            matchResults.text += hl.text;
+            for (const auto& hit : hl.hits)
+                matchResults.index.back().matches.emplace_back(hit.cpMin - hl.position, hit.cpMax - hit.cpMin);
+        }
+        else for (size_t hitLineIndex = 0; hitLineIndex < hb.hitLines.size(); ++hitLineIndex) {  // <== can be made more efficient!
+            const auto& hl = hb.hitLines[hitLineIndex];
+            matchResults.index.emplace_back();
+            matchResults.index.back().lineNumber = hl.line;
+            for (const auto& hit : hl.hits) {
+                matchResults.index.back().matches.emplace_back();
+                auto& sm = matchResults.index.back().matches.back();
+                sm.offset = (hit.cpMin == hl.position ? 0
+                          : utf16to8(toWide(hl.text.substr(0, hit.cpMin - hl.position), hb.codepage)).length());
+                if (hit.cpMax == hit.cpMin) sm.length = 0;
+                else if (static_cast<size_t>(hit.cpMax - hl.position) <= hl.text.length())
+                    sm.length = utf16to8(toWide(hl.text.substr(hit.cpMin - hl.position, hit.cpMax - hit.cpMin),
+                                                hb.codepage)).length();
+                else /* hit spans multiple lines */ {
+                    sm.length = utf16to8(toWide(hl.text.substr(hit.cpMin - hl.position), hb.codepage)).length();
+                    size_t remainingLength = hit.cpMax - hl.position - hl.text.length();
+                    for (size_t hli = hitLineIndex + 1; remainingLength > 0; ++hli) {
+                        const auto& extLine = hb.hitLines[hli];
+                        if (remainingLength <= extLine.text.length()) {
+                            sm.length += utf16to8(toWide(extLine.text.substr(0, remainingLength), hb.codepage)).length();
+                            break;
+                        }
+                        sm.length += utf16to8(toWide(extLine.text, hb.codepage)).length();
+                        remainingLength -= extLine.text.length();
+                    }
+                }
+            }
+            const std::string utf8text = utf16to8(toWide(hl.text, hb.codepage));
+            matchResults.index.back().length = utf8text.length();
+            matchResults.text += utf8text;
+        }
+        if (matchResults.text.back() != '\n' && matchResults.text.back() != '\r') {
+            matchResults.text += "\r\n";
+            matchResults.index.back().length += 2;
+        }
+    }
+
+    showHitlist(matchResults);
 
 }

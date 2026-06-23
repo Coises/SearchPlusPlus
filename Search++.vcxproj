@@ -30,6 +30,7 @@
     <ClInclude Include="src\Framework\UtilityFrameworkMIT.h" />
     <ClInclude Include="src\Host\Docking.h" />
     <ClInclude Include="src\Host\dockingResource.h" />
+    <ClInclude Include="src\MatchResults.h" />
     <ClInclude Include="src\nlohmann\json.hpp" />
     <ClInclude Include="src\Numeric.h" />
     <ClInclude Include="src\ProgressInfo.h" />
