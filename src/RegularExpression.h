@@ -20,51 +20,38 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+
 #include "Framework/ScintillaCallEx.h"
 
-
-class RegularExpressionInterface {
-    friend class RegularExpression;
-protected:
-    Scintilla::ScintillaCall& sci;
-public:
-    RegularExpressionInterface(Scintilla::ScintillaCall& sciCall) : sci(sciCall) {}
-    virtual ~RegularExpressionInterface() {}
-    virtual bool         can_search(                                                                       ) const = 0;
-    virtual std::string  find      (const std::string& s, bool caseSensitive, bool dotAll, bool freeSpacing) = 0;
-    virtual std::string  format    (const std::string& replacement                                         ) const = 0;
-    virtual void         invalidate(                                                                       )       = 0;
-    virtual intptr_t     length    (int n = 0                                                              ) const = 0;
-    virtual size_t       mark_count(                                                                       ) const = 0;
-    virtual intptr_t     position  (int n = 0                                                              ) const = 0;
-    virtual bool         search    (std::string_view s, size_t from = 0                                    )       = 0;
-    virtual bool         search    (intptr_t from, intptr_t to, intptr_t start                             )       = 0;
-    virtual size_t       size      (                                                                       ) const = 0;
-    virtual std::string  str       (int n = 0                                                              ) const = 0;
-    virtual std::string  str       (std::string_view n                                                     ) const = 0;
-    virtual std::wstring wstr      (int n = 0                                                              ) const = 0;
-    virtual std::wstring wstr      (std::string_view n                                                     ) const = 0;
-};
-
 class RegularExpression {
-    RegularExpressionInterface* rex = 0;
 public:
-    RegularExpression() {}
-    RegularExpression(Scintilla::ScintillaCall& sciCall) { setup(sciCall); }
-    ~RegularExpression() { if (rex) delete rex; }
+    class Mono;
+    class Poly;
+private:
+    Mono* mono = 0;
+    Poly* poly = 0;
+public:
+    RegularExpression();
+    RegularExpression(Scintilla::ScintillaCall& sciCall);
+    RegularExpression(const RegularExpression& rx);
+    ~RegularExpression();
+    bool               can_search() const;
+    std::string        find(const std::string& s, bool caseSensitive, bool dotAll, bool freeSpacing);
+    std::string        format(const std::string& replacement) const;
+    void               invalidate();
+    intptr_t           length(int n = 0) const;
+    size_t             mark_count() const;
+    intptr_t           position(int n = 0) const;
+    bool               search(std::string_view s, size_t from = 0);
+    bool               search(std::string_view s, std::string& errmsg);
+    bool               search(std::string_view s, size_t from, std::string& errmsg);
+    bool               search(intptr_t from, intptr_t to, intptr_t start);
+    bool               search(intptr_t from, intptr_t to, intptr_t start, std::string& errmsg);
+    RegularExpression& setup(unsigned int codepage);
     RegularExpression& setup(Scintilla::ScintillaCall& sciCall);
-    bool         can_search(                                                                       ) const {return rex->can_search(                                     );}
-    std::string  find      (const std::string& s, bool caseSensitive, bool dotAll, bool freeSpacing)       {return rex->find      (s, caseSensitive, dotAll, freeSpacing);}
-    std::string  format    (const std::string& replacement                                         ) const {return rex->format    (replacement                          );}
-    void         invalidate(                                                                       )       {       rex->invalidate(                                     );}
-    intptr_t     length    (int n = 0                                                              ) const {return rex->length    (n                                    );}
-    size_t       mark_count(                                                                       ) const {return rex->mark_count(                                     );}
-    intptr_t     position  (int n = 0                                                              ) const {return rex->position  (n                                    );}
-    bool         search    (std::string_view s, size_t from = 0                                    )       {return rex->search    (s, from                              );}
-    bool         search    (intptr_t from, intptr_t to, intptr_t start                             )       {return rex->search    (from, to, start                      );}
-    size_t       size      (                                                                       ) const {return rex->size      (                                     );}
-    std::string  str       (int n = 0                                                              ) const {return rex->str       (n                                    );}
-    std::string  str       (std::string_view n                                                     ) const {return rex->str       (n                                    );}
-    std::wstring wstr      (int n = 0                                                              ) const {return rex->wstr      (n                                    );}
-    std::wstring wstr      (std::string_view n                                                     ) const {return rex->wstr      (n                                    );}
+    size_t             size() const;
+    std::string        str(int n = 0) const;
+    std::string        str(std::string_view n) const;
+    std::wstring       wstr(int n = 0) const;
+    std::wstring       wstr(std::string_view n) const;
 };

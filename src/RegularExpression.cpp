@@ -19,17 +19,79 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// #include <algorithm>
+
 #include "Framework/ScintillaCallEx.h"
 #include "Framework/UtilityFrameworkMIT.h"
 #include "Framework/UnicodeFormatTranslation.h"
-
 #include "RegularExpression.h"
-#include "Unicode\UnicodeRegexTraits.h"
+#include "Unicode/UnicodeRegexTraits.h"
 #include <mbstring.h>
 
 
-class RegularExpressionU : public RegularExpressionInterface {
+class RegularExpression::Mono {
+public:
+    boost::basic_regex<char32_t, utf32_regex_traits> uFind;
+    Scintilla::ScintillaCall* sci = 0;
+    mutable intptr_t    end = 0;
+    mutable intptr_t    gap = 0;
+    mutable const char* pt1 = 0;
+    mutable const char* pt2 = 0;
+    unsigned int codepage = 0;
+    bool regexValid = false;
+    void ensureValid() {
+        if (!sci) {
+            regexValid = false;
+            MessageBox(0, L"A search requiring a Scintilla pointer has been called without a pointer. This is a logic error. "
+                          L"Searching is not possible.",
+                          L"Search++: Error in regular expression search", MB_ICONERROR);
+            return;
+        }
+        if (pt1 == 0 && pt2 == 0) {
+            end = sci->Length();
+            gap = sci->GapPosition();
+            pt1 = gap > 0 ? reinterpret_cast<const char*>(sci->RangePointer(0, gap)) : 0;
+            pt2 = gap < end ? reinterpret_cast<const char*>(sci->RangePointer(gap, end - gap)) - gap : 0;
+        }
+    }
+};
+
+
+class RegularExpression::Poly {
+protected:
+    Mono& mono;
+public:
+    Poly(Mono& mono) : mono(mono) {}
+    virtual ~Poly() {}
+    virtual std::string  format(const std::string& replacement)                                  const = 0;
+    virtual intptr_t     length(int n = 0)                                                       const = 0;
+    virtual intptr_t     position(int n = 0)                                                     const = 0;
+    virtual bool         search(std::string_view s, size_t from           , std::string* errmsg)       = 0;
+    virtual bool         search(intptr_t from, intptr_t to, intptr_t start, std::string* errmsg)       = 0;
+    virtual size_t       size()                                                                  const = 0;
+    virtual std::string  str(int n = 0)                                                          const = 0;
+    virtual std::string  str(std::string_view n)                                                 const = 0;
+    virtual std::wstring wstr(int n = 0)                                                         const = 0;
+    virtual std::wstring wstr(std::string_view n)                                                const = 0;
+};
+
+
+class RegularExpressionNone : public RegularExpression::Poly {
+public:
+    RegularExpressionNone(RegularExpression::Mono& mono) : Poly(mono) {}
+    std::string  format    (const std::string&          )               const override { return "";    }
+    intptr_t     length    (int                         )               const override { return 0;     }
+    intptr_t     position  (int                         )               const override { return 0;     }
+    bool         search    (std::string_view, size_t    , std::string*)       override { return false; }
+    bool         search    (intptr_t, intptr_t, intptr_t, std::string*)       override { return false; }
+    size_t       size      (                            )               const override { return 0;     }
+    std::string  str       (int                         )               const override { return "";    }
+    std::string  str       (std::string_view            )               const override { return "";    }
+    std::wstring wstr      (int                         )               const override { return L"";   }
+    std::wstring wstr      (std::string_view            )               const override { return L"";   }
+};
+
+
+class RegularExpressionU : public RegularExpression::Poly {
 
 public:
 
@@ -93,14 +155,16 @@ public:
         using reference         = char32_t&;
 
         DocumentIterator() : pos(0), end(0), gap(0), pt1(0), pt2(0) {}
-        DocumentIterator(RegularExpressionU*     reba, intptr_t pos) : pos(pos), end(reba->end), gap(reba->gap), pt1(reba->pt1), pt2(reba->pt2) { fix_position(); }
-        DocumentIterator(const DocumentIterator& di  , intptr_t pos) : pos(pos), end(di.end   ), gap(di.gap   ), pt1(di.pt1   ), pt2(di.pt2   ) { fix_position(); }
+        DocumentIterator(const DocumentIterator& di, intptr_t pos)
+            : pos(pos), end(di.end), gap(di.gap), pt1(di.pt1), pt2(di.pt2) { fix_position(); }
+        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos)
+            : pos(pos), end(mono.end), gap(mono.gap), pt1(mono.pt1), pt2(mono.pt2) { fix_position(); }
 
         bool operator==(const DocumentIterator& other) const { return pos == other.pos; }
         bool operator!=(const DocumentIterator& other) const { return pos != other.pos; }
 
         intptr_t          position() const { return pos; }
-        DocumentIterator& position(Scintilla::Position at) { pos = at; return *this; }
+        DocumentIterator& position(intptr_t at) { pos = at; return *this; }
 
         DocumentIterator& operator++() {
             pos += length(pos);
@@ -134,102 +198,65 @@ public:
 private:
 
     friend class DocumentIterator;
-
-    mutable intptr_t    end = 0;
-    mutable intptr_t    gap = 0;
-    mutable const char* pt1 = 0;
-    mutable const char* pt2 = 0;
-
-    boost::basic_regex<char32_t, utf32_regex_traits> uFind;
-    boost::match_results<DocumentIterator>           uMatch;
-    bool                                             regexValid = false;
-
-    void ensureValid() const {
-        if (pt1 == 0 && pt2 == 0) {
-            end = sci.Length();
-            gap = sci.GapPosition();
-            pt1 = gap > 0 ? reinterpret_cast<const char*>(sci.RangePointer(0, gap)) : 0;
-            pt2 = gap < end ? reinterpret_cast<const char*>(sci.RangePointer(gap, end - gap)) - gap : 0;
-        }
-    }
+    boost::match_results<DocumentIterator> uMatch;
 
 public:
 
-    RegularExpressionU(Scintilla::ScintillaCall& sci) : RegularExpressionInterface(sci) {}
-
-    bool can_search() const override { return regexValid; }
-
-    std::string find(const std::string& s, bool caseSensitive, bool dotAll, bool freeSpacing) override {
-        try {
-            uFind.assign(utf8to32(s), ( (caseSensitive ? 0 : boost::regex_constants::icase)
-                                      | (dotAll        ? boost::regex_constants::mod_s : boost::regex_constants::no_mod_s)
-                                      | (freeSpacing   ? boost::regex_constants::mod_x : 0) ));
-        }
-        catch (const boost::regex_error& e) {
-            regexValid = false;
-            return e.what();
-        }
-        catch (...) {
-            regexValid = false;
-            return "Undetermined error processing this regular expression.";
-        }
-        regexValid = true;
-        return "";
-    }
+    RegularExpressionU(RegularExpression::Mono& mono) : Poly(mono) {}
 
     std::string format(const std::string& replacement) const override {
         return utf32to8(uMatch.format(utf8to32(replacement), boost::format_all));
     }
 
-    void invalidate() override {
-        end = gap = 0;
-        pt1 = pt2 = 0;
-    }
-
     intptr_t length(int n = 0) const override {
-        return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) ? -1 : uMatch[n].second.position() - uMatch[n].first.position();
+        return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size())
+            ? -1 : uMatch[n].second.position() - uMatch[n].first.position();
     }
 
-    size_t mark_count() const override { return !regexValid ? 0 : uFind.mark_count(); }
+    intptr_t position(int n = 0) const override {
+        return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) ? -1 : uMatch[n].first.position();
+    }
 
-    intptr_t position(int n = 0) const override { return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) ? -1 : uMatch[n].first.position(); }
-
-    bool search(std::string_view s, size_t from = 0) override {
-        if (!regexValid) return false;
-        end = gap = s.length();
-        pt1 = s.data();
-        pt2 = 0;
+    bool search(std::string_view s, size_t from, std::string* errmsg) override {
+        if (!mono.regexValid) return false;
+        mono.end = mono.gap = s.length();
+        mono.pt1 = s.data();
+        mono.pt2 = 0;
         try {
-            return boost::regex_search(DocumentIterator(this, from), DocumentIterator(this, s.length()), uMatch, uFind,
-                                       boost::match_not_dot_newline, DocumentIterator(this, 0));
+            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, s.length()), uMatch, mono.uFind,
+                                       boost::match_not_dot_newline, DocumentIterator(mono, 0));
         }
         catch (const boost::regex_error& e) {
-            regexValid = false;
-            MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = e.what();
+            else MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         catch (...) {
-            regexValid = false;
-            MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
+            mono.regexValid = false;
+            if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
+            else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
                           L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
 
-    bool search(intptr_t from, intptr_t to, intptr_t start) override {
-        if (!regexValid) return false;
-        ensureValid();
+    bool search(intptr_t from, intptr_t to, intptr_t start, std::string* errmsg) override {
+        if (!mono.regexValid) return false;
+        mono.ensureValid();
         try {
-            return boost::regex_search(DocumentIterator(this, from), DocumentIterator(this, to), uMatch, uFind,
-                                       boost::match_not_dot_newline, DocumentIterator(this, start));
+            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, to), uMatch, mono.uFind,
+                                       boost::match_not_dot_newline, DocumentIterator(mono, start));
         }
         catch (const boost::regex_error& e) {
-            regexValid = false;
-            MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = e.what();
+            else MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         catch (...) {
-            regexValid = false;
-            MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                          L"Search++: Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
+            else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
+                L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
@@ -237,25 +264,25 @@ public:
     size_t size() const override { return uMatch.size(); }
 
     std::string str(int n) const override {
-        ensureValid();
+        mono.ensureValid();
         if (uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) || !uMatch[n].matched) return "";
-        Scintilla::Position s1 = uMatch[n].first.position();
-        Scintilla::Position s2 = uMatch[n].second.position();
-        if (s2 <= gap) return std::string(pt1 + s1, pt1 + s2);
-        if (s1 >= gap) return std::string(pt2 + s1, pt2 + s2);
-        return std::string(pt1 + s1, pt1 + gap) + std::string(pt2 + gap, pt2 + s2);
+        intptr_t s1 = uMatch[n].first.position();
+        intptr_t s2 = uMatch[n].second.position();
+        if (s2 <= mono.gap) return std::string(mono.pt1 + s1, mono.pt1 + s2);
+        if (s1 >= mono.gap) return std::string(mono.pt2 + s1, mono.pt2 + s2);
+        return std::string(mono.pt1 + s1, mono.pt1 + mono.gap) + std::string(mono.pt2 + mono.gap, mono.pt2 + s2);
     }
 
     std::string str(std::string_view n) const override {
-        ensureValid();
+        mono.ensureValid();
         if (uMatch.empty() || n.empty()) return "";
         auto x = uMatch[n.data()];
         if (!x.matched) return "";
-        Scintilla::Position s1 = uMatch[n.data()].first.position();
-        Scintilla::Position s2 = uMatch[n.data()].second.position();
-        if (s2 <= gap) return std::string(pt1 + s1, pt1 + s2);
-        if (s1 >= gap) return std::string(pt2 + s1, pt2 + s2);
-        return std::string(pt1 + s1, pt1 + gap) + std::string(pt2 + gap, pt2 + s2);
+        intptr_t s1 = uMatch[n.data()].first.position();
+        intptr_t s2 = uMatch[n.data()].second.position();
+        if (s2 <= mono.gap) return std::string(mono.pt1 + s1, mono.pt1 + s2);
+        if (s1 >= mono.gap) return std::string(mono.pt2 + s1, mono.pt2 + s2);
+        return std::string(mono.pt1 + s1, mono.pt1 + mono.gap) + std::string(mono.pt2 + mono.gap, mono.pt2 + s2);
     }
 
     std::wstring wstr(int              n) const override { return utf8to16(str(n)); }
@@ -264,7 +291,7 @@ public:
 };
 
 
-class RegularExpressionSBCS : public RegularExpressionInterface {
+class RegularExpressionSBCS : public RegularExpression::Poly {
 
 public:
 
@@ -284,14 +311,14 @@ public:
         using reference         = char32_t&;
 
         DocumentIterator() : pos(0), gap(0), pt1(0), pt2(0) {}
-        DocumentIterator(RegularExpressionSBCS* reba, intptr_t pos) : pos(pos), gap(reba->gap), pt1(reba->pt1), pt2(reba->pt2) {}
-        DocumentIterator(const DocumentIterator&  di, intptr_t pos) : pos(pos), gap(di.gap   ), pt1(di.pt1   ), pt2(di.pt2   ) {}
+        DocumentIterator(const DocumentIterator&        di  , intptr_t pos) : pos(pos), gap(di  .gap), pt1(di  .pt1), pt2(di  .pt2) {}
+        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos) : pos(pos), gap(mono.gap), pt1(mono.pt1), pt2(mono.pt2) {}
 
         bool operator==(const DocumentIterator& other) const { return pos == other.pos; }
         bool operator!=(const DocumentIterator& other) const { return pos != other.pos; }
 
         intptr_t          position() const { return pos; }
-        DocumentIterator& position(Scintilla::Position at) { pos = at; return *this; }
+        DocumentIterator& position(intptr_t at) { pos = at; return *this; }
 
         DocumentIterator& operator++() { ++pos; return *this; }
         DocumentIterator& operator--() { --pos; return *this; }
@@ -325,102 +352,65 @@ public:
 private:
 
     friend class DocumentIterator;
-
-    mutable intptr_t    end = 0;
-    mutable intptr_t    gap = 0;
-    mutable const char* pt1 = 0;
-    mutable const char* pt2 = 0;
-
-    boost::basic_regex<char32_t, utf32_regex_traits> uFind;
-    boost::match_results<DocumentIterator>           uMatch;
-    bool                                             regexValid = false;
-
-    void ensureValid() const {
-        if (pt1 == 0 && pt2 == 0) {
-            end = sci.Length();
-            gap = sci.GapPosition();
-            pt1 = gap > 0 ? reinterpret_cast<const char*>(sci.RangePointer(0, gap)) : 0;
-            pt2 = gap < end ? reinterpret_cast<const char*>(sci.RangePointer(gap, end - gap)) - gap : 0;
-        }
-    }
+    boost::match_results<DocumentIterator> uMatch;
 
 public:
 
-    RegularExpressionSBCS(Scintilla::ScintillaCall& sci) : RegularExpressionInterface(sci) {}
-
-    bool can_search() const override { return regexValid; }
-
-    std::string find(const std::string& s, bool caseSensitive, bool dotAll, bool freeSpacing) override {
-        try {
-            uFind.assign(utf8to32(s), ( (caseSensitive ? 0 : boost::regex_constants::icase)
-                                      | (dotAll        ? boost::regex_constants::mod_s : boost::regex_constants::no_mod_s)
-                                      | (freeSpacing   ? boost::regex_constants::mod_x : 0) ));
-        }
-        catch (const boost::regex_error& e) {
-            regexValid = false;
-            return e.what();
-        }
-        catch (...) {
-            regexValid = false;
-            return "Undetermined error processing this regular expression.";
-        }
-        regexValid = true;
-        return "";
-    }
+    RegularExpressionSBCS(RegularExpression::Mono& mono) : Poly(mono) {}
 
     std::string format(const std::string& replacement) const override {
         return fromWide(utf32to16(uMatch.format(utf8to32(replacement), boost::format_all)), 0);
     }
 
-    void invalidate() override {
-        end = gap = 0;
-        pt1 = pt2 = 0;
-    }
-
     intptr_t length(int n = 0) const override {
-        return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) ? -1 : uMatch[n].second.position() - uMatch[n].first.position();
+        return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size())
+            ? -1 : uMatch[n].second.position() - uMatch[n].first.position();
     }
 
-    size_t mark_count() const override { return !regexValid ? 0 : uFind.mark_count(); }
+    intptr_t position(int n = 0) const override {
+        return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) ? -1 : uMatch[n].first.position();
+    }
 
-    intptr_t position(int n = 0) const override { return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) ? -1 : uMatch[n].first.position(); }
-
-    bool search(std::string_view s, size_t from = 0) override {
-        if (!regexValid) return false;
-        end = gap = s.length();
-        pt1 = s.data();
-        pt2 = 0;
+    bool search(std::string_view s, size_t from, std::string* errmsg) override {
+        if (!mono.regexValid) return false;
+        mono.end = mono.gap = s.length();
+        mono.pt1 = s.data();
+        mono.pt2 = 0;
         try {
-            return boost::regex_search(DocumentIterator(this, from), DocumentIterator(this, s.length()), uMatch, uFind,
-                                       boost::match_not_dot_newline, DocumentIterator(this, 0));
+            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, s.length()), uMatch, mono.uFind,
+                                       boost::match_not_dot_newline, DocumentIterator(mono, 0));
         }
         catch (const boost::regex_error& e) {
-            regexValid = false;
-            MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = e.what();
+            else MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         catch (...) {
-            regexValid = false;
-            MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                          L"Search++: Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
+            else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
+                L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
 
-    bool search(intptr_t from, intptr_t to, intptr_t start) override {
-        if (!regexValid) return false;
-        ensureValid();
+    bool search(intptr_t from, intptr_t to, intptr_t start, std::string* errmsg) override {
+        if (!mono.regexValid) return false;
+        mono.ensureValid();
         try {
-            return boost::regex_search(DocumentIterator(this, from), DocumentIterator(this, to), uMatch, uFind,
-                                       boost::match_not_dot_newline, DocumentIterator(this, start));
+            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, to), uMatch, mono.uFind,
+                boost::match_not_dot_newline, DocumentIterator(mono, start));
         }
         catch (const boost::regex_error& e) {
-            regexValid = false;
-            MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = e.what();
+            else MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         catch (...) {
-            regexValid = false;
-            MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                          L"Search++: Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
+            else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
+                L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
@@ -428,34 +418,34 @@ public:
     size_t size() const override { return uMatch.size(); }
 
     std::string str(int n) const override {
-        ensureValid();
+        mono.ensureValid();
         if (uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) || !uMatch[n].matched) return "";
-        Scintilla::Position s1 = uMatch[n].first.position();
-        Scintilla::Position s2 = uMatch[n].second.position();
-        if (s2 <= gap) return std::string(pt1 + s1, pt1 + s2);
-        if (s1 >= gap) return std::string(pt2 + s1, pt2 + s2);
-        return std::string(pt1 + s1, pt1 + gap) + std::string(pt2 + gap, pt2 + s2);
+        intptr_t s1 = uMatch[n].first.position();
+        intptr_t s2 = uMatch[n].second.position();
+        if (s2 <= mono.gap) return std::string(mono.pt1 + s1, mono.pt1 + s2);
+        if (s1 >= mono.gap) return std::string(mono.pt2 + s1, mono.pt2 + s2);
+        return std::string(mono.pt1 + s1, mono.pt1 + mono.gap) + std::string(mono.pt2 + mono.gap, mono.pt2 + s2);
     }
 
     std::string str(std::string_view n) const override {
-        ensureValid();
+        mono.ensureValid();
         if (uMatch.empty() || n.empty()) return "";
         auto x = uMatch[n.data()];
         if (!x.matched) return "";
-        Scintilla::Position s1 = uMatch[n.data()].first.position();
-        Scintilla::Position s2 = uMatch[n.data()].second.position();
-        if (s2 <= gap) return std::string(pt1 + s1, pt1 + s2);
-        if (s1 >= gap) return std::string(pt2 + s1, pt2 + s2);
-        return std::string(pt1 + s1, pt1 + gap) + std::string(pt2 + gap, pt2 + s2);
+        intptr_t s1 = uMatch[n.data()].first.position();
+        intptr_t s2 = uMatch[n.data()].second.position();
+        if (s2 <= mono.gap) return std::string(mono.pt1 + s1, mono.pt1 + s2);
+        if (s1 >= mono.gap) return std::string(mono.pt2 + s1, mono.pt2 + s2);
+        return std::string(mono.pt1 + s1, mono.pt1 + mono.gap) + std::string(mono.pt2 + mono.gap, mono.pt2 + s2);
     }
 
-    std::wstring wstr(int              n) const override { return toWide(str(n), 0); }
-    std::wstring wstr(std::string_view n) const override { return toWide(str(n), 0); }
+    std::wstring wstr(int              n) const override { return toWide(str(n), mono.codepage); }
+    std::wstring wstr(std::string_view n) const override { return toWide(str(n), mono.codepage); }
 
 };
 
 
-class RegularExpressionDBCS : public RegularExpressionInterface {
+class RegularExpressionDBCS : public RegularExpression::Poly {
 
 public:
 
@@ -518,14 +508,16 @@ public:
         using reference         = char32_t&;
 
         DocumentIterator() : pos(0), end(0), gap(0), pt1(0), pt2(0) {}
-        DocumentIterator(RegularExpressionDBCS*  reba, intptr_t pos) : pos(pos), end(reba->end), gap(reba->gap), pt1(reba->pt1), pt2(reba->pt2) { fix_position(); }
-        DocumentIterator(const DocumentIterator& di  , intptr_t pos) : pos(pos), end(di.end   ), gap(di.gap   ), pt1(di.pt1   ), pt2(di.pt2   ) { fix_position(); }
+        DocumentIterator(const DocumentIterator& di, intptr_t pos)
+            : pos(pos), end(di.end), gap(di.gap), pt1(di.pt1), pt2(di.pt2) { fix_position(); }
+        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos)
+            : pos(pos), end(mono.end), gap(mono.gap), pt1(mono.pt1), pt2(mono.pt2) { fix_position(); }
 
         bool operator==(const DocumentIterator& other) const { return pos == other.pos; }
         bool operator!=(const DocumentIterator& other) const { return pos != other.pos; }
 
         intptr_t          position() const { return pos; }
-        DocumentIterator& position(Scintilla::Position at) { pos = at; return *this; }
+        DocumentIterator& position(intptr_t at) { pos = at; return *this; }
 
         DocumentIterator& operator++() {
             pos += length(pos);
@@ -562,102 +554,62 @@ public:
 private:
 
     friend class DocumentIterator;
-
-    mutable intptr_t    end = 0;
-    mutable intptr_t    gap = 0;
-    mutable const char* pt1 = 0;
-    mutable const char* pt2 = 0;
-
-    boost::basic_regex<char32_t, utf32_regex_traits> uFind;
-    boost::match_results<DocumentIterator>           uMatch;
-    bool                                             regexValid = false;
-
-    void ensureValid() const {
-        if (pt1 == 0 && pt2 == 0) {
-            end = sci.Length();
-            gap = sci.GapPosition();
-            pt1 = gap > 0 ? reinterpret_cast<const char*>(sci.RangePointer(0, gap)) : 0;
-            pt2 = gap < end ? reinterpret_cast<const char*>(sci.RangePointer(gap, end - gap)) - gap : 0;
-        }
-    }
+    boost::match_results<DocumentIterator> uMatch;
 
 public:
 
-    RegularExpressionDBCS(Scintilla::ScintillaCall& sci) : RegularExpressionInterface(sci) {}
-
-    bool can_search() const override { return regexValid; }
-
-    std::string find(const std::string& s, bool caseSensitive, bool dotAll, bool freeSpacing) override {
-        try {
-            uFind.assign(utf8to32(s), ( (caseSensitive ? 0 : boost::regex_constants::icase)
-                                      | (dotAll        ? boost::regex_constants::mod_s : boost::regex_constants::no_mod_s)
-                                      | (freeSpacing   ? boost::regex_constants::mod_x : 0) ));
-        }
-        catch (const boost::regex_error& e) {
-            regexValid = false;
-            return e.what();
-        }
-        catch (...) {
-            regexValid = false;
-            return "Undetermined error processing this regular expression.";
-        }
-        regexValid = true;
-        return "";
-    }
+    RegularExpressionDBCS(RegularExpression::Mono& mono) : Poly(mono) {}
 
     std::string format(const std::string& replacement) const override {
         return fromWide(utf32to16(uMatch.format(utf8to32(replacement), boost::format_all)), 0);
-    }
-
-    void invalidate() override {
-        end = gap = 0;
-        pt1 = pt2 = 0;
     }
 
     intptr_t length(int n = 0) const override {
         return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) ? -1 : uMatch[n].second.position() - uMatch[n].first.position();
     }
 
-    size_t mark_count() const override { return !regexValid ? 0 : uFind.mark_count(); }
-
     intptr_t position(int n = 0) const override { return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) ? -1 : uMatch[n].first.position(); }
 
-    bool search(std::string_view s, size_t from = 0) override {
-        if (!regexValid) return false;
-        end = gap = s.length();
-        pt1 = s.data();
-        pt2 = 0;
+    bool search(std::string_view s, size_t from, std::string* errmsg) override {
+        if (!mono.regexValid) return false;
+        mono.end = mono.gap = s.length();
+        mono.pt1 = s.data();
+        mono.pt2 = 0;
         try {
-            return boost::regex_search(DocumentIterator(this, from), DocumentIterator(this, s.length()), uMatch, uFind,
-                                       boost::match_not_dot_newline, DocumentIterator(this, 0));
+            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, s.length()), uMatch, mono.uFind,
+                                       boost::match_not_dot_newline, DocumentIterator(mono, 0));
         }
         catch (const boost::regex_error& e) {
-            regexValid = false;
-            MessageBox(0, toWide(e.what(), 0).data(), L"Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = e.what();
+            else MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         catch (...) {
-            regexValid = false;
-            MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                          L"Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
+            else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
+                L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
 
-    bool search(intptr_t from, intptr_t to, intptr_t start) override {
-        if (!regexValid) return false;
-        ensureValid();
+    bool search(intptr_t from, intptr_t to, intptr_t start, std::string* errmsg) override {
+        if (!mono.regexValid) return false;
+        mono.ensureValid();
         try {
-            return boost::regex_search(DocumentIterator(this, from), DocumentIterator(this, to), uMatch, uFind,
-                                       boost::match_not_dot_newline, DocumentIterator(this, start));
+            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, to), uMatch, mono.uFind,
+                boost::match_not_dot_newline, DocumentIterator(mono, start));
         }
         catch (const boost::regex_error& e) {
-            regexValid = false;
-            MessageBox(0, toWide(e.what(), 0).data(), L"Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = e.what();
+            else MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         catch (...) {
-            regexValid = false;
-            MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                          L"Error in regular expression search", MB_ICONERROR);
+            mono.regexValid = false;
+            if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
+            else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
+                L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
@@ -665,46 +617,138 @@ public:
     size_t size() const override { return uMatch.size(); }
 
     std::string str(int n) const override {
-        ensureValid();
+        mono.ensureValid();
         if (uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) || !uMatch[n].matched) return "";
-        Scintilla::Position s1 = uMatch[n].first.position();
-        Scintilla::Position s2 = uMatch[n].second.position();
-        if (s2 <= gap) return std::string(pt1 + s1, pt1 + s2);
-        if (s1 >= gap) return std::string(pt2 + s1, pt2 + s2);
-        return std::string(pt1 + s1, pt1 + gap) + std::string(pt2 + gap, pt2 + s2);
+        intptr_t s1 = uMatch[n].first.position();
+        intptr_t s2 = uMatch[n].second.position();
+        if (s2 <= mono.gap) return std::string(mono.pt1 + s1, mono.pt1 + s2);
+        if (s1 >= mono.gap) return std::string(mono.pt2 + s1, mono.pt2 + s2);
+        return std::string(mono.pt1 + s1, mono.pt1 + mono.gap) + std::string(mono.pt2 + mono.gap, mono.pt2 + s2);
     }
 
     std::string str(std::string_view n) const override {
-        ensureValid();
+        mono.ensureValid();
         if (uMatch.empty() || n.empty()) return "";
         auto x = uMatch[n.data()];
         if (!x.matched) return "";
-        Scintilla::Position s1 = uMatch[n.data()].first.position();
-        Scintilla::Position s2 = uMatch[n.data()].second.position();
-        if (s2 <= gap) return std::string(pt1 + s1, pt1 + s2);
-        if (s1 >= gap) return std::string(pt2 + s1, pt2 + s2);
-        return std::string(pt1 + s1, pt1 + gap) + std::string(pt2 + gap, pt2 + s2);
+        intptr_t s1 = uMatch[n.data()].first.position();
+        intptr_t s2 = uMatch[n.data()].second.position();
+        if (s2 <= mono.gap) return std::string(mono.pt1 + s1, mono.pt1 + s2);
+        if (s1 >= mono.gap) return std::string(mono.pt2 + s1, mono.pt2 + s2);
+        return std::string(mono.pt1 + s1, mono.pt1 + mono.gap) + std::string(mono.pt2 + mono.gap, mono.pt2 + s2);
     }
 
-    std::wstring wstr(int              n) const override { return toWide(str(n), 0); }
-    std::wstring wstr(std::string_view n) const override { return toWide(str(n), 0); }
+    std::wstring wstr(int              n) const override { return toWide(str(n), mono.codepage); }
+    std::wstring wstr(std::string_view n) const override { return toWide(str(n), mono.codepage); }
 
 };
 
 
 #include "RegularExpressionTS.h"
 
+std::string  RegularExpression::format  (const std::string& replacement            ) const {return poly->format  (replacement    );}
+intptr_t     RegularExpression::length  (int n                                     ) const {return poly->length  (n              );}
+intptr_t     RegularExpression::position(int n                                     ) const {return poly->position(n              );}
+size_t       RegularExpression::size    (                                          ) const {return poly->size    (               );}
+std::string  RegularExpression::str     (int n                                     ) const {return poly->str     (n              );}
+std::string  RegularExpression::str     (std::string_view n                        ) const {return poly->str     (n              );}
+std::wstring RegularExpression::wstr    (int n                                     ) const {return poly->wstr    (n              );}
+std::wstring RegularExpression::wstr    (std::string_view n                        ) const {return poly->wstr    (n              );}
+
+bool RegularExpression::search(std::string_view s, size_t from                     ) {return poly->search(s, from, 0      );}
+bool RegularExpression::search(std::string_view s             , std::string& errmsg) {return poly->search(s, 0   , &errmsg);}
+bool RegularExpression::search(std::string_view s, size_t from, std::string& errmsg) {return poly->search(s, from, &errmsg);}
+bool RegularExpression::search(intptr_t from, intptr_t to, intptr_t start                     ) {return poly->search(from, to, start, 0      );}
+bool RegularExpression::search(intptr_t from, intptr_t to, intptr_t start, std::string& errmsg) {return poly->search(from, to, start, &errmsg);}
+
+bool   RegularExpression::can_search() const { return mono->regexValid; }
+void   RegularExpression::invalidate()       { mono->end = mono->gap = 0; mono->pt1 = mono->pt2 = 0; }
+size_t RegularExpression::mark_count() const { return !mono->regexValid ? 0 : mono->uFind.mark_count(); }
+
+RegularExpression::RegularExpression() {
+    mono = new RegularExpression::Mono;
+    poly = new RegularExpressionNone(*mono);
+}
+
+RegularExpression::RegularExpression(Scintilla::ScintillaCall& sciCall) {
+    mono = new RegularExpression::Mono;
+    setup(sciCall);
+}
+
+RegularExpression::RegularExpression(const RegularExpression& rx) {
+    mono = new RegularExpression::Mono;
+    poly = new RegularExpressionNone(*mono);
+    mono->uFind      = rx.mono->uFind;
+    mono->regexValid = rx.mono->regexValid;
+}
+
+RegularExpression::~RegularExpression() {
+    if (poly) delete poly;
+    if (mono) delete mono;
+}
+
+std::string RegularExpression::find(const std::string& s, bool caseSensitive, bool dotAll, bool freeSpacing) {
+    try {
+        mono->uFind.assign(utf8to32(s), ((caseSensitive ? 0 : boost::regex_constants::icase)
+            | (dotAll ? boost::regex_constants::mod_s : boost::regex_constants::no_mod_s)
+            | (freeSpacing ? boost::regex_constants::mod_x : 0)));
+    }
+    catch (const boost::regex_error& e) {
+        mono->regexValid = false;
+        return e.what();
+    }
+    catch (...) {
+        mono->regexValid = false;
+        return "Undetermined error processing this regular expression.";
+    }
+    mono->regexValid = true;
+    return "";
+}
+
+RegularExpression& RegularExpression::setup(unsigned int codepage) {
+    if (!codepage) codepage = GetACP();
+    mono->sci = 0;
+    invalidate();
+    if (mono->codepage != codepage) {
+        mono->codepage = codepage;
+        if (poly) delete poly;
+        switch (codepage) {
+        case 1200:
+            poly = new RegularExpressionNone(*mono);  // Will be UTF-16 LE, not yet implemented
+            break;
+        case 1201:
+            poly = new RegularExpressionNone(*mono);  // Will be UTF-16 BE, not yet implemented
+            break;
+        case 20127:
+        case CP_UTF8:
+            poly = new RegularExpressionU(*mono);
+            break;
+        default:
+        {
+            CPINFO cpi;
+            GetCPInfo(codepage, &cpi);
+            if (cpi.MaxCharSize == 1) poly = new RegularExpressionSBCS(*mono);
+                                 else poly = new RegularExpressionDBCS(*mono);
+        }
+        }
+    }
+    return *this;
+}
+
 RegularExpression& RegularExpression::setup(Scintilla::ScintillaCall& sciCall) {
-    if (rex) delete rex;
+    invalidate();
+    if (poly) delete poly;
+    mono->sci = &sciCall;
+    mono->codepage = sciCall.CodePage();
     switch (sciCall.CodePage()) {
     case 0:
-        rex = new RegularExpressionSBCS(sciCall);
+        poly = new RegularExpressionSBCS(*mono);
         break;
     case CP_UTF8:
-        rex = new RegularExpressionU(sciCall);
+        poly = new RegularExpressionU(*mono);
         break;
     default:
-        rex = new RegularExpressionDBCS(sciCall);
+        poly = new RegularExpressionDBCS(*mono);
     }
     return *this;
 }
