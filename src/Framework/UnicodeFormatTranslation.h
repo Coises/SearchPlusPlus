@@ -24,6 +24,7 @@
 
 #pragma once
 #include <string>
+#include <string_view>
 
 enum class InvalidUnicode {
     Substitute  = 0,  // Use substitution character when transcoding invalid Unicode
@@ -103,11 +104,11 @@ inline std::u32string utf8to32(const std::string_view s, InvalidUnicode errs = I
             continue;
         case 4:
             if (i + 3 >= s.length() || !utf8byte::valid_trail(s[i], s[i + 1], s[i + 2]), s[i + 3]) break;
-            u += utf8byte::to32(s[i], s[i + 1], s[i + 2]);
+            u += utf8byte::to32(s[i], s[i + 1], s[i + 2], s[i + 3]);
             i += 3;
             continue;
         }
-        u += (errs == InvalidUnicode::Preserve_8) ? 0xDC00 + s[i] : 0xFFFD;
+        u += (errs == InvalidUnicode::Preserve_8) ? 0xDC00 | s[i] : 0xFFFD;
     }
     return u;
 }
@@ -166,7 +167,7 @@ inline std::wstring utf8to16(const std::string_view s, InvalidUnicode errs = Inv
             i += 3;
             continue;
         }
-        w += (errs == InvalidUnicode::Preserve_8) ? 0xDC00 + s[i] : 0xFFFD;
+        w += (errs == InvalidUnicode::Preserve_8) ? 0xDC00 | s[i] : 0xFFFD;
     }
     return w;
 }
@@ -180,14 +181,14 @@ inline std::string utf16to8(const std::wstring_view w, InvalidUnicode errs = Inv
             s += static_cast<char>((c >> 6) | 0xC0);
             s += static_cast<char>((c & 0x3F) | 0x80);
         }
-        else if (c < 0xD800 && c > 0xDFFF) {
+        else if (c < 0xD800 || c > 0xDFFF) {
             s += static_cast<char>((c >> 12) | 0xE0);
             s += static_cast<char>(((c >> 6) & 0x3F) | 0x80);
             s += static_cast<char>((c & 0x3F) | 0x80);
         }
         else {
-            if (i + 1 < w.length() && w[i + 1] >= 0xDC00 && w[i + 1] <= 0xDFFF) {
-                char32_t u = (static_cast<char32_t>(c & 0x7FF) << 10 | (w[i + 1] & 0x03FF)) + 0x10000;
+            if (i + 1 < w.length() && c < 0xDC00 && w[i + 1] >= 0xDC00 && w[i + 1] <= 0xDFFF) {
+                char32_t u = ((static_cast<char32_t>(c & 0x3FF) << 10) | (w[i + 1] & 0x03FF)) + 0x10000;
                 s += static_cast<char>((u >> 18) | 0xF0);
                 s += static_cast<char>(((u >> 12) & 0x3F) | 0x80);
                 s += static_cast<char>(((u >> 6) & 0x3F) | 0x80);
