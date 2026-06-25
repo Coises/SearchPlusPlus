@@ -22,6 +22,7 @@
 #include <windowsx.h>
 
 void showSearchDialog();
+void showSearchInFilesDialog();
 
 
 namespace {
@@ -308,6 +309,9 @@ LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
         case 'D':
             if (GetKeyState(VK_SHIFT) & 0x8000) prevDocument();
             else nextDocument();
+            return 0;
+        case 'F':
+            if (GetKeyState(VK_SHIFT) & 0x8000) showSearchInFilesDialog();
             return 0;
         case 'H':
             if (GetKeyState(VK_SHIFT) & 0x8000) {
@@ -621,6 +625,26 @@ void colorHitlist() {
         constexpr ULONG dmfSetThemeDirectly = 0x00000010UL;
         npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, sciHits);
         configureSciHits();
+    }
+}
+
+
+void showHitlist(std::string_view path) {
+    showHitlist();
+    plugin.getScintillaPointers(sciHits);
+    if (sci.LineCount() < 3) return;
+    Scintilla::Line headerLine = 1;
+    for (;;) {
+        std::string headerText = sci.GetLine(headerLine);
+        if (headerText.length() > path.length() + 2
+            && headerText.substr(headerText.length() - path.length() - 2, path.length()) == path) {
+            sci.FoldLine(headerLine, Scintilla::FoldAction::Expand);
+            sci.SetSel(-1, sci.PositionFromLine(headerLine + 1));
+            sci.SetFirstVisibleLine(sci.VisibleFromDocLine(headerLine));
+            return;
+        }
+        headerLine = sci.LastChild(headerLine, Level_Document) + 1;
+        if (sci.FoldLevel(headerLine) != Level_Document) return;
     }
 }
 

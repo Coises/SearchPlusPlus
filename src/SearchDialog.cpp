@@ -26,6 +26,7 @@ void clearHitlist();
 bool hitlistEmpty();
 void hideHitlist();
 void showHitlist();
+void showSearchInFilesDialog();
 
 
 namespace {
@@ -272,6 +273,7 @@ INT_PTR CALLBACK removeMarksDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 // Tools button and shortcuts processing
 
 namespace ToolsCommand {
+    constexpr unsigned char SearchInFiles      = 'F';
     constexpr unsigned char BookmarkWhenMark   = 'b';
     constexpr unsigned char JumpReplace        = 'j';
     constexpr unsigned char HideAll            = 'Q';
@@ -290,6 +292,10 @@ namespace ToolsCommand {
 bool processToolsCommand(unsigned char command) {
 
     switch (command) {
+
+    case ToolsCommand::SearchInFiles:
+        showSearchInFilesDialog();
+        break;
 
     case ToolsCommand::BookmarkWhenMark:
         data.markAlsoBookmarks = !data.markAlsoBookmarks;
@@ -713,6 +719,7 @@ void configureSearchBox(HWND sciBox) {
     sci.ClearCmdKey('W' + (SCMOD_CTRL << 16));
     sci.ClearCmdKey('C' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('E' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    sci.ClearCmdKey('F' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('H' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('M' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sci.ClearCmdKey('N' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
@@ -726,15 +733,16 @@ void configureSearchBox(HWND sciBox) {
 
 HWND setupSearchBox(HWND hwndDlg, int box) {
     HWND customBox = GetDlgItem(hwndDlg, box);
+    HWND hPrev = GetWindow(customBox, GW_HWNDPREV);
     RECT rectBox;
     GetWindowRect(customBox, &rectBox);
     MapWindowPoints(0, hwndDlg, reinterpret_cast<LPPOINT>(&rectBox), 2);
     DestroyWindow(customBox);
     HWND sciBox = reinterpret_cast<HWND>(npp(NPPM_CREATESCINTILLAHANDLE, 0, hwndDlg));
-    SetWindowPos(sciBox, 0, rectBox.left, rectBox.top, rectBox.right - rectBox.left, rectBox.bottom - rectBox.top,
-                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+    SetWindowPos(sciBox, hPrev, rectBox.left, rectBox.top, rectBox.right - rectBox.left, rectBox.bottom - rectBox.top, SWP_SHOWWINDOW);
     SetWindowLong(sciBox, GWL_ID, box);
     SetWindowLong(sciBox, GWL_STYLE, GetWindowLong(sciBox, GWL_STYLE) | WS_BORDER | WS_TABSTOP);
+    SetWindowPos(sciBox, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
     configureSearchBox(sciBox);
     SetWindowSubclass(sciBox, subclassScintilla, 0, 0);
     return sciBox;
@@ -1318,6 +1326,8 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
         case IDC_SEARCH_TOOLS:
         {
             HMENU pum = CreatePopupMenu();
+            AppendMenu(pum, MF_STRING, ToolsCommand::SearchInFiles, L"Search in &Files/Folders\tCtrl+Shift+F");
+            AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, ToolsCommand::BookmarkWhenMark, L"&Bookmark lines when marking text\tCtrl+B");
             AppendMenu(pum, MF_STRING, ToolsCommand::JumpReplace     , L"&Jump to next match after Replace\tCtrl+J");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
@@ -2033,5 +2043,10 @@ void destroySearchDialogs() {
         }
         data.searchDialog = 0;
         RemoveFontResourceEx(L"Search++-Private-Symbols.otf", FR_PRIVATE | FR_NOT_ENUM, 0);
+    }
+    if (data.searchInFilesDialog) {
+        npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, data.searchInFilesDialog);
+        DestroyWindow(data.searchInFilesDialog);
+        data.searchInFilesDialog = 0;
     }
 }

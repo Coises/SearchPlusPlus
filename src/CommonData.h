@@ -19,52 +19,20 @@
 #include "Framework/PluginFramework.h"
 #include "Framework/ConfigFramework.h"
 #include "Framework/UtilityFramework.h"
+#include "ConfigEnums.h"
 #include "ProgressInfo.h"
 #include "Search.h"
-
-
-// Define enumerations for use with config, and tell the JSON package how represent them in the configuration file
-
-enum class DialogLayout {Docking, Horizontal, Vertical, Adaptive};
-NLOHMANN_JSON_SERIALIZE_ENUM(DialogLayout, {
-    {DialogLayout::Docking   , "docking"   },
-    {DialogLayout::Horizontal, "horizontal"},
-    {DialogLayout::Vertical  , "vertical"  },
-    {DialogLayout::Adaptive  , "adaptive"  }
-})
-
-enum class SearchEngine {Plain, Boost, ICU};
-NLOHMANN_JSON_SERIALIZE_ENUM(SearchEngine, {
-    {SearchEngine::Plain, "plain" },
-    {SearchEngine::Boost, "Boost" },
-    {SearchEngine::ICU  , "ICU"   }
-})
-
-enum class CopyMarkedSeparator {None, Blank, Tab, Line, Custom};
-NLOHMANN_JSON_SERIALIZE_ENUM(CopyMarkedSeparator, {
-    {CopyMarkedSeparator::None  , "none"   },
-    {CopyMarkedSeparator::Blank , "blank"  },
-    {CopyMarkedSeparator::Tab   , "tab"    },
-    {CopyMarkedSeparator::Line  , "line"   },
-    {CopyMarkedSeparator::Custom, "custom" }
-})
-
-NLOHMANN_JSON_SERIALIZE_ENUM(Scintilla::Wrap, {
-    {Scintilla::Wrap::None      , "none"},
-    {Scintilla::Wrap::Word      , "word"},
-    {Scintilla::Wrap::Char      , "char"},
-    {Scintilla::Wrap::WhiteSpace, "space"}
-})
 
 
 // Common data structure
 
 inline struct CommonData {
 
-    HWND searchDialog  = 0;
-    HWND dockingDialog = 0;
-    HWND regularDialog = 0;
-    int  bookMarker    = 0;
+    HWND searchDialog         = 0;
+    HWND dockingDialog        = 0;
+    HWND regularDialog        = 0;
+    HWND searchInFilesDialog  = 0;
+    int  bookMarker           = 0;
     bool dockingDialogIsDocked = false;
 
     SearchContext context;

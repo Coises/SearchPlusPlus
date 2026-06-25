@@ -18,6 +18,7 @@
 
 void colorHitlist();
 void colorSearch();
+void colorSif();
 
 void scnFocusIn(const Scintilla::NotificationData* scnp) {
     if (zlmIndicator != 0) {
@@ -47,6 +48,7 @@ void bufferActivated() {
 void darkModeChanged() {
     colorHitlist();
     colorSearch();
+    colorSif();
 }
 
 void modifyAll(const NMHDR*) {

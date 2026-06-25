@@ -115,6 +115,18 @@
     <ClInclude Include="src\MatchResults.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\SearchableFile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SearchInFiles.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SearchInFilesConfiguration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ConfigEnums.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\About.cpp">
@@ -172,6 +184,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ScrollIntoView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SearchableFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ScanDirectory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DispatchFileSearchTasks.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SearchInFiles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

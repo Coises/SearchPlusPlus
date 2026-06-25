@@ -42,6 +42,7 @@ void modifyAll(const NMHDR*);
 
 void showAboutDialog();
 void showSearchDialog();
+void showSearchInFilesDialog();
 void showSettingsDialog();
 
 // Other routines needed for initialization or cleanup
@@ -68,10 +69,11 @@ void destroySearchDialogs();
 // to get the menu item identifier assigned by Notepad++.
 
 FuncItem menuDefinition[] = {
-    { L"Search..."                , []() {plugin.cmd(showSearchDialog         );}, 0, false, 0               },
-    { 0                           , 0                                            , 0, false, 0               },
-    { L"Settings..."              , []() {plugin.cmd(showSettingsDialog       );}, 0, false, 0               },
-    { L"Help/About..."            , []() {plugin.cmd(showAboutDialog          );}, 0, false, 0               }
+    { L"Search..."                , []() {plugin.cmd(showSearchDialog       );}, 0, false, 0},
+    { L"Search in Files..."       , []() {plugin.cmd(showSearchInFilesDialog);}, 0, false, 0},
+    { 0                           , 0                                          , 0, false, 0},
+    { L"Settings..."              , []() {plugin.cmd(showSettingsDialog     );}, 0, false, 0},
+    { L"Help/About..."            , []() {plugin.cmd(showAboutDialog        );}, 0, false, 0}
 };
 
 

@@ -11,6 +11,7 @@
 #define IDD_HITLIST                     160
 #define IDD_TOOLS_COPYMARKED            170
 #define IDD_REMOVEMARKS                 180
+#define IDD_SIF                         190
 #define IDC_ABOUT_VERSION               1101
 #define IDC_ABOUT_HELP                  1102
 #define IDC_ABOUT_MORE                  1103
@@ -73,6 +74,39 @@
 #define IDC_COPYMARKED_TEXT             1706
 #define IDC_REMOVEMARKS_VIEW            1801
 #define IDC_REMOVEMARKS_OPEN            1802
+#define IDC_SIF_SUBFOLDERS              1901
+#define IDC_SIF_HIDDEN                  1902
+#define IDC_SIF_BROWSE                  1903
+#define IDC_SIF_FOLDER                  1904
+#define IDC_SIF_FILTER_NONE             1905
+#define IDC_SIF_FILTER_EXTENSION        1906
+#define IDC_SIF_FILTER_EXCLUDE          1907
+#define IDC_SIF_FILTER_REGEX            1908
+#define IDC_SIF_FILTER_LABEL            1909
+#define IDC_SIF_FILTER                  1910
+#define IDC_SIF_SIZE                    1911
+#define IDC_SIF_SIZE_MIN_EDIT           1912
+#define IDC_SIF_SIZE_MIN_SPIN           1913
+#define IDC_SIF_SIZE_MIN_TYPE           1914
+#define IDC_SIF_SIZE_MAX_EDIT           1915
+#define IDC_SIF_SIZE_MAX_SPIN           1916
+#define IDC_SIF_SIZE_MAX_TYPE           1917
+#define IDC_SIF_DATE                    1918
+#define IDC_SIF_DATE_TYPE               1919
+#define IDC_SIF_DATE_MIN                1920
+#define IDC_SIF_DATE_MAX                1921
+#define IDC_SIF_REGEX                   1922
+#define IDC_SIF_MATCHCASE               1923
+#define IDC_SIF_WHOLEWORD               1924
+#define IDC_SIF_DOTALL                  1925
+#define IDC_SIF_FREESPACING             1926
+#define IDC_SIF_FINDBOX                 1927
+#define IDC_SIF_REPLBOX                 1928
+#define IDC_SIF_FIND                    1929
+#define IDC_SIF_CLOSECANCEL             1930
+#define IDC_SIF_REPLACE                 1931
+#define IDC_SIF_MESSAGE                 1932
+#define IDC_SIF_LIST                    1933
 #define ID_SCMSCI_UNDO                  40001
 #define ID_SCMSCI_REDO                  40002
 #define ID_SCMSCI_CUT                   40003
@@ -103,9 +137,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        190
+#define _APS_NEXT_RESOURCE_VALUE        200
 #define _APS_NEXT_COMMAND_VALUE         40026
-#define _APS_NEXT_CONTROL_VALUE         1904
+#define _APS_NEXT_CONTROL_VALUE         1934
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
