@@ -48,6 +48,7 @@
     <ClInclude Include="src\Host\ScintillaStructures.h" />
     <ClInclude Include="src\Host\ScintillaTypes.h" />
     <ClInclude Include="src\Host\Sci_Position.h" />
+    <ClInclude Include="src\SciControl.h" />
     <ClInclude Include="src\Search.h" />
     <ClInclude Include="src\SearchableFile.h" />
     <ClInclude Include="src\SearchInFiles.h" />
@@ -66,6 +67,7 @@
     <ClCompile Include="src\ProgressDialog.cpp" />
     <ClCompile Include="src\RegularExpression.cpp" />
     <ClCompile Include="src\ScanDirectory.cpp" />
+    <ClCompile Include="src\SciControl.cpp" />
     <ClCompile Include="src\ScrollIntoView.cpp" />
     <ClCompile Include="src\SearchableFile.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">&lt;inherit from parent or project defaults</ExcludedFromBuild>

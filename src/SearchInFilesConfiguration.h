@@ -24,6 +24,7 @@
 #pragma once
 #include "Framework/UnicodeFormatTranslation.h"
 #include "ConfigEnums.h"
+#include "SciControl.h"
 
 struct SciConfig {
     config_history          history;
@@ -44,10 +45,10 @@ struct SciConfig {
 
 inline struct UserConfigurationData {
 
-    SciConfig folderConfig = { "sif folder"      , false };  // IDC_SIF_FOLDER
-    SciConfig filterConfig = { "sif filter"      , false };  // IDC_SIF_FILTER
-    SciConfig findConfig   = { "sif find"        , true  };  // IDC_SIF_FIND
-    SciConfig replConfig   = { "sif replace"     , true  };  // IDC_SIF_REPL
+    SciControl folderCntl = { "sif folder" , false };  // IDC_SIF_FOLDER
+    SciControl filterCntl = { "sif filter" , false };  // IDC_SIF_FILTER
+    SciControl findCntl   = { "sif find"   , true  };  // IDC_SIF_FIND
+    SciControl replCntl   = { "sif replace", true  };  // IDC_SIF_REPL
 
     config_rect mainWindowPosition = { "sif main window position" };
 

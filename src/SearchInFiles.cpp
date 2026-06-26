@@ -182,123 +182,12 @@ std::wstring BrowseForFolder(HWND hParent) {
 }
 
 
-// Subclass procedure for Scintilla controls: implement keyboard shortcuts not built in to Scintilla
-
-LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR scp) {
-    SciConfig& sciConfig = *reinterpret_cast<SciConfig*>(scp);
-    switch (uMsg) {
-    case WM_NCDESTROY:
-        RemoveWindowSubclass(hWnd, subclassScintilla, 0);
-        break;
-    case WM_GETDLGCODE:
-        if (!sciConfig.useTab && wParam == VK_TAB)
-            return DefSubclassProc(hWnd, uMsg, wParam, lParam) & ~(DLGC_HASSETSEL | DLGC_WANTTAB | DLGC_WANTMESSAGE);
-        return DefSubclassProc(hWnd, uMsg, wParam, lParam) & ~DLGC_HASSETSEL;
-    case WM_KEYDOWN:
-    {
-        // Note: Passing the WM_KEYDOWN to Scintilla first, with ClearCmdKey having been performed for each combination,
-        // avoids unwanted insertion of a control character when executing commands that open a dialog.
-        LRESULT return_value = DefSubclassProc(hWnd, uMsg, wParam, lParam);
-        if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') return return_value;
-        /* if (!processToolsCommand(static_cast<unsigned char>(
-            GetKeyState(VK_SHIFT) & 0x8000 ? std::toupper(static_cast<unsigned char>(wParam))
-            : std::tolower(static_cast<unsigned char>(wParam)))
-        )) */ switch (wParam) {
-        case 'E':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            HWND hFindBox = GetDlgItem(data.searchInFilesDialog, IDC_SIF_FINDBOX);
-            HWND hReplBox = GetDlgItem(data.searchInFilesDialog, IDC_SIF_REPLBOX);
-            plugin.getScintillaPointers(hReplBox);
-            std::string replText = sci.GetText(sci.Length());
-            plugin.getScintillaPointers(hFindBox);
-            std::string findText = sci.GetText(sci.Length());
-            sci.TargetWholeDocument();
-            sci.ReplaceTarget(replText);
-            plugin.getScintillaPointers(hReplBox);
-            sci.TargetWholeDocument();
-            sci.ReplaceTarget(findText);
-            break;
-        }
-        case 'F':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            if (!data.searchDialog) break;
-            plugin.getScintillaPointers(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
-            std::string text = sci.GetText(sci.Length());
-            plugin.getScintillaPointers(hWnd);
-            sci.TargetFromSelection();
-            sci.ReplaceTarget(text);
-            break;
-        }
-        case 'H':
-            if (GetKeyState(VK_SHIFT) & 0x8000) hideHitlist();
-            else                                showHitlist();
-            break;
-        case 'I':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            plugin.getScintillaPointers();
-            std::string text = sci.GetSelText();
-            plugin.getScintillaPointers(hWnd);
-            sci.TargetFromSelection();
-            sci.ReplaceTarget(text);
-            break;
-        }
-        case 'N':
-            SetFocus(plugin.currentScintilla());
-            if (GetKeyState(VK_SHIFT) & 0x8000) {
-                if (data.searchDialog) {
-                    if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                    else ShowWindow(data.searchDialog, SW_HIDE);
-                }
-                hideHitlist();
-                SendMessage(data.searchInFilesDialog, WM_COMMAND, MAKEWPARAM(IDCANCEL, 0), 0);
-            }
-            break;
-        case 'O':
-            if (GetKeyState(VK_SHIFT) & 0x8000) {
-                if (!data.searchDialog) break;
-                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                else ShowWindow(data.searchDialog, SW_HIDE);
-            }
-            else showSearchDialog();
-            break;
-        case 'R':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            if (!data.searchDialog) break;
-            plugin.getScintillaPointers(GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX));
-            std::string text = sci.GetText(sci.Length());
-            plugin.getScintillaPointers(hWnd);
-            sci.TargetFromSelection();
-            sci.ReplaceTarget(text);
-            break;
-        }
-        case 'W':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            plugin.getScintillaPointers(hWnd);
-            Scintilla::Wrap current = sci.WrapMode();
-            if      (current == Scintilla::Wrap::None) sci.SetWrapMode(Scintilla::Wrap::Char);
-            else if (current == Scintilla::Wrap::Char) sci.SetWrapMode(Scintilla::Wrap::Word);
-            else                                       sci.SetWrapMode(Scintilla::Wrap::None);
-            break;
-        }
-        }
-        return return_value;
-    }
-    }
-    return DefSubclassProc(hWnd, uMsg, wParam, lParam);
-}
-
-
 // Subclass procedure for non-Scintilla controls: implement dialog-wide keyboard shortcuts
 
 LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
     switch (uMsg) {
     case WM_NCDESTROY:
-        RemoveWindowSubclass(hWnd, subclassScintilla, 0);
+        RemoveWindowSubclass(hWnd, subclassOther, 0);
         break;
     case WM_KEYDOWN:
         if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') break;
@@ -332,97 +221,7 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 }
 
 
-void configureScintillaBox(HWND sciBox, SciConfig& sciConfig) {
-
-    plugin.getScintillaPointers();
-
-    Scintilla::ColourAlpha caret            = sci.ElementColour(Scintilla::Element::Caret);
-    Scintilla::ColourAlpha caretLineBack    = sci.ElementColour(Scintilla::Element::CaretLineBack);
-    Scintilla::ColourAlpha selectionBack    = sci.ElementColour(Scintilla::Element::SelectionBack);
-    Scintilla::ColourAlpha whiteSpace       = sci.ElementColour(Scintilla::Element::WhiteSpace);
-    std::string            defaultFont      = sci.StyleGetFont(STYLE_DEFAULT);
-    int                    defaultSize      = sci.StyleGetSize(STYLE_DEFAULT);
-    Scintilla::Colour      defaultFore      = sci.StyleGetFore(STYLE_DEFAULT);
-    Scintilla::Colour      defaultBack      = sci.StyleGetBack(STYLE_DEFAULT);
-    Scintilla::CaretStyle  caretStyle       = sci.CaretStyle();
-    int                    caretWidth       = sci.CaretWidth();
-    int                    caretPeriod      = sci.CaretPeriod();
-    int                    caretLineFrame   = sci.CaretLineFrame();
-    bool                   caretLineVisible = sci.CaretLineVisible();
-
-    plugin.getScintillaPointers(sciBox);
-
-    sci.SetElementColour(Scintilla::Element::Caret, caret);
-    sci.SetElementColour(Scintilla::Element::CaretLineBack, caretLineBack);
-    sci.SetElementColour(Scintilla::Element::SelectionBack, selectionBack);
-    sci.SetElementColour(Scintilla::Element::SelectionInactiveBack, selectionBack);
-    sci.SetElementColour(Scintilla::Element::WhiteSpace, whiteSpace);
-    sci.StyleSetFont(STYLE_DEFAULT, defaultFont.data());
-    sci.StyleSetSize(STYLE_DEFAULT, defaultSize);
-    sci.StyleSetFore(STYLE_DEFAULT, defaultFore);
-    sci.StyleSetBack(STYLE_DEFAULT, defaultBack);
-    sci.StyleClearAll();
-    sci.SetCaretStyle(caretStyle);
-    sci.SetCaretWidth(caretWidth);
-    sci.SetCaretPeriod(caretPeriod);
-    sci.SetCaretLineFrame(caretLineFrame);
-    sci.SetCaretLineVisible(caretLineVisible);
-
-    sci.SetModEventMask(Scintilla::ModificationFlags::DeleteText | Scintilla::ModificationFlags::InsertText);
-    sci.SetMargins(0);
-    sci.SetWrapMode(Scintilla::Wrap::Char);
-    sci.SetTabWidth(1);
-    sci.SetUseTabs(true);
-    sci.SetViewWS(Scintilla::WhiteSpace::VisibleAlways);
-    sci.SetViewEOL(true);
-    sci.SetWhitespaceSize(2);
-    sci.UsePopUp(Scintilla::PopUp::Never);
-    sci.SetMultipleSelection(false);
-    sci.SetVirtualSpaceOptions(Scintilla::VirtualSpace::None);
-    sci.SetAdditionalSelectionTyping(true);
-    sci.SetRepresentation("\n", reinterpret_cast<const char*>(u8"\U0001F807"));
-    sci.SetRepresentation("\r", reinterpret_cast<const char*>(u8"\U0001F804"));
-    sci.SetRepresentation("\r\n", reinterpret_cast<const char*>(u8"\u21A9"));
-    sci.SetRepresentationAppearance("\n", Scintilla::RepresentationAppearance::Plain);
-    sci.SetRepresentationAppearance("\r", Scintilla::RepresentationAppearance::Plain);
-    sci.SetRepresentationAppearance("\r\n", Scintilla::RepresentationAppearance::Plain);
-    sci.SetRepresentationColour("\n", whiteSpace);
-    sci.SetRepresentationColour("\r", whiteSpace);
-    sci.SetRepresentationColour("\r\n", whiteSpace);
-    sci.ClearCmdKey('B' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('E' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('F' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('H' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('I' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('J' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('M' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('N' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('O' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('Q' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('R' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('W' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('C' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('E' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('H' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('M' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('N' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('O' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('Q' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('R' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('S' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('Y' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-
-    if (!sciConfig.useTab) sci.ClearCmdKey(SCK_TAB);
-
-    sci.TargetWholeDocument();
-    sci.ReplaceTarget(sciConfig.text.get());
-    sci.SetWrapMode(sciConfig.wrap);
-    sci.SetZoom(sciConfig.zoom);
-
-}
-
-
-HWND setupScintillaBox(HWND hwndDlg, int box, SciConfig& sciConfig) {
+HWND setupScintillaBox(HWND hwndDlg, int box, SciControl& sciCtrl) {
     HWND customBox = GetDlgItem(hwndDlg, box);
     HWND hPrev = GetWindow(customBox, GW_HWNDPREV);
     RECT rectBox;
@@ -434,18 +233,81 @@ HWND setupScintillaBox(HWND hwndDlg, int box, SciConfig& sciConfig) {
     SetWindowLong(sciBox, GWL_ID, box);
     SetWindowLong(sciBox, GWL_STYLE, GetWindowLong(sciBox, GWL_STYLE) | WS_BORDER | WS_TABSTOP);
     SetWindowPos(sciBox, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-    configureScintillaBox(sciBox, sciConfig);
-    SetWindowSubclass(sciBox, subclassScintilla, 0, reinterpret_cast<DWORD_PTR>(&sciConfig));
+    sciCtrl.attach(sciBox);
+    plugin.getScintillaPointers();
+    sciCtrl.configure(sci);
+    sciCtrl.subclass(
+        [](SciControl& sc, char key) -> bool {
+            switch (key) {
+            case 'e':
+            {
+                ucd.findCntl.sync();
+                ucd.replCntl.sync();
+                ucd.findCntl.TargetWholeDocument();
+                ucd.findCntl.ReplaceTarget(ucd.replCntl.text.get());
+                ucd.replCntl.TargetWholeDocument();
+                ucd.replCntl.ReplaceTarget(ucd.findCntl.text.get());
+                return true;
+            }
+            case 'f':
+            {
+                if (!data.searchDialog) break;
+                plugin.getScintillaPointers(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
+                std::string text = sci.GetText(sci.Length());
+                sc.TargetFromSelection();
+                sc.ReplaceTarget(text);
+                return true;
+            }
+            case 'H':
+                hideHitlist();
+                return true;
+            case 'h':
+                showHitlist();
+                return true;
+            case 'i':
+            {
+                plugin.getScintillaPointers();
+                std::string text = sci.GetSelText();
+                sc.TargetFromSelection();
+                sc.ReplaceTarget(text);
+                return true;
+            }
+            case 'n':
+                SetFocus(plugin.currentScintilla());
+                return true;
+            case 'N':
+                SetFocus(plugin.currentScintilla());
+                if (data.searchDialog) {
+                    if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                    else ShowWindow(data.searchDialog, SW_HIDE);
+                }
+                hideHitlist();
+                SendMessage(data.searchInFilesDialog, WM_COMMAND, MAKEWPARAM(IDCANCEL, 0), 0);
+                return true;
+            case 'o':
+                showSearchDialog();
+                return true;
+            case 'O':
+                if (!data.searchDialog) break;
+                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                else ShowWindow(data.searchDialog, SW_HIDE);
+                return true;
+            case 'r':
+            {
+                if (!data.searchDialog) break;
+                plugin.getScintillaPointers(GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX));
+                std::string text = sci.GetText(sci.Length());
+                sc.TargetFromSelection();
+                sc.ReplaceTarget(text);
+                return true;
+            }
+            }
+            return false;
+        }
+    );
     return sciBox;
 }
 
-void saveScintillaConfiguration(HWND hwndDlg, int box, SciConfig& sciConfig) {
-    plugin.getScintillaPointers(GetDlgItem(hwndDlg, box));
-    sci.TargetWholeDocument();
-    sciConfig.text     = sci.TargetText();
-    sciConfig.wrap     = sci.WrapMode();
-    sciConfig.zoom     = sci.Zoom();
-}
 
 void enableDisableDependentControls(HWND hwndDlg) {
 
@@ -485,12 +347,13 @@ void enableDisableDependentControls(HWND hwndDlg) {
 
 }
 
+
 void updateConfigFromControls(HWND hwndDlg) {
 
-    saveScintillaConfiguration(hwndDlg, IDC_SIF_FOLDER , ucd.folderConfig);
-    saveScintillaConfiguration(hwndDlg, IDC_SIF_FILTER , ucd.filterConfig);
-    saveScintillaConfiguration(hwndDlg, IDC_SIF_FINDBOX, ucd.findConfig  );
-    saveScintillaConfiguration(hwndDlg, IDC_SIF_REPLBOX, ucd.replConfig  );
+    ucd.folderCntl.sync();
+    ucd.filterCntl.sync();
+    ucd.findCntl.sync();
+    ucd.replCntl.sync();
 
     switch (SendDlgItemMessage(hwndDlg, IDC_SIF_SIZE_MIN_TYPE, CB_GETCURSEL, 0, 0)) {
     case  1: ucd.sizeMinUnit = FileSizeUnit::KiB; break;
@@ -555,7 +418,6 @@ void updateConfigFromControls(HWND hwndDlg) {
         : SendDlgItemMessage(hwndDlg, IDC_SIF_FILTER_EXCLUDE  , BM_GETCHECK, 0, 0) == BST_CHECKED ? FilterEngine::Exclude
         : SendDlgItemMessage(hwndDlg, IDC_SIF_FILTER_REGEX    , BM_GETCHECK, 0, 0) == BST_CHECKED ? FilterEngine::Boost
                                                                                                   : FilterEngine::Disabled;
-
 }
 
 
@@ -590,10 +452,10 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
     case WM_INITDIALOG:
     {
 
-        setupScintillaBox(hwndDlg, IDC_SIF_FOLDER , ucd.folderConfig);
-        setupScintillaBox(hwndDlg, IDC_SIF_FILTER , ucd.filterConfig);
-        setupScintillaBox(hwndDlg, IDC_SIF_FINDBOX, ucd.findConfig  );
-        setupScintillaBox(hwndDlg, IDC_SIF_REPLBOX, ucd.replConfig  );
+        setupScintillaBox(hwndDlg, IDC_SIF_FOLDER , ucd.folderCntl);
+        setupScintillaBox(hwndDlg, IDC_SIF_FILTER , ucd.filterCntl);
+        setupScintillaBox(hwndDlg, IDC_SIF_FINDBOX, ucd.findCntl  );
+        setupScintillaBox(hwndDlg, IDC_SIF_REPLBOX, ucd.replCntl  );
 
         mainWindowStretch.setup(hwndDlg);
         ucd.mainWindowPosition.put(hwndDlg);
@@ -865,7 +727,7 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             updateConfigFromControls(hwndDlg);
 
             {
-                std::string folder = ucd.folderConfig.text;
+                std::string folder = ucd.folderCntl.text;
                 std::erase(folder, '\n');
                 std::erase(folder, '\r');
                 if (folder.length() >= 2 && folder.substr(folder.length() - 2) == "\\*") folder = folder.substr(0, folder.length() - 2);
@@ -882,10 +744,10 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
                 sif.fileSpecification.path = utf8to16(folder);
             }
 
-            if (ucd.filterEngine == FilterEngine::Disabled || ucd.filterConfig.text.get().empty())
+            if (ucd.filterEngine == FilterEngine::Disabled || ucd.filterCntl.text.get().empty())
                 sif.fileSpecification.useFilter = false;
             else {
-                const std::string& filter = ucd.filterConfig.text.get();
+                const std::string& filter = ucd.filterCntl.text.get();
                 if (ucd.filterEngine == FilterEngine::Extension || ucd.filterEngine == FilterEngine::Exclude) {
                     std::regex extensionDelimiters("[\\s,;\\|]+");
                     std::sregex_token_iterator exti(filter.begin(), filter.end(), extensionDelimiters, -1);
@@ -955,11 +817,11 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             sif.fileSpecification.skipHidden = !ucd.hidden;
             sif.fileSpecification.recursive  = ucd.subfolders;
 
-            if (ucd.findConfig.text.get().empty()) {
+            if (ucd.findCntl.text.get().empty()) {
                 showScintillaTip(GetDlgItem(hwndDlg, IDC_SIF_FINDBOX), "Enter a search string.");
                 return TRUE;
             }
-            sif.findString = ucd.findConfig.text.get();
+            sif.findString = ucd.findCntl.text;
 
             if (!ucd.regex) {
                 std::string s;
@@ -989,9 +851,9 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             SetDlgItemText(hwndDlg, IDC_SIF_CLOSECANCEL, L"&Cancel All");
             ListView_SetItemCountEx(GetDlgItem(hwndDlg, IDC_SIF_LIST), 0, 0);
             dispatchSearchTasks(hwndDlg);
-            ucd.folderConfig.push();
-            if (ucd.filterEngine != FilterEngine::Disabled) ucd.filterConfig.push();
-            ucd.findConfig.push();
+            ucd.folderCntl.push();
+            if (ucd.filterEngine != FilterEngine::Disabled) ucd.filterCntl.push();
+            ucd.findCntl.push();
             return TRUE;
         }
 
@@ -1281,14 +1143,15 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             EnableMenuItem(menu, ID_SCMSCI_ZOOMDEFAULT    , zoom != 0            ? MF_ENABLED : MF_GRAYED);
             if (contextID == IDC_SIF_FOLDER || contextID == IDC_SIF_FILTER) DeleteMenu(menu, 11, MF_BYPOSITION);
             std::vector<std::wstring> historyList;
-            const auto& history = contextID == IDC_SIF_FOLDER  ? ucd.folderConfig.history.history
-                                : contextID == IDC_SIF_FILTER  ? ucd.filterConfig.history.history
-                                : contextID == IDC_SIF_FINDBOX ? ucd.findConfig.history.history
-                                                               : ucd.replConfig.history.history;
+            const auto& history = contextID == IDC_SIF_FOLDER  ? ucd.folderCntl.history.get()
+                                : contextID == IDC_SIF_FILTER  ? ucd.filterCntl.history.get()
+                                : contextID == IDC_SIF_FINDBOX ? ucd.findCntl.history.get()
+                                                               : ucd.replCntl.history.get();
             if (!history.empty() && !(history.size() == 1 && history.back().empty())) {
                 AppendMenu(menu, MF_SEPARATOR, 0, 0);
                 int menuCounter = 5000;
-                for (const std::wstring& item : history) {
+                for (const std::string& hist : history) {
+                    std::wstring item = utf8to16(hist);
                     if (item.empty()) {
                         historyList.push_back(L"");
                         ++menuCounter;
@@ -1382,9 +1245,8 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             }
             default:
                 if (result > 5000 && result <= 5000 + static_cast<int>(history.size())) {
-                    std::string item = utf16to8(history[result - 5001]).data();
                     sci.TargetWholeDocument();
-                    sci.ReplaceTarget(item);
+                    sci.ReplaceTarget(history[result - 5001]);
                 }
             }
             return TRUE;
@@ -1406,18 +1268,14 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 void colorSif() {
     if (!data.searchInFilesDialog) return;
     constexpr ULONG dmfSetThemeDirectly = 0x00000010UL;
-    HWND folder  = GetDlgItem(data.searchInFilesDialog, IDC_SIF_FOLDER);
-    HWND filter  = GetDlgItem(data.searchInFilesDialog, IDC_SIF_FILTER);
-    HWND findBox = GetDlgItem(data.searchInFilesDialog, IDC_SIF_FINDBOX);
-    HWND replBox = GetDlgItem(data.searchInFilesDialog, IDC_SIF_REPLBOX);
-    npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, folder);
-    npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, filter);
-    npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, findBox);
-    npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, replBox);
-    configureScintillaBox(folder , ucd.folderConfig);
-    configureScintillaBox(filter , ucd.filterConfig);
-    configureScintillaBox(findBox, ucd.findConfig);
-    configureScintillaBox(replBox, ucd.replConfig);
+    npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, ucd.folderCntl.handle);
+    npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, ucd.filterCntl.handle);
+    npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, ucd.findCntl  .handle);
+    npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, ucd.replCntl  .handle);
+    ucd.folderCntl.configure(sci);
+    ucd.filterCntl.configure(sci);
+    ucd.findCntl  .configure(sci);
+    ucd.replCntl  .configure(sci);
     isDarkMode = npp(NPPM_ISDARKMODEENABLED, 0, 0);
     if (isDarkMode) npp(NPPM_GETDARKMODECOLORS, sizeof darkModeColors, &darkModeColors);
     enableDisableDependentControls(data.searchInFilesDialog);

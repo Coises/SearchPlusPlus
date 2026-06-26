@@ -84,10 +84,10 @@ inline struct CommonData {
 
     config<Scintilla::Wrap> wrapFind     = { "wrap find"              , Scintilla::Wrap::Char };
     config<Scintilla::Wrap> wrapRepl     = { "wrap replace"           , Scintilla::Wrap::Char };
-    config<Scintilla::Wrap> wrapHits     = { "wrap search results"    , Scintilla::Wrap::Char };
+//    config<Scintilla::Wrap> wrapHits     = { "wrap search results"    , Scintilla::Wrap::Char };
     config<int            > zoomFind     = { "zoom find"              , 0                     };
     config<int            > zoomRepl     = { "zoom replace"           , 0                     };
-    config<int            > zoomHits     = { "zoom search results"    , 0                     };
+//    config<int            > zoomHits     = { "zoom search results"    , 0                     };
 
     config<SearchEngine> searchEngine     = { "search engine"     , SearchEngine::Plain };
     config<unsigned int> buttonFind       = { "Find command"      , SearchCommand(SearchCommand::Find                          ) };
