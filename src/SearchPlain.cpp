@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "CommonData.h"
+#include "ProgressInfo.h"
 #include "Framework/UnicodeFormatTranslation.h"
 
 
@@ -29,8 +30,6 @@ struct ProgressInfoPlain : ProgressInfo {
 
 
 struct ProgressOpenDocumentsPlain : ProgressInfoPlain {
-    std::string originalFind;
-    std::string originalRepl;
     Scintilla::FindOption searchFlags = Scintilla::FindOption::None;
     ProgressOpenDocumentsPlain(SearchRequest& req) : ProgressInfoPlain(req) {}
 };
@@ -42,10 +41,8 @@ SearchResult singleFind(SearchRequest& req, bool postReplace = false) {
     bool inSelection = !postReplace && req.command.scope == SearchCommand::Selection;
     bool wrap        = req.context->notFound();
 
-    plugin.getScintillaPointers(req.sciFind);
-    Scintilla::Position findLength = sci.Length();
-    if (findLength < 1) return req.error(L"Nothing to find.");
-    std::string find = sci.GetText(findLength);
+    if (req.find.empty()) return req.error(L"Nothing to find.");
+    std::string find = req.find;
     
     plugin.getScintillaPointers(req.sciText);
     if (sci.CodePage() != CP_UTF8) find = fromWide(utf8to16(find));
@@ -98,10 +95,7 @@ SearchResult singleReplace(SearchRequest& req) {
     
     req.context->clear();
 
-    plugin.getScintillaPointers(req.sciRepl);
-    Scintilla::Position replLength = sci.Length();
-    std::string repl = replLength ? sci.GetText(replLength) : "";
-    
+    std::string repl = req.repl;
     plugin.getScintillaPointers(req.sciText);
     if (sci.CodePage() != CP_UTF8) repl = fromWide(utf8to16(repl));
 
@@ -151,7 +145,7 @@ bool progressiveSearch(ProgressInfo& pi) {
             pip.hitSet->add(found, foundEnd);
             break;
         case SearchCommand::Select:
-            if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) scrollIntoView(found, position);
+            if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) pi.req.scrollIntoView(found, position);
             else sci.AddSelection(position, found);
             break;
         case SearchCommand::Show:
@@ -194,16 +188,8 @@ bool progressiveSearch(ProgressInfo& pi) {
 
 
 SearchResult multipleSearch(SearchRequest& req) {
-    plugin.getScintillaPointers(req.sciFind);
-    Scintilla::Position findLength = sci.Length();
-    if (findLength < 1) return req.error(L"Nothing to find.");
+    if (req.find.empty()) return req.error(L"Nothing to find.");
     ProgressInfoPlain pip(req);
-    pip.find = sci.GetText(findLength);
-    if (req.command.verb == SearchCommand::ReplaceAll) {
-        plugin.getScintillaPointers(req.sciRepl);
-        Scintilla::Position replLength = sci.Length();
-        pip.repl = replLength ? sci.GetText(replLength) : "";
-    }
     plugin.getScintillaPointers(req.sciText);
     Scintilla::FindOption searchFlags = Scintilla::FindOption::None;
     if (data.wholeWord) searchFlags |= Scintilla::FindOption::WholeWord;
@@ -212,10 +198,14 @@ SearchResult multipleSearch(SearchRequest& req) {
     sci.SetIndicatorCurrent(data.indicator);
     sci.SetIndicatorValue(1);
     pip.hitSet = std::make_unique<ProgressInfo::HitSet>();
-    pip.hitSet->searchString = "(Text): " + pip.find;
-    if (auto cp = sci.CodePage() != CP_UTF8) {
-        pip.find = fromWide(utf8to16(pip.find), cp);
-        if (req.command.verb == SearchCommand::ReplaceAll) pip.repl = fromWide(utf8to16(pip.repl), cp);
+    pip.hitSet->searchString = "(Text): " + req.find;
+    if (auto cp = sci.CodePage(); cp != CP_UTF8) {
+        pip.find = fromWide(utf8to16(req.find), cp);
+        pip.repl = fromWide(utf8to16(req.repl), cp);
+    }
+    else {
+        pip.find = req.find;
+        pip.repl = req.repl;
     }
     pip.exec(progressiveSearch);
     return pip.result;
@@ -225,33 +215,25 @@ SearchResult multipleSearch(SearchRequest& req) {
 void openDocumentsPrepare(ProgressInfo& pi) {
     ProgressOpenDocumentsPlain& pip = static_cast<ProgressOpenDocumentsPlain&>(pi);
     pip.offset = 0;
-    if (auto cp = sci.CodePage() != CP_UTF8) {
-        pip.find = fromWide(utf8to16(pip.originalFind), cp);
-        pip.repl = fromWide(utf8to16(pip.originalRepl), cp);
+    if (auto cp = sci.CodePage(); cp != CP_UTF8) {
+        pip.find = fromWide(utf8to16(pip.req.find), cp);
+        pip.repl = fromWide(utf8to16(pip.req.repl), cp);
     }
     else {
-        pip.find = pip.originalFind;
-        pip.repl = pip.originalRepl;
+        pip.find = pip.req.find;
+        pip.repl = pip.req.repl;
     }
     sci.SetSearchFlags(pip.searchFlags);
 }
 
 
 SearchResult openDocumentsSearch(SearchRequest& req) {
-    plugin.getScintillaPointers(req.sciFind);
-    Scintilla::Position findLength = sci.Length();
-    if (findLength < 1) return req.error(L"Nothing to find.");
+    if (req.find.empty()) return req.error(L"Nothing to find.");
     ProgressOpenDocumentsPlain pip(req);
-    pip.originalFind = sci.GetText(findLength);
-    if (req.command.verb == SearchCommand::ReplaceAll) {
-        plugin.getScintillaPointers(req.sciRepl);
-        Scintilla::Position replLength = sci.Length();
-        pip.originalRepl = replLength ? sci.GetText(replLength) : "";
-    }
     if (data.wholeWord) pip.searchFlags |= Scintilla::FindOption::WholeWord;
     if (data.matchCase) pip.searchFlags |= Scintilla::FindOption::MatchCase;
     pip.hitSet = std::make_unique<ProgressInfo::HitSet>();
-    pip.hitSet->searchString = "(Text): " + pip.originalFind;
+    pip.hitSet->searchString = "(Text): " + req.find;
     pip.openDocuments(progressiveSearch, openDocumentsPrepare);
     return pip.result;
 }

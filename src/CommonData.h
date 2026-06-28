@@ -20,8 +20,8 @@
 #include "Framework/ConfigFramework.h"
 #include "Framework/UtilityFramework.h"
 #include "ConfigEnums.h"
-#include "ProgressInfo.h"
 #include "Search.h"
+#include "ScintillaControl.h"
 
 
 // Common data structure
@@ -40,6 +40,9 @@ inline struct CommonData {
     // Data to be saved in the configuration file
 
     config<DialogLayout> dialogLayout = { "dialog format", DialogLayout::Docking };
+
+    ScintillaControl find = { "find", true, 12 };
+    ScintillaControl repl = { "replace", true, 12 };
 
     config<bool> fillSearch            = { "fill from selection"           , true  }; // IDC_SETTINGS_FILL
     config<bool> fillSearchLimit       = { "limit fill from selection"     , true  }; // IDC_SETTINGS_FILL_LIMIT
@@ -70,24 +73,11 @@ inline struct CommonData {
     config<CopyMarkedSeparator> copyMarkedSeparator     = { "copy marked separator"     , CopyMarkedSeparator::Line };
     config<std::string>         copyMarkedSeparatorText = { "copy marked separator text", ""                        };
 
-    config_history historyFind = { "find history"   , {}, 12, config_history::Blank };
-    config_history historyRepl = { "replace history", {}, 12, config_history::Blank };
-
-    config<std::string> findBoxLast = { "find box last content", "" };
-    config<std::string> replBoxLast = { "replace box last content", "" };
-
-    config<bool           > dotAll       = { "period matches all"     , false                 };
-    config<bool           > freeSpacing  = { "free spacing"           , false                 };
-    config<bool           > matchCase    = { "match case"             , false                 };
-    config<bool           > wholeWord    = { "match whole word only"  , false                 };
-    config<bool           > uniWordBound = { "unicode word boundaries", true                  };
-
-    config<Scintilla::Wrap> wrapFind     = { "wrap find"              , Scintilla::Wrap::Char };
-    config<Scintilla::Wrap> wrapRepl     = { "wrap replace"           , Scintilla::Wrap::Char };
-//    config<Scintilla::Wrap> wrapHits     = { "wrap search results"    , Scintilla::Wrap::Char };
-    config<int            > zoomFind     = { "zoom find"              , 0                     };
-    config<int            > zoomRepl     = { "zoom replace"           , 0                     };
-//    config<int            > zoomHits     = { "zoom search results"    , 0                     };
+    config<bool> dotAll       = { "period matches all"     , false };
+    config<bool> freeSpacing  = { "free spacing"           , false };
+    config<bool> matchCase    = { "match case"             , false };
+    config<bool> wholeWord    = { "match whole word only"  , false };
+    config<bool> uniWordBound = { "unicode word boundaries", true  };
 
     config<SearchEngine> searchEngine     = { "search engine"     , SearchEngine::Plain };
     config<unsigned int> buttonFind       = { "Find command"      , SearchCommand(SearchCommand::Find                          ) };

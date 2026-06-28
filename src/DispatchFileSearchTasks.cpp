@@ -82,9 +82,10 @@ void dispatchSearchTasks(HWND inform) {
                     }
                 }
                 if (matches) {
-                    std::string singleLineFindText = std::format(UserLocale, " {:Ld} match{:s} in {:Ld} file{:s}: ",
-                        matches, matches == 1 ? "" : "es",
-                        files, files == 1 ? "" : "s");
+                    // Using wide character formatting because it honors the UserLocale more reliably
+                    std::string singleLineFindText = utf16to8(std::format(UserLocale, L" {:Ld} match{:s} in {:Ld} file{:s}: ",
+                        matches, matches == 1 ? L"" : L"es",
+                        files, files == 1 ? L"" : L"s"));
                     for (size_t i = 0; i < sif.findString.length(); ++i) {
                         switch (sif.findString[i]) {
                         case '\t':
@@ -115,10 +116,10 @@ void dispatchSearchTasks(HWND inform) {
                         auto& sf = SearchableFile::queue[i];
                         if (sf.matches_found > 0) {
                             size_t linesMatched = sf.results.index.size();
-                            std::string fileHeader = std::format(UserLocale, "-- {:Ld} match{:s} in {:Ld} line{:s}: ",
-                                sf.matches_found, sf.matches_found == 1 ? "" : "es",
-                                linesMatched, linesMatched == 1 ? "" : "s")
-                                + utf16to8(sf.filePath) + "\r\n";
+                            std::string fileHeader = utf16to8(std::format(UserLocale, L"-- {:Ld} match{:s} in {:Ld} line{:s}: ",
+                                sf.matches_found, sf.matches_found == 1 ? L"" : L"es",
+                                linesMatched, linesMatched == 1 ? L"" : L"s")
+                                + sf.filePath) + "\r\n";
                             sif.matchResults.index.emplace_back();
                             sif.matchResults.index.back().lineNumber = -1;
                             sif.matchResults.index.back().length = fileHeader.length();

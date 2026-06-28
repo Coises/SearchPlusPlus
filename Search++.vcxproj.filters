@@ -127,7 +127,10 @@
     <ClInclude Include="src\ConfigEnums.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SciControl.h">
+    <ClInclude Include="src\ScintillaControl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\SearchRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -201,7 +204,7 @@
     <ClCompile Include="src\SearchInFiles.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SciControl.cpp">
+    <ClCompile Include="src\ScintillaControl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

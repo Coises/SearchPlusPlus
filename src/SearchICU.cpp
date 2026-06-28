@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "CommonData.h"
+#include "ProgressInfo.h"
 
 #include "unicode/errorcode.h"
 #include "unicode/regex.h"
@@ -25,7 +26,6 @@ namespace {
 
 struct ProgressInfoICU : ProgressInfo {
     std::unique_ptr<icu::RegexMatcher> icuMatcher;
-    std::string repl;
     Scintilla::Position offset1 = 0;
     Scintilla::Position offset2 = 0;
     ProgressInfoICU(SearchRequest& req) : ProgressInfo(req) {}
@@ -76,15 +76,14 @@ SearchResult singleFind(SearchRequest& req, bool postReplace = false) {
     bool inSelection = !postReplace && req.command.scope == SearchCommand::Selection;
     bool wrap        = req.context->notFound();
 
-    plugin.getScintillaPointers(req.sciFind);
-    std::string find = sci.GetText(sci.Length());
+    if (req.find.empty()) return req.error(L"Nothing to find.");
     uint32_t flags = UREGEX_MULTILINE;
     if ( data.dotAll      ) flags |= UREGEX_DOTALL;
     if ( data.freeSpacing ) flags |= UREGEX_COMMENTS;
     if (!data.matchCase   ) flags |= UREGEX_CASE_INSENSITIVE;
     if ( data.uniWordBound) flags |= UREGEX_UWORD;
     icu::ErrorCode status;
-    icu::RegexMatcher matcher(find.data(), flags, status);
+    icu::RegexMatcher matcher(req.find.data(), flags, status);
     if (status.isFailure()) return req.error(L"Invalid regular expression.", utf16to8(rxError(status.get(), L"")));
 
     plugin.getScintillaPointers(req.sciText);
@@ -165,7 +164,7 @@ bool progressiveSearch(ProgressInfo& pi) {
             pii.hitSet->add(matchStart, matchEnd);
             break;
         case SearchCommand::Select:
-            if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) scrollIntoView(matchStart, matchEnd);
+            if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) pi.req.scrollIntoView(matchStart, matchEnd);
             else sci.AddSelection(matchEnd, matchStart);
             break;
         case SearchCommand::Show:
@@ -199,29 +198,21 @@ bool progressiveSearch(ProgressInfo& pi) {
 
 
 SearchResult multipleSearch(SearchRequest& req) {
-    plugin.getScintillaPointers(req.sciFind);
-    Scintilla::Position findLength = sci.Length();
-    if (findLength < 1) return req.error(L"Nothing to find.");
+    if (req.find.empty()) return req.error(L"Nothing to find.");
     ProgressInfoICU pii(req);
-    std::string find = sci.GetText(sci.Length());
     uint32_t flags = UREGEX_MULTILINE;
     if (data.dotAll) flags |= UREGEX_DOTALL;
     if (data.freeSpacing) flags |= UREGEX_COMMENTS;
     if (!data.matchCase) flags |= UREGEX_CASE_INSENSITIVE;
     if (data.uniWordBound) flags |= UREGEX_UWORD;
     icu::ErrorCode status;
-    pii.icuMatcher = std::make_unique<icu::RegexMatcher>(find.data(), flags, status);
+    pii.icuMatcher = std::make_unique<icu::RegexMatcher>(req.find.data(), flags, status);
     if (status.isFailure()) return req.error(L"Invalid regular expression.", utf16to8(rxError(status.get(), L"")));
-    if (req.command.verb == SearchCommand::ReplaceAll) {
-        plugin.getScintillaPointers(req.sciRepl);
-        Scintilla::Position replLength = sci.Length();
-        pii.repl = replLength ? sci.GetText(replLength) : "";
-    }
     plugin.getScintillaPointers(req.sciText);
     sci.SetIndicatorCurrent(data.indicator);
     sci.SetIndicatorValue(1);
     pii.hitSet = std::make_unique<ProgressInfo::HitSet>();
-    pii.hitSet->searchString = "(ICU Regex): " + find;
+    pii.hitSet->searchString = "(ICU Regex): " + req.find;
     pii.exec(progressiveSearch);
     return pii.result;
 }

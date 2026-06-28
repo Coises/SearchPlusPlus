@@ -18,7 +18,7 @@
 
 #include "Framework/PluginFramework.h"
 #include "Framework/UnicodeFormatTranslation.h"
-#include "Search.h"
+#include "SearchRequest.h"
 
 class ProgressiveDocumentsList;
 

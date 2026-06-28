@@ -15,16 +15,26 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "CommonData.h"
+#include "SearchRequest.h"
+#include "ScintillaControl.h"
 #include <algorithm>
 
 SearchResult searchPlain(SearchRequest& req);
 SearchResult searchBoost(SearchRequest& req);
 SearchResult searchICU(SearchRequest& req);
 
+void scrollIntoView(HWND scintilla, HWND avoid, Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select);
 
-SearchResult SearchRequest::exec(SearchCommand cmd) {
+
+SearchResult SearchRequest::exec
+    (SearchCommand cmd, SearchContext& contextPar, std::string_view findPar, std::string_view replPar, HWND sciTextPar) {
 
     command = cmd;
+    context = &contextPar;
+    find    = findPar;
+    repl    = replPar;
+    sciText = sciTextPar;
+
     ranges.clear();
     bool convertSelectionToMarks = false;
     
@@ -123,14 +133,8 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
     }
 
     if (!result.error()) {
-        plugin.getScintillaPointers(sciFind);
-        Scintilla::Position length = sci.Length();
-        if (length) data.historyFind += utf8to16(sci.GetText(length));
-        if (command.verb == SearchCommand::Verb::Replace || command.verb == SearchCommand::Verb::ReplStop) {
-            plugin.getScintillaPointers(sciRepl);
-            length = sci.Length();
-            if (length) data.historyRepl += utf8to16(sci.GetText(length));
-        }
+        data.find.push();
+        if (command.verb == SearchCommand::Verb::Replace || command.verb == SearchCommand::Verb::ReplStop) data.repl.push();
         if (result.success()) {
             if (convertSelectionToMarks) {
                 plugin.getScintillaPointers(sciText);
@@ -151,11 +155,11 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
                 }
             }
             if (data.focusStepwise && (command.extent == SearchCommand::Forward || command.extent == SearchCommand::Backward))
-                SetFocus(plugin.currentScintilla());
+                SetFocus(sciText);
             else if (data.focusShow &&command.verb == SearchCommand::Show)
-                SetFocus(plugin.currentScintilla());
+                SetFocus(sciText);
             else if (data.focusSelect && command.verb == SearchCommand::Select) {
-                SetFocus(plugin.currentScintilla());
+                SetFocus(sciText);
                 plugin.getScintillaPointers();
                 sci.SetMainSelection(0);
                 scrollIntoView(sci.SelectionNStart(0), sci.SelectionNEnd(0), false);
@@ -166,4 +170,14 @@ SearchResult SearchRequest::exec(SearchCommand cmd) {
     plugin.bypassNotifications = false;
     return result;
 
+}
+
+
+void SearchRequest::scrollIntoView(Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select) {
+    ::scrollIntoView(sciText, data.searchDialog, foundStart, foundEnd, select);
+}
+
+
+SearchResult RequestSearch(SearchCommand cmd, SearchContext& context, ScintillaControl& find, ScintillaControl& repl, HWND sciText) {
+    return SearchRequest().exec(cmd, context, find.text(), repl.text(), sciText);
 }

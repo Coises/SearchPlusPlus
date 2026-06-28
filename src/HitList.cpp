@@ -16,12 +16,14 @@
 
 #include "CommonData.h"
 #include "MatchResults.h"
-#include "SciControl.h"
+#include "ScintillaControl.h"
+#include "ProgressInfo.h"
 
 #include "resource.h"
 #include "Shlwapi.h"
 #include <windowsx.h>
 
+void scrollIntoView(HWND scintilla, HWND avoid, Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select);
 void showSearchDialog();
 void showSearchInFilesDialog();
 
@@ -34,7 +36,7 @@ std::locale userLocale("");
 
 HWND hitlist = 0;  // Window handle to the hit list dialog
 
-SciControl sciHits = { "results list", true, 0 };
+ScintillaControl sciHits = { "results list", true, 0 };
 
 constexpr int SCIHITS = 101;  // Dialog ID of the Scintilla control within the hit list dialog
 
@@ -93,7 +95,11 @@ bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position
         end = start + length;
     }
     data.context.clear();
-    scrollIntoView(start, end);
+    HWND curSci = plugin.currentScintilla();
+    UpdateWindow(curSci);             // These lines are needed to ensure that Scintilla calculates layout
+    sci.EnsureVisible(lineNumber);    // at least up to the line containg the start of the match
+    sci.WrapCount(lineNumber);        // so that scrolling will be accurate.
+    scrollIntoView(curSci, data.searchDialog, start, end, true);
     if (!switchFocus) {
         if (start == end) {
             char c;
@@ -339,7 +345,7 @@ HWND setupScintilla() {
     configureSciHits();
 
     sciHits.subclass(
-        [](SciControl&, char key) -> bool /* Cntl keys */ {
+        [](ScintillaControl&, char key) -> bool /* Cntl keys */ {
             switch (key) {
             case 'd':
                 nextDocument();
@@ -384,13 +390,13 @@ HWND setupScintilla() {
             }
             return false;
         },
-        [](SciControl&, bool shift, bool cntl) -> bool /* Tab key */ {
+        [](ScintillaControl&, bool shift, bool cntl) -> bool /* Tab key */ {
             if (cntl) return false;
             if (shift) prevMatch();
                   else nextMatch();
             return true;
         },
-        [](SciControl&, bool shift, bool cntl) -> bool /* Enter key */ {
+        [](ScintillaControl&, bool shift, bool cntl) -> bool /* Enter key */ {
             if (cntl) return false;
             processEnterKey(shift);
             return true;

@@ -16,6 +16,7 @@
 
 #include "CommonData.h"
 #include "resource.h"
+#include "ProgressInfo.h"
 #include <set>
 
 void showHitlist(ProgressInfo& pi);

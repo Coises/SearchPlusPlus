@@ -23,8 +23,10 @@
 
 void showSettingsDialog();
 void clearHitlist();
+void closeSearchInFilesDialog();
 bool hitlistEmpty();
 void hideHitlist();
+SearchResult RequestSearch(SearchCommand cmd, SearchContext& context, ScintillaControl& find, ScintillaControl& repl, HWND sciText);
 void showHitlist();
 void showSearchInFilesDialog();
 
@@ -502,121 +504,75 @@ bool processToolsCommand(unsigned char command) {
 }
 
 
-// Subclass procedure for Scintilla controls: implement keyboard shortcuts not built in to Scintilla
+// Process Scintilla shortcut/menu commands
 
-LRESULT __stdcall subclassScintilla(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
-    switch (uMsg) {
-    case WM_GETDLGCODE:
-        return DefSubclassProc(hWnd, uMsg, wParam, lParam) & ~DLGC_HASSETSEL;
-    case WM_KEYDOWN:
+bool processScintillaShortcut(ScintillaControl& sc, char key) {
+    if (processToolsCommand(key)) return true;
+    switch (key) {
+    case 'e':
     {
-        // Note: Passing the WM_KEYDOWN to Scintilla first, with ClearCmdKey having been performed for each combination,
-        // avoids unwanted insertion of a control character when executing commands that open a dialog.
-        LRESULT return_value = DefSubclassProc(hWnd, uMsg, wParam, lParam);
-        if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') return return_value;
-        if (!processToolsCommand(static_cast<unsigned char>(
-            GetKeyState(VK_SHIFT) & 0x8000 ? std::toupper(static_cast<unsigned char>(wParam))
-                                           : std::tolower(static_cast<unsigned char>(wParam)))
-        )) switch (wParam) {
-        case 'E':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
-            HWND hReplBox = GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX);
-            plugin.getScintillaPointers(hReplBox);
-            std::string replText = sci.GetText(sci.Length());
-            plugin.getScintillaPointers(hFindBox);
-            std::string findText = sci.GetText(sci.Length());
-            sci.TargetWholeDocument();
-            sci.ReplaceTarget(replText);
-            plugin.getScintillaPointers(hReplBox);
-            sci.TargetWholeDocument();
-            sci.ReplaceTarget(findText);
-            break;
-        }
-        case 'F':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
-            HWND hReplBox = GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX);
-            plugin.getScintillaPointers(hFindBox);
-            std::string text = sci.GetText(sci.Length());
-            plugin.getScintillaPointers(hReplBox);
-            if (hWnd == hReplBox) sci.TargetFromSelection();
-                             else sci.TargetWholeDocument();
-            sci.ReplaceTarget(text);
-            break;
-        }
-        case 'H':
-            if (GetKeyState(VK_SHIFT) & 0x8000) hideHitlist();
-            else                                showHitlist();
-            break;
-        case 'I':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            plugin.getScintillaPointers();
-            std::string text = sci.GetSelText();
-            plugin.getScintillaPointers(hWnd);
-            sci.TargetFromSelection();
-            sci.ReplaceTarget(text);
-            break;
-        }
-        case 'N':
-            SetFocus(plugin.currentScintilla());
-            if (GetKeyState(VK_SHIFT) & 0x8000) {
-                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                                                        else ShowWindow(data.searchDialog, SW_HIDE);
-                hideHitlist();
-            }
-            break;
-        case 'O':
-            if (GetKeyState(VK_SHIFT) & 0x8000) {
-                SetFocus(plugin.currentScintilla());
-                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                                                        else ShowWindow(data.searchDialog, SW_HIDE);
-            }
-            else {
-                HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
-                SetFocus(hWnd == hFindBox ? GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX) : hFindBox);
-            }
-            break;
-        case 'R':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
-            HWND hReplBox = GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX);
-            plugin.getScintillaPointers(hReplBox);
-            std::string text = sci.GetText(sci.Length());
-            plugin.getScintillaPointers(hFindBox);
-            if (hWnd == hFindBox) sci.TargetFromSelection();
-                             else sci.TargetWholeDocument();
-            sci.ReplaceTarget(text);
-            break;
-        }
-        case 'W':
-        {
-            if (GetKeyState(VK_SHIFT) & 0x8000) break;
-            HWND hFindBox = GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX);
-            auto& setting = hWnd == hFindBox ? data.wrapFind : data.wrapRepl;
-            plugin.getScintillaPointers(hWnd);
-            Scintilla::Wrap current = sci.WrapMode();
-            if      (current == Scintilla::Wrap::None) sci.SetWrapMode(setting = Scintilla::Wrap::Char);
-            else if (current == Scintilla::Wrap::Char) sci.SetWrapMode(setting = Scintilla::Wrap::Word);
-            else                                       sci.SetWrapMode(setting = Scintilla::Wrap::None);
-            break;
-        }
-        }
-        return return_value;
+        std::string findText = data.find.text();
+        std::string replText = data.repl.text();
+        data.find.TargetWholeDocument();
+        data.find.ReplaceTarget(replText);
+        data.repl.TargetWholeDocument();
+        data.repl.ReplaceTarget(findText);
+        return true;
     }
+    case 'f':
+        if (sc == data.repl) data.repl.TargetFromSelection();
+                        else data.repl.TargetWholeDocument();
+        data.repl.ReplaceTarget(data.find.text());
+        if (sc == data.repl) sc.SetSel(-1, sc.TargetEnd());
+        return true;
+    case 'h':
+        showHitlist();
+        return true;
+    case 'H':
+        hideHitlist();
+        return true;
+    case 'i':
+        plugin.getScintillaPointers();
+        sc.TargetFromSelection();
+        sc.ReplaceTarget(sci.GetSelText());
+        sc.SetSel(-1, sc.TargetEnd());
+        return true;
+    case 'n':
+        SetFocus(plugin.currentScintilla());
+        return true;
+    case 'N':
+        SetFocus(plugin.currentScintilla());
+        if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                                                else ShowWindow(data.searchDialog, SW_HIDE);
+        hideHitlist();
+        closeSearchInFilesDialog();
+        return true;
+    case 'o':
+        SetFocus(sc == data.find ? data.repl.handle : data.find.handle);
+        return true;
+    case 'O':
+        SetFocus(plugin.currentScintilla());
+        if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                                                else ShowWindow(data.searchDialog, SW_HIDE);
+        return true;
+    case 'r':
+        if (sc == data.find) data.find.TargetFromSelection();
+                        else data.find.TargetWholeDocument();
+        data.find.ReplaceTarget(data.repl.text());
+        if (sc == data.find) sc.SetSel(-1, sc.TargetEnd());
+        return true;
     }
-    return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+    return false;
 }
 
 
 // Subclass procedure for non-Scintilla controls: implement dialog-wide keyboard shortcuts
 
-LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR, DWORD_PTR) {
+LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR) {
     switch (uMsg) {
+    case WM_NCDESTROY:
+        RemoveWindowSubclass(hWnd, subclassOther, uIdSubclass);
+        break;
     case WM_KEYDOWN:
         if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') break;
         if (!processToolsCommand(static_cast<unsigned char>(
@@ -633,6 +589,7 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
                                                         else ShowWindow(data.searchDialog, SW_HIDE);
                 hideHitlist();
+                closeSearchInFilesDialog();
             }
             break;
         case 'O':
@@ -649,89 +606,7 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 }
 
 
-void configureSearchBox(HWND sciBox) {
-
-    plugin.getScintillaPointers();
-    Scintilla::ColourAlpha caret            = sci.ElementColour(Scintilla::Element::Caret);
-    Scintilla::ColourAlpha caretLineBack    = sci.ElementColour(Scintilla::Element::CaretLineBack);
-    Scintilla::ColourAlpha selectionBack    = sci.ElementColour(Scintilla::Element::SelectionBack);
-    Scintilla::ColourAlpha whiteSpace       = sci.ElementColour(Scintilla::Element::WhiteSpace);
-    std::string            defaultFont      = sci.StyleGetFont(STYLE_DEFAULT);
-    int                    defaultSize      = sci.StyleGetSize(STYLE_DEFAULT);
-    Scintilla::Colour      defaultFore      = sci.StyleGetFore(STYLE_DEFAULT);
-    Scintilla::Colour      defaultBack      = sci.StyleGetBack(STYLE_DEFAULT);
-    Scintilla::CaretStyle  caretStyle       = sci.CaretStyle();
-    int                    caretWidth       = sci.CaretWidth();
-    int                    caretPeriod      = sci.CaretPeriod();
-    int                    caretLineFrame   = sci.CaretLineFrame();
-    bool                   caretLineVisible = sci.CaretLineVisible();
-
-    plugin.getScintillaPointers(sciBox);
-
-    sci.SetElementColour(Scintilla::Element::Caret                , caret        );
-    sci.SetElementColour(Scintilla::Element::CaretLineBack        , caretLineBack);
-    sci.SetElementColour(Scintilla::Element::SelectionBack        , selectionBack);
-    sci.SetElementColour(Scintilla::Element::SelectionInactiveBack, selectionBack);
-    sci.SetElementColour(Scintilla::Element::WhiteSpace           , whiteSpace   );
-    sci.StyleSetFont(STYLE_DEFAULT, defaultFont.data());
-    sci.StyleSetSize(STYLE_DEFAULT, defaultSize);
-    sci.StyleSetFore(STYLE_DEFAULT, defaultFore);
-    sci.StyleSetBack(STYLE_DEFAULT, defaultBack);
-    sci.StyleClearAll();
-    sci.SetCaretStyle(caretStyle);
-    sci.SetCaretWidth(caretWidth);
-    sci.SetCaretPeriod(caretPeriod);
-    sci.SetCaretLineFrame(caretLineFrame);
-    sci.SetCaretLineVisible(caretLineVisible);
-
-    sci.SetModEventMask(Scintilla::ModificationFlags::DeleteText | Scintilla::ModificationFlags::InsertText);
-    sci.SetMargins(0);
-    sci.SetWrapMode(Scintilla::Wrap::Char);
-    sci.SetTabWidth(1);
-    sci.SetUseTabs(true);
-    sci.SetViewWS(Scintilla::WhiteSpace::VisibleAlways);
-    sci.SetViewEOL(true);
-    sci.SetWhitespaceSize(2);
-    sci.UsePopUp(Scintilla::PopUp::Never);
-    sci.SetMultipleSelection(false);
-    sci.SetVirtualSpaceOptions(Scintilla::VirtualSpace::None);
-    sci.SetAdditionalSelectionTyping(true);
-    sci.SetRepresentation("\n"  , reinterpret_cast<const char*>(u8"\U0001F807"));
-    sci.SetRepresentation("\r"  , reinterpret_cast<const char*>(u8"\U0001F804"));
-    sci.SetRepresentation("\r\n", reinterpret_cast<const char*>(u8"\u21A9"));
-    sci.SetRepresentationAppearance("\n"  , Scintilla::RepresentationAppearance::Plain);
-    sci.SetRepresentationAppearance("\r"  , Scintilla::RepresentationAppearance::Plain);
-    sci.SetRepresentationAppearance("\r\n", Scintilla::RepresentationAppearance::Plain);
-    sci.SetRepresentationColour("\n"  , whiteSpace);
-    sci.SetRepresentationColour("\r"  , whiteSpace);
-    sci.SetRepresentationColour("\r\n", whiteSpace);
-    sci.ClearCmdKey('B' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('E' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('F' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('H' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('I' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('J' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('M' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('N' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('O' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('Q' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('R' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('W' + (SCMOD_CTRL << 16));
-    sci.ClearCmdKey('C' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('E' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('F' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('H' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('M' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('N' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('O' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('Q' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('R' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('S' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-    sci.ClearCmdKey('Y' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
-}
-
-
-HWND setupSearchBox(HWND hwndDlg, int box) {
+HWND setupSearchBox(HWND hwndDlg, int box, ScintillaControl& sc) {
     HWND customBox = GetDlgItem(hwndDlg, box);
     HWND hPrev = GetWindow(customBox, GW_HWNDPREV);
     RECT rectBox;
@@ -743,8 +618,10 @@ HWND setupSearchBox(HWND hwndDlg, int box) {
     SetWindowLong(sciBox, GWL_ID, box);
     SetWindowLong(sciBox, GWL_STYLE, GetWindowLong(sciBox, GWL_STYLE) | WS_BORDER | WS_TABSTOP);
     SetWindowPos(sciBox, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-    configureSearchBox(sciBox);
-    SetWindowSubclass(sciBox, subclassScintilla, 0, 0);
+    sc.attach(sciBox);
+    plugin.getScintillaPointers();
+    sc.configure(sci);
+    sc.subclass(processScintillaShortcut);
     return sciBox;
 }
 
@@ -1113,17 +990,10 @@ void showMessage(HWND hwndDlg, const SearchResult& result) {
 
 void synchronizeDialogItems(HWND hwndDlg) {
 
-    plugin.getScintillaPointers(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX));
-    sci.SetWrapMode(data.wrapFind);
-    sci.SetZoom(data.zoomFind);
-    sci.TargetWholeDocument();
-    sci.ReplaceTarget(data.findBoxLast.get());
-
-    plugin.getScintillaPointers(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX));
-    sci.SetWrapMode(data.wrapRepl);
-    sci.SetZoom(data.zoomRepl);
-    sci.TargetWholeDocument();
-    sci.ReplaceTarget(data.replBoxLast.get());
+    data.find.attach(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX));
+    data.find.load();
+    data.repl.attach(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX));
+    data.repl.load();
 
     switch (data.searchEngine) {
     case SearchEngine::Boost   : CheckRadioButton(hwndDlg, IDC_SEARCH_PLAIN, IDC_SEARCH_ICU, IDC_SEARCH_BOOST); break;
@@ -1164,29 +1034,10 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
 
     switch (uMsg) {
 
-    case WM_DESTROY:
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX    ), subclassScintilla, 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX    ), subclassScintilla, 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_PLAIN      ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_BOOST      ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_ICU        ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_TOOLS      ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_DOTALL     ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FREESPACING), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_MATCHCASE  ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_UNICODEWORD), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_WHOLEWORD  ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FIND       ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_COUNT      ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FINDALL    ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACE    ), subclassOther    , 0);
-        RemoveWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACEALL ), subclassOther    , 0);
-        return TRUE;
-
     case WM_INITDIALOG:
     {
-        setupSearchBox(hwndDlg, IDC_SEARCH_REPLBOX);
-        setupSearchBox(hwndDlg, IDC_SEARCH_FINDBOX);
+        setupSearchBox(hwndDlg, IDC_SEARCH_FINDBOX, data.find);
+        setupSearchBox(hwndDlg, IDC_SEARCH_REPLBOX, data.repl);
         GetControlReferencesForLayout(hwndDlg);
         synchronizeDialogItems(hwndDlg);
         
@@ -1227,7 +1078,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
         isDarkMode = npp(NPPM_ISDARKMODEENABLED, 0, 0);
         if (isDarkMode) npp(NPPM_GETDARKMODECOLORS, sizeof darkModeColors, &darkModeColors);
 
-        SetFocus(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX));
+        SetFocus(data.find.handle);
         return FALSE;
 
     }
@@ -1235,12 +1086,8 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
     case WM_COMMAND:
         switch (LOWORD(wParam)) {
         case IDCANCEL:
-            plugin.getScintillaPointers(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX));
-            sci.TargetWholeDocument();
-            data.findBoxLast = sci.TargetText();
-            plugin.getScintillaPointers(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX));
-            sci.TargetWholeDocument();
-            data.replBoxLast = sci.TargetText();
+            data.find.sync();
+            data.repl.sync();
             if (hwndDlg == data.dockingDialog) npp(NPPM_DMMHIDE, 0, hwndDlg);
                                           else ShowWindow(hwndDlg, SW_HIDE);
             return TRUE;
@@ -1249,22 +1096,19 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             SearchCommand command = data.buttonFind.get();
             if ((GetKeyState(VK_SHIFT) & 0x8000) && data.searchEngine == SearchEngine::Plain)
                 command.extent = command.extent == SearchCommand::Forward ? SearchCommand::Backward : SearchCommand::Forward;
-            auto result = SearchRequest::exec(command, data.context,
-                GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+            auto result = RequestSearch(command, data.context, data.find, data.repl, plugin.currentScintilla());
             showMessage(hwndDlg, result);
             return TRUE;
         }
         case IDC_SEARCH_COUNT:
         {
-            auto result = SearchRequest::exec(data.buttonCount.value, data.context,
-                GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+            auto result = RequestSearch(data.buttonCount.value, data.context, data.find, data.repl, plugin.currentScintilla());
             showMessage(hwndDlg, result);
             return TRUE;
         }
         case IDC_SEARCH_FINDALL:
         {
-            auto result = SearchRequest::exec(data.buttonFindAll.value, data.context,
-                GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+            auto result = RequestSearch(data.buttonFindAll.value, data.context, data.find, data.repl, plugin.currentScintilla());
             showMessage(hwndDlg, result);
             return TRUE;
         }
@@ -1273,15 +1117,13 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             SearchCommand command = data.buttonReplace.get();
             if ((GetKeyState(VK_SHIFT) & 0x8000) && data.searchEngine == SearchEngine::Plain)
                 command.extent = command.extent == SearchCommand::Forward ? SearchCommand::Backward : SearchCommand::Forward;
-            auto result = SearchRequest::exec(command, data.context,
-                GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+            auto result = RequestSearch(command, data.context, data.find, data.repl, plugin.currentScintilla());
             showMessage(hwndDlg, result);
             return TRUE;
         }
         case IDC_SEARCH_REPLACEALL:
         {
-            auto result = SearchRequest::exec(data.buttonReplaceAll.value, data.context,
-                GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+            auto result = RequestSearch(data.buttonReplaceAll.value, data.context, data.find, data.repl, plugin.currentScintilla());
             showMessage(hwndDlg, result);
             return TRUE;
         }
@@ -1406,20 +1248,18 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
     {
         POINT screenLocation = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
         HWND target = reinterpret_cast<HWND>(wParam);
-        HWND hFindBox = GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX);
-        HWND hReplBox = GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX);
-        if (target != hFindBox && target != hReplBox) return FALSE;
+        if (target != data.find.handle && target != data.repl.handle) return FALSE;
+        ScintillaControl& sc = target == data.find.handle ? data.find : data.repl;
         plugin.getScintillaPointers();
         bool documentHasSelection = !sci.SelectionEmpty();
-        plugin.getScintillaPointers(target);
         if (screenLocation.x == -1 && screenLocation.y == -1) /* invoked from keyboard, not mouse */ {
-            Scintilla::Position caret = sci.CurrentPos();
-            screenLocation.x = sci.PointXFromPosition(caret);
-            screenLocation.y = sci.PointYFromPosition(caret);
+            Scintilla::Position caret = sc.CurrentPos();
+            screenLocation.x = sc.PointXFromPosition(caret);
+            screenLocation.y = sc.PointYFromPosition(caret);
             MapWindowPoints(target, 0, &screenLocation, 1);
         }
-        bool hasSelection = !sci.SelectionEmpty();
-        int zoom = sci.Zoom();
+        bool hasSelection = !sc.SelectionEmpty();
+        int zoom = sc.Zoom();
         std::wstring zoomText = (zoom > 0 ? L"&Zoom (+" : L"&Zoom (") + std::to_wstring(zoom) + L")";
         HMENU menu = GetSubMenu(LoadMenu(plugin.dllInstance, MAKEINTRESOURCE(IDR_SEARCH_CONTEXT)), 0);
         MENUITEMINFO mii;
@@ -1429,11 +1269,11 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
         SetMenuItemInfo(menu, 10, TRUE, &mii);
         mii.fMask = MIIM_FTYPE | MIIM_STATE;
         mii.fType = MFT_RADIOCHECK;
-        mii.fState = sci.WrapMode() == Scintilla::Wrap::None ? MFS_CHECKED : 0;
+        mii.fState = sc.WrapMode() == Scintilla::Wrap::None ? MFS_CHECKED : 0;
         SetMenuItemInfo(menu, ID_SCMSCI_WRAPNONE, FALSE, &mii);
-        mii.fState = sci.WrapMode() == Scintilla::Wrap::Char ? MFS_CHECKED : 0;
+        mii.fState = sc.WrapMode() == Scintilla::Wrap::Char ? MFS_CHECKED : 0;
         SetMenuItemInfo(menu, ID_SCMSCI_WRAPCHAR, FALSE, &mii);
-        mii.fState = sci.WrapMode() == Scintilla::Wrap::Word ? MFS_CHECKED : 0;
+        mii.fState = sc.WrapMode() == Scintilla::Wrap::Word ? MFS_CHECKED : 0;
         SetMenuItemInfo(menu, ID_SCMSCI_WRAPWORD, FALSE, &mii);
         EnableMenuItem(menu, ID_SCMSCI_UNDO           , sci.CanUndo()        ? MF_ENABLED : MF_GRAYED);
         EnableMenuItem(menu, ID_SCMSCI_REDO           , sci.CanRedo()        ? MF_ENABLED : MF_GRAYED);
@@ -1446,11 +1286,12 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
         EnableMenuItem(menu, ID_SCMSCI_ZOOMOUT        , zoom > -10           ? MF_ENABLED : MF_GRAYED);
         EnableMenuItem(menu, ID_SCMSCI_ZOOMDEFAULT    , zoom != 0            ? MF_ENABLED : MF_GRAYED);
         std::vector<std::wstring> historyList;
-        const auto& history = target == hFindBox ? data.historyFind.history : data.historyRepl.history;
+        const auto& history = sc.history.get();
         if (!history.empty() && !(history.size() == 1 && history.back().empty())) {
             AppendMenu(menu, MF_SEPARATOR, 0, 0);
             int menuCounter = 5000;
-            for (const std::wstring& item : history) {
+            for (const std::string& hist : history) {
+                std::wstring item = utf8to16(hist);
                 if (item.empty()) {
                     historyList.push_back(L"");
                     ++menuCounter;
@@ -1492,73 +1333,35 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 AppendMenu(menu, MF_STRING, ++menuCounter, text.data());
             }
         }
+
         int result = TrackPopupMenu(menu, TPM_NONOTIFY | TPM_RETURNCMD,
                                     screenLocation.x, screenLocation.y, 0, target, 0);
         DestroyMenu(menu);
         switch (result) {
-        case ID_SCMSCI_UNDO       : sci.Undo     (); break;
-        case ID_SCMSCI_REDO       : sci.Redo     (); break;
-        case ID_SCMSCI_CUT        : sci.Cut      (); break;
-        case ID_SCMSCI_COPY       : sci.Copy     (); break;
-        case ID_SCMSCI_PASTE      : sci.Paste    (); break;
-        case ID_SCMSCI_DELETE     : sci.Clear    (); break;
-        case ID_SCMSCI_SELECTALL  : sci.SelectAll(); break;
-        case ID_SCMSCI_ZOOMIN     : sci.ZoomIn   (); break;
-        case ID_SCMSCI_ZOOMOUT    : sci.ZoomOut  (); break;
-        case ID_SCMSCI_ZOOMDEFAULT: sci.SetZoom (0); break;
-        case ID_SCMSCI_WRAPNONE   : sci.SetWrapMode((target == hFindBox ? data.wrapFind : data.wrapRepl) = Scintilla::Wrap::None); break;
-        case ID_SCMSCI_WRAPCHAR   : sci.SetWrapMode((target == hFindBox ? data.wrapFind : data.wrapRepl) = Scintilla::Wrap::Char); break;
-        case ID_SCMSCI_WRAPWORD   : sci.SetWrapMode((target == hFindBox ? data.wrapFind : data.wrapRepl) = Scintilla::Wrap::Word); break;
-
-        case ID_SCMSCI_INSERTSELECTION:
-        {
-            plugin.getScintillaPointers();
-            std::string text = sci.GetSelText();
-            plugin.getScintillaPointers(target);
-            sci.TargetFromSelection();
-            sci.ReplaceTarget(text);
-            break;
-        }
-        case ID_SCMSCI_COPYTOREPLACE:
-        {
-            plugin.getScintillaPointers(hFindBox);
-            std::string text = sci.GetText(sci.Length());
-            plugin.getScintillaPointers(hReplBox);
-            if (target == hReplBox) sci.TargetFromSelection();
-                               else sci.TargetWholeDocument();
-            sci.ReplaceTarget(text);
-            break;
-        }
-        case ID_SCMSCI_COPYTOFIND:
-        {
-            plugin.getScintillaPointers(hReplBox);
-            std::string text = sci.GetText(sci.Length());
-            plugin.getScintillaPointers(hFindBox);
-            if (target == hFindBox) sci.TargetFromSelection();
-                               else sci.TargetWholeDocument();
-            sci.ReplaceTarget(text);
-            break;
-        }
-        case ID_SCMSCI_EXCHANGE:
-        {
-            plugin.getScintillaPointers(hReplBox);
-            std::string replText = sci.GetText(sci.Length());
-            plugin.getScintillaPointers(hFindBox);
-            std::string findText = sci.GetText(sci.Length());
-            sci.TargetWholeDocument();
-            sci.ReplaceTarget(replText);
-            plugin.getScintillaPointers(hReplBox);
-            sci.TargetWholeDocument();
-            sci.ReplaceTarget(findText);
-            break;
-        }
+        case ID_SCMSCI_UNDO       : sc.Undo     (); break;
+        case ID_SCMSCI_REDO       : sc.Redo     (); break;
+        case ID_SCMSCI_CUT        : sc.Cut      (); break;
+        case ID_SCMSCI_COPY       : sc.Copy     (); break;
+        case ID_SCMSCI_PASTE      : sc.Paste    (); break;
+        case ID_SCMSCI_DELETE     : sc.Clear    (); break;
+        case ID_SCMSCI_SELECTALL  : sc.SelectAll(); break;
+        case ID_SCMSCI_ZOOMIN     : sc.ZoomIn   (); break;
+        case ID_SCMSCI_ZOOMOUT    : sc.ZoomOut  (); break;
+        case ID_SCMSCI_ZOOMDEFAULT: sc.SetZoom (0); break;
+        case ID_SCMSCI_WRAPNONE       : sc.SetWrapMode(Scintilla::Wrap::None); break;
+        case ID_SCMSCI_WRAPCHAR       : sc.SetWrapMode(Scintilla::Wrap::Char); break;
+        case ID_SCMSCI_WRAPWORD       : sc.SetWrapMode(Scintilla::Wrap::Word); break;
+        case ID_SCMSCI_INSERTSELECTION: processScintillaShortcut(sc, 'i'); break;
+        case ID_SCMSCI_COPYFIND       : processScintillaShortcut(sc, 'f'); break;
+        case ID_SCMSCI_COPYREPLACE    : processScintillaShortcut(sc, 'r'); break;
+        case ID_SCMSCI_EXCHANGE       : processScintillaShortcut(sc, 'e'); break;
         default:
             if (result > 5000 && result <= 5000 + static_cast<int>(history.size())) {
-                std::string item = utf16to8(history[result - 5001]).data();
-                sci.TargetWholeDocument();
-                sci.ReplaceTarget(item);
+                sc.TargetWholeDocument();
+                sc.ReplaceTarget(history[result - 5001]);
             }
         }
+
         return TRUE;
     }
 
@@ -1798,8 +1601,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                     *searchButton = choice;
                     SetDlgItemText(hwndDlg, static_cast<int>(bd.hdr.idFrom), Command_Button(choice));
                 }
-                auto result = SearchRequest::exec(choice, data.context,
-                    GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), plugin.currentScintilla());
+                auto result = RequestSearch(choice, data.context, data.find, data.repl, plugin.currentScintilla());
                 showMessage(hwndDlg, result);
             }
             return TRUE;
@@ -1830,14 +1632,6 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             const Scintilla::NotificationData& scn = *reinterpret_cast<Scintilla::NotificationData*>(lParam);
             if (scn.nmhdr.idFrom == IDC_SEARCH_FINDBOX) data.context.clear();
             if (scn.nmhdr.idFrom == IDC_SEARCH_REPLBOX) data.context.calcIsValid = false;
-            return TRUE;
-        }
-
-        case SCN_ZOOM:
-        {
-            const Scintilla::NotificationData& scn = *reinterpret_cast<Scintilla::NotificationData*>(lParam);
-            plugin.getScintillaPointers(reinterpret_cast<HWND>(scn.nmhdr.hwndFrom));
-            (scn.nmhdr.idFrom == IDC_SEARCH_FINDBOX ? data.zoomFind : data.zoomRepl) = sci.Zoom();
             return TRUE;
         }
         
@@ -1887,20 +1681,19 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
 void colorSearch() {
     constexpr ULONG dmfSetThemeDirectly = 0x00000010UL;
     if (data.dockingDialog) {
-        HWND findBox = GetDlgItem(data.dockingDialog, IDC_SEARCH_FINDBOX);
-        HWND replBox = GetDlgItem(data.dockingDialog, IDC_SEARCH_REPLBOX);
-        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, findBox);
-        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, replBox);
-        configureSearchBox(findBox);
-        configureSearchBox(replBox);
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, data.find.handle);
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, data.repl.handle);
+        plugin.getScintillaPointers();
+        ScintillaControl::Configuration cfg(sci);
+        cfg.put(data.find);
+        cfg.put(data.repl);
     }
     if (data.regularDialog) {
-        HWND findBox = GetDlgItem(data.regularDialog, IDC_SEARCH_FINDBOX);
-        HWND replBox = GetDlgItem(data.regularDialog, IDC_SEARCH_REPLBOX);
-        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, findBox);
-        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, replBox);
-        configureSearchBox(findBox);
-        configureSearchBox(replBox);
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, data.find.handle);
+        npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeDirectly, data.repl.handle);
+        ScintillaControl::Configuration cfg(sci);
+        cfg.put(data.find);
+        cfg.put(data.repl);
     }
     isDarkMode = npp(NPPM_ISDARKMODEENABLED, 0, 0);
     if (isDarkMode) npp(NPPM_GETDARKMODECOLORS, sizeof darkModeColors, &darkModeColors);
@@ -1964,8 +1757,6 @@ void showSearchDialog() {
         npp(NPPM_GETPLUGINHOMEPATH, pipLength + 1, pip.data());
         pip += L"\\Search++\\Search++-Private-Symbols.otf";
         AddFontResourceEx(pip.data(), FR_PRIVATE | FR_NOT_ENUM, 0);
-        data.historyFind.get();
-        data.historyRepl.get();
         if (data.dialogLayout == DialogLayout::Docking) {
             data.searchDialog = CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_DOCKINGSEARCH), plugin.nppData._nppHandle, searchDialogProc);
             NPP::tTbData dock;
@@ -2014,10 +1805,9 @@ void showSearchDialog() {
                 }
             }
             if (!text.empty()) {
-                plugin.getScintillaPointers(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
-                sci.TargetWholeDocument();
-                sci.ReplaceTarget(text);
-                sci.SelectAll();
+                data.find.TargetWholeDocument();
+                data.find.ReplaceTarget(text);
+                data.find.SelectAll();
             }
         }
     }
@@ -2025,12 +1815,8 @@ void showSearchDialog() {
 
 void destroySearchDialogs() {
     if (data.searchDialog) {
-        plugin.getScintillaPointers(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
-        sci.TargetWholeDocument();
-        data.findBoxLast = sci.TargetText();
-        plugin.getScintillaPointers(GetDlgItem(data.searchDialog, IDC_SEARCH_REPLBOX));
-        sci.TargetWholeDocument();
-        data.replBoxLast = sci.TargetText();
+        data.find.sync();
+        data.repl.sync();
         if (data.dockingDialog) {
             npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, data.dockingDialog);
             data.dockingDialog = 0;
@@ -2044,9 +1830,5 @@ void destroySearchDialogs() {
         data.searchDialog = 0;
         RemoveFontResourceEx(L"Search++-Private-Symbols.otf", FR_PRIVATE | FR_NOT_ENUM, 0);
     }
-    if (data.searchInFilesDialog) {
-        npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, data.searchInFilesDialog);
-        DestroyWindow(data.searchInFilesDialog);
-        data.searchInFilesDialog = 0;
-    }
+    closeSearchInFilesDialog();
 }

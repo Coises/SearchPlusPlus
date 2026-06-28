@@ -16,14 +16,11 @@
 
 #pragma once
 
-#include "Framework/PluginFramework.h"
-#include "Framework/ConfigFramework.h"
 #include "Framework/UtilityFramework.h"
 #include "RegularExpression.h"
 #include "Calculation.h"
 
 extern int zlmIndicator;   // Scintilla indicator used to show zero length matches
-void scrollIntoView(Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select = true);
 
 
 struct SearchCommand {
@@ -97,69 +94,5 @@ struct SearchResult {
     bool success() const { return status == Success; }
     bool failure() const { return status == Failure; }
     bool error  () const { return status == Error;   }
-
-};
-
-
-struct SearchRequest {
-    
-    SearchCommand command;
-
-    SearchContext* context = 0;
-
-    HWND sciFind = 0;
-    HWND sciRepl = 0;
-    HWND sciText = 0;
-
-    std::vector<Scintilla::CharacterRangeFull> ranges;
-
-    SearchRequest() {}
-    SearchRequest(SearchContext& context, HWND sciFind, HWND sciRepl, HWND sciText)
-        : context(&context), sciFind(sciFind), sciRepl(sciRepl), sciText(sciText) {}
-
-    SearchResult exec(SearchCommand cmd);
-
-    static SearchResult exec(SearchCommand cmd, SearchContext& context, HWND sciFind, HWND sciRepl, HWND sciText) {
-        SearchRequest req(context, sciFind, sciRepl, sciText);
-        return req.exec(cmd);
-    }
-
-    SearchResult error(const std::wstring& message, const std::string& bubble = "")
-        { context->clear(); return SearchResult(message, bubble);                        }
-    SearchResult found(const std::wstring& message, const std::string& bubble = "")
-        { context->setFound(); return SearchResult(SearchResult::Success, message, bubble); }
-    SearchResult notFound(const std::wstring& message, const std::string& bubble = "")
-        { context->setNotFound(); return SearchResult(SearchResult::Failure, message, bubble); }
-    SearchResult replaced(const std::wstring& message, const std::string& bubble = "")
-        { context->setReplaced(); return SearchResult(SearchResult::Success, message, bubble); }
-    SearchResult endRepl (const std::wstring& message, const std::string& bubble = "")
-        { context->setNotFound(); return SearchResult(SearchResult::Success, message, bubble); }
-
-    SearchResult found(Scintilla::Position cpMin, Scintilla::Position cpMax, const std::wstring& message) {
-        scrollIntoView(cpMin, cpMax);
-        sci.CallTipCancel();
-        if (cpMin == cpMax) {
-            char c;
-            if (zlmIndicator == 0 || cpMin == sci.Length()
-                || (!sci.ViewEOL() && ((c = sci.CharacterAt(cpMin)) == '\r' || c == '\n'))) {
-                sci.CallTipShow(cpMin, "^ zero length match");
-            }
-            else {
-                sci.IndicSetStyle(zlmIndicator, Scintilla::IndicatorStyle::Point);
-                sci.IndicSetFore(zlmIndicator, sci.ElementColour(Scintilla::Element::Caret));
-                sci.SetIndicatorCurrent(zlmIndicator);
-                sci.SetIndicatorValue(1);
-                sci.IndicatorClearRange(0, sci.Length());
-                sci.IndicatorFillRange(cpMin, 1);
-            }
-        }
-        context->setFound();
-        return found(message);
-    }
-
-    SearchResult replaced(Scintilla::Position cpMin, Scintilla::Position cpMax, const std::wstring& message) {
-        scrollIntoView(cpMin, cpMax);
-        return replaced(message);
-    }
 
 };

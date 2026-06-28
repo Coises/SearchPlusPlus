@@ -1,25 +1,34 @@
 // This file is part of Search++.
-// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
+// Copyright 2026 by by Randy Fellmy <https://www.coises.com/>.
 
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// at your option any later version.
+// The source code contained in this file is independent of Notepad++ code.
+// It is released under the MIT (Expat) license:
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <https://www.gnu.org/licenses/>.
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
+// associated documentation files (the "Software"), to deal in the Software without restriction, 
+// including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
+// and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, 
+// subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all copies or substantial 
+// portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT 
+// LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "CommonData.h"
+#define NOMINMAX
+#include <Windows.h>
+#include "Framework/ScintillaCallEx.h"
 
 namespace {
 
+Scintilla::ScintillaCall sci;
+
 RECT            scintillaRect;
-RECT            dialogRect;
+RECT            dialogRect = { 0, 0, 0, 0 };
 Scintilla::Line firstVisibleLine;
 int             pxOffset;
 int             pxBlank;
@@ -142,21 +151,25 @@ ScrollNeeded ScrollTarget::find(const VisibleArea& va) const {
 }
 
 
-void scrollIntoView(Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select) {
+void scrollIntoView(HWND scintilla, HWND avoid, Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select) {
 
-    HWND currentScintilla = plugin.currentScintilla();
-    plugin.getScintillaPointers(currentScintilla);
-    GetClientRect(currentScintilla, &scintillaRect);
+    sci.SetFnPtr(
+        reinterpret_cast<Scintilla::FunctionDirect>
+            (SendMessage(scintilla, static_cast<UINT>(Scintilla::Message::GetDirectStatusFunction), 0, 0)),
+        SendMessage(scintilla, static_cast<UINT>(Scintilla::Message::GetDirectPointer), 0, 0));
+    sci.SetStatus(Scintilla::Status::Ok);  // C-interface code can ignore an error status, causing exception in C++ interface
+
+    GetClientRect(scintilla, &scintillaRect);
     int marginCount = sci.Margins();
     for (int i = 0; i < marginCount; ++i) scintillaRect.left += sci.MarginWidthN(i);
     scintillaRect.left += sci.MarginLeft();
     scintillaRect.right -= sci.MarginRight();
     firstVisibleLine = sci.FirstVisibleLine();
     pxOffset = sci.XOffset();
-    pxBlank = sci.TextWidth(STYLE_DEFAULT, " ");
+    pxBlank = sci.TextWidth(32, " ");
 
-    GetWindowRect(data.searchDialog, &dialogRect);
-    MapWindowPoints(0, currentScintilla, reinterpret_cast<POINT*>(&dialogRect), 2);
+    if (avoid) GetWindowRect(avoid, &dialogRect);
+    MapWindowPoints(0, scintilla, reinterpret_cast<POINT*>(&dialogRect), 2);
 
     ScrollTarget st(foundStart, foundEnd);
     ScrollNeeded sn;

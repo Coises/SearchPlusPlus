@@ -17,6 +17,7 @@
 #include "CommonData.h"
 #include "Framework/UnicodeFormatTranslation.h"
 #include "RegularExpression.h"
+#include "ProgressInfo.h"
 
 
 namespace {
@@ -29,27 +30,17 @@ struct ProgressInfoBoost : ProgressInfo {
 };
 
 
-struct ProgressOpenDocumentsBoost : ProgressInfoBoost {
-    std::string originalFind;
-    std::string originalRepl;
-    ProgressOpenDocumentsBoost(SearchRequest& req) : ProgressInfoBoost(req) {}
-};
-
-
 SearchResult singleFind(SearchRequest& req, bool postReplace = false) {
 
     bool inSelection = !postReplace && req.command.scope == SearchCommand::Selection;
     bool wrap        = req.context->notFound();
 
-    plugin.getScintillaPointers(req.sciFind);
-    Scintilla::Position findLength = sci.Length();
-    if (findLength < 1) return req.error(L"Nothing to find.");
-    std::string find = sci.GetText(sci.Length());
+    if (req.find.empty()) return req.error(L"Nothing to find.");
 
     plugin.getScintillaPointers(req.sciText);
     RegularExpression& rx = req.context->rx;
     rx.setup(sci);
-    std::string rxMessage = rx.find(find, data.matchCase, data.dotAll, data.freeSpacing);
+    std::string rxMessage = rx.find(req.find, data.matchCase, data.dotAll, data.freeSpacing);
     if (!rxMessage.empty()) return req.error(L"Invalid regular expression.", rxMessage);
 
     Scintilla::Position searchFrom = inSelection ? req.ranges.front().cpMin : std::max(sci.Anchor(), sci.CurrentPos());
@@ -88,16 +79,12 @@ SearchResult singleReplace(SearchRequest& req) {
 
     if (!req.context->found()) return singleFind(req);
 
-    plugin.getScintillaPointers(req.sciRepl);
-    Scintilla::Position replLength = sci.Length();
-    std::string repl = replLength ? sci.GetText(replLength) : "";
-
     plugin.getScintillaPointers(req.sciText);
     sci.TargetFromSelection();
     Scintilla::Position foundStart = sci.TargetStart();
     Scintilla::Position foundEnd = sci.TargetEnd();
     if (!req.context->calcIsValid) {
-        std::string errmsg = req.context->calc.parse(repl);
+        std::string errmsg = req.context->calc.parse(req.repl);
         if (!errmsg.empty()) return SearchResult(L"Error in replacement formula.", "", errmsg);
         req.context->calcIsValid = true;
     }
@@ -135,9 +122,10 @@ bool progressiveSearch(ProgressInfo& pi) {
     Scintilla::CharacterRangeFull r = req.ranges[pi.rangeIndex];
     Scintilla::Position scanMax = std::min(rangeEnd, r.cpMax);
     if (position > scanMax) return false;
-    bool rxSuccess = pib.rx.search(std::max(position + pib.offset2, r.cpMin + pib.offset1), r.cpMax + pib.offset2, r.cpMin + pib.offset1);
+    bool rxSuccess = pib.rx.search(std::max(position + pib.offset2, r.cpMin + pib.offset1),
+                                   r.cpMax + pib.offset2, r.cpMin + pib.offset1);
 
-    if (rxSuccess){
+    if (rxSuccess) {
         Scintilla::Position found  = pib.rx.position();
         Scintilla::Position length = pib.rx.length(0);
         position = found + length - pib.offset2;
@@ -149,7 +137,7 @@ bool progressiveSearch(ProgressInfo& pi) {
             pib.hitSet->add(found, found + length);
             break;
         case SearchCommand::Select:
-            if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) scrollIntoView(found, position);
+            if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) pi.req.scrollIntoView(found, position);
             else sci.AddSelection(position, found);
             break;
         case SearchCommand::Show:
@@ -197,27 +185,21 @@ bool progressiveSearch(ProgressInfo& pi) {
 
 
 SearchResult multipleSearch(SearchRequest& req) {
-    plugin.getScintillaPointers(req.sciFind);
-    Scintilla::Position findLength = sci.Length();
-    if (findLength < 1) return req.error(L"Nothing to find.");
-    std::string find = sci.GetText(findLength);
+    if (req.find.empty()) return req.error(L"Nothing to find.");
     ProgressInfoBoost pib(req);
     if (req.command.verb == SearchCommand::ReplaceAll && !req.context->calcIsValid) {
-        plugin.getScintillaPointers(req.sciRepl);
-        Scintilla::Position replLength = sci.Length();
-        std::string repl = replLength ? sci.GetText(replLength) : "";
-        std::string errmsg = req.context->calc.parse(repl);
+        std::string errmsg = req.context->calc.parse(req.repl);
         if (!errmsg.empty()) return SearchResult(L"Error in replacement formula.", "", errmsg);
         req.context->calcIsValid = true;
     }
     plugin.getScintillaPointers(req.sciText);
     pib.rx.setup(sci);
-    std::string rxMessage = pib.rx.find(find, data.matchCase, data.dotAll, data.freeSpacing);
+    std::string rxMessage = pib.rx.find(req.find, data.matchCase, data.dotAll, data.freeSpacing);
     if (!rxMessage.empty()) return SearchResult(L"Invalid regular expression.", rxMessage);
     sci.SetIndicatorCurrent(data.indicator);
     sci.SetIndicatorValue(1);
     pib.hitSet = std::make_unique<ProgressInfo::HitSet>();
-    pib.hitSet->searchString = "(Regex): " + find;
+    pib.hitSet->searchString = "(Regex): " + req.find;
     pib.exec(progressiveSearch);
     if (pib.result.success() && req.command.verb == SearchCommand::ReplaceAll) req.context->calcIsValid = false;
     return pib.result;
@@ -225,35 +207,28 @@ SearchResult multipleSearch(SearchRequest& req) {
 
 
 void openDocumentsPrepare(ProgressInfo& pi) {
-    ProgressOpenDocumentsBoost& pib = static_cast<ProgressOpenDocumentsBoost&>(pi);
+    ProgressInfoBoost& pib = static_cast<ProgressInfoBoost&>(pi);
     pib.offset1 = pib.offset2 = 0;
     pib.rx.setup(sci);
-    pib.rx.find(pib.originalFind, data.matchCase, data.dotAll, data.freeSpacing);
-    pib.req.context->calc.parse(pib.originalRepl);
+    pib.req.context->calc.parse(pib.req.repl);
     pib.req.context->calcIsValid = true;
 }
 
 
 SearchResult openDocumentsSearch(SearchRequest& req) {
-    plugin.getScintillaPointers(req.sciFind);
-    Scintilla::Position findLength = sci.Length();
-    if (findLength < 1) return req.error(L"Nothing to find.");
-    ProgressOpenDocumentsBoost pib(req);
-    pib.originalFind = sci.GetText(findLength);
+    if (req.find.empty()) return req.error(L"Nothing to find.");
+    ProgressInfoBoost pib(req);
     if (req.command.verb == SearchCommand::ReplaceAll && !req.context->calcIsValid) {
-        plugin.getScintillaPointers(req.sciRepl);
-        Scintilla::Position replLength = sci.Length();
-        pib.originalRepl = replLength ? sci.GetText(replLength) : "";
-        std::string errmsg = req.context->calc.parse(pib.originalRepl);
+        std::string errmsg = req.context->calc.parse(req.repl);
         if (!errmsg.empty()) return SearchResult(L"Error in replacement formula.", "", errmsg);
         req.context->calcIsValid = true;
     }
     plugin.getScintillaPointers(req.sciText);
     pib.rx.setup(sci);
-    std::string rxMessage = pib.rx.find(pib.originalFind, data.matchCase, data.dotAll, data.freeSpacing);
+    std::string rxMessage = pib.rx.find(pib.req.find, data.matchCase, data.dotAll, data.freeSpacing);
     if (!rxMessage.empty()) return SearchResult(L"Invalid regular expression.", rxMessage);
     pib.hitSet = std::make_unique<ProgressInfo::HitSet>();
-    pib.hitSet->searchString = "(Regex): " + pib.originalFind;
+    pib.hitSet->searchString = "(Regex): " + pib.req.find;
     pib.openDocuments(progressiveSearch, openDocumentsPrepare);
     if (pib.result.success() && req.command.verb == SearchCommand::ReplaceAll) req.context->calcIsValid = false;
     return pib.result;
