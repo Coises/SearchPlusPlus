@@ -588,7 +588,6 @@ void showHitlist(MatchResults& matchResults) {
     sciHits.StartStyling  (0, 0);
     sciHits.SetStyling    (cumulativeLineIndex[0].length, Style_Search);
     sciHits.MarkerAdd     (0, Marker_Search);
-//    sciHits.MarginSetText (0, "====");
     sciHits.MarginSetStyle(0, Style_Search);
     sciHits.SetFoldLevel  (0, Level_Search);
 
@@ -601,7 +600,6 @@ void showHitlist(MatchResults& matchResults) {
             sciHits.StartStyling  (position, 0);
             sciHits.SetStyling    (mld.length, Style_Document);
             sciHits.MarkerAdd     (line, Marker_Document);
-//            sciHits.MarginSetText (line, "--");
             sciHits.MarginSetStyle(line, Style_Document);
             sciHits.SetFoldLevel  (line, Level_Document);
         }
@@ -642,113 +640,5 @@ void showHitlist(MatchResults& matchResults) {
     sciHits.SetSel(-1, sciHits.PositionFromLine(2));
     sciHits.SetReadOnly(true);
     if (focused) SetFocus(focused);
-
-}
-
-
-void showHitlist(ProgressInfo& pi) {
-
-    if (!pi.count) return showHitlist();
-
-    MatchResults matchResults;
-
-    size_t files   = pi.hitSet->hitBlocks.size();
-    size_t matches = pi.count;
-    size_t indices = 1;
-    size_t textlen = 0;  // estimate of the final textlen -- better to overestimate than underestimate!
-
-    for (const auto& hb : pi.hitSet->hitBlocks) {
-        indices += 1 + hb.hitLines.size();
-        textlen += 62 + hb.documentPath.length();
-        for (const auto& hl : hb.hitLines) textlen += hl.text.length();
-    }
-
-    std::string singleLineFindText = std::format(userLocale, " {:Ld} match{:s} in {:Ld} file{:s} ",
-                                                 matches, matches == 1 ? "" : "es", files, files == 1 ? "" : "s");
-    for (size_t i = 0; i < pi.hitSet->searchString.length(); ++i) {
-        switch (pi.hitSet->searchString[i]) {
-        case '\t':
-            singleLineFindText += reinterpret_cast<const char*>(u8"\u2B72");
-            break;
-        case '\n':
-            singleLineFindText += reinterpret_cast<const char*>(u8"\u240A");
-            break;
-        case '\r':
-            if (i + 1 < pi.hitSet->searchString.length() && pi.hitSet->searchString[i + 1] == '\n') {
-                singleLineFindText += reinterpret_cast<const char*>(u8"\u21A9");
-                ++i;
-            }
-            else singleLineFindText += reinterpret_cast<const char*>(u8"\u240D");
-            break;
-        default:
-            singleLineFindText += pi.hitSet->searchString[i];
-        }
-    }
-    singleLineFindText += "\r\n";
-
-    matchResults.index.reserve(indices);
-    matchResults.text.reserve(singleLineFindText.length() + textlen + 2);
-    matchResults.index.emplace_back();
-    matchResults.index.back().lineNumber = -2;
-    matchResults.index.back().length = singleLineFindText.length();
-    matchResults.text = singleLineFindText;
-
-    for (const auto& hb : pi.hitSet->hitBlocks) {
-        size_t linesMatched = hb.hitLines.size();
-        size_t fileMatches = hb.count();
-        std::string fileHeader = std::format(userLocale, "-- {:Ld} match{:s} in {:Ld} line{:s}: ",
-                                                         fileMatches, fileMatches == 1 ? "" : "es",
-                                                         linesMatched, linesMatched == 1 ? "" : "s")
-                               + hb.documentPath + "\r\n";
-        matchResults.index.emplace_back();
-        matchResults.index.back().lineNumber = -1;
-        matchResults.index.back().length = fileHeader.length();
-        matchResults.text += fileHeader;
-        if (hb.codepage == CP_UTF8) for (const auto& hl : hb.hitLines) {
-            matchResults.index.emplace_back();
-            matchResults.index.back().length = hl.text.length();
-            matchResults.index.back().lineNumber = hl.line;
-            matchResults.text += hl.text;
-            for (const auto& hit : hl.hits)
-                matchResults.index.back().matches.emplace_back(hit.cpMin - hl.position, hit.cpMax - hit.cpMin);
-        }
-        else for (size_t hitLineIndex = 0; hitLineIndex < hb.hitLines.size(); ++hitLineIndex) {  // <== can be made more efficient!
-            const auto& hl = hb.hitLines[hitLineIndex];
-            matchResults.index.emplace_back();
-            matchResults.index.back().lineNumber = hl.line;
-            for (const auto& hit : hl.hits) {
-                matchResults.index.back().matches.emplace_back();
-                auto& sm = matchResults.index.back().matches.back();
-                sm.offset = (hit.cpMin == hl.position ? 0
-                          : utf16to8(toWide(hl.text.substr(0, hit.cpMin - hl.position), hb.codepage)).length());
-                if (hit.cpMax == hit.cpMin) sm.length = 0;
-                else if (static_cast<size_t>(hit.cpMax - hl.position) <= hl.text.length())
-                    sm.length = utf16to8(toWide(hl.text.substr(hit.cpMin - hl.position, hit.cpMax - hit.cpMin),
-                                                hb.codepage)).length();
-                else /* hit spans multiple lines */ {
-                    sm.length = utf16to8(toWide(hl.text.substr(hit.cpMin - hl.position), hb.codepage)).length();
-                    size_t remainingLength = hit.cpMax - hl.position - hl.text.length();
-                    for (size_t hli = hitLineIndex + 1; remainingLength > 0; ++hli) {
-                        const auto& extLine = hb.hitLines[hli];
-                        if (remainingLength <= extLine.text.length()) {
-                            sm.length += utf16to8(toWide(extLine.text.substr(0, remainingLength), hb.codepage)).length();
-                            break;
-                        }
-                        sm.length += utf16to8(toWide(extLine.text, hb.codepage)).length();
-                        remainingLength -= extLine.text.length();
-                    }
-                }
-            }
-            const std::string utf8text = utf16to8(toWide(hl.text, hb.codepage));
-            matchResults.index.back().length = utf8text.length();
-            matchResults.text += utf8text;
-        }
-        if (matchResults.text.back() != '\n' && matchResults.text.back() != '\r') {
-            matchResults.text += "\r\n";
-            matchResults.index.back().length += 2;
-        }
-    }
-
-    showHitlist(matchResults);
 
 }

@@ -161,7 +161,6 @@ bool progressiveSearch(ProgressInfo& pi) {
         pii.preClear();
         switch (req.command.verb) {
         case SearchCommand::FindAll:
-            pii.hitSet->add(matchStart, matchEnd);
             pii.documentMatches.add(matchStart, matchEnd);
             break;
         case SearchCommand::Select:
@@ -212,8 +211,6 @@ SearchResult multipleSearch(SearchRequest& req) {
     plugin.getScintillaPointers(req.sciText);
     sci.SetIndicatorCurrent(data.indicator);
     sci.SetIndicatorValue(1);
-    pii.hitSet = std::make_unique<ProgressInfo::HitSet>();
-    pii.hitSet->searchString = "(ICU Regex): " + req.find;
     pii.exec(progressiveSearch);
     return pii.result;
 }

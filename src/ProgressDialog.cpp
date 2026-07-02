@@ -399,37 +399,6 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
 }
 
 
-// ProgressInfo::HitSet::add must be called with the document in the active buffer
-// and Scintilla pointers (plugin.getScintillaPointers()) already set.
-
-void ProgressInfo::HitSet::add(Scintilla::Position cpMin, Scintilla::Position cpMax) {
-    UINT_PTR bufferID = npp(NPPM_GETCURRENTBUFFERID, 0, 0);
-    if (hitBlocks.empty() || hitBlocks.back().bufferID != bufferID) {
-        hitBlocks.emplace_back();
-        hitBlocks.back().bufferID = bufferID;
-        hitBlocks.back().codepage = sci.CodePage();
-        hitBlocks.back().documentPath = utf16to8(getFilePath(bufferID));
-    }
-    Scintilla::Line firstLine = sci.LineFromPosition(cpMin);
-    HitBlock& hb = hitBlocks.back();
-    if (hb.hitLines.empty() || hb.hitLines.back().line != firstLine) {
-        hb.hitLines.emplace_back();
-        hb.hitLines.back().line = firstLine;
-        hb.hitLines.back().position = sci.PositionFromLine(firstLine);
-        hb.hitLines.back().text = sci.GetLine(firstLine);
-    }
-    hb.hitLines.back().hits.push_back({ cpMin, cpMax });
-    Scintilla::Line lastLine = sci.LineFromPosition(cpMax);
-    for (Scintilla::Line line = firstLine + 1; line <= lastLine; ++line) {
-        hb.hitLines.emplace_back();
-        hb.hitLines.back().line = line;
-        hb.hitLines.back().position = sci.PositionFromLine(line);
-        hb.hitLines.back().text = sci.GetLine(line);
-    }
-}
-
-
-
 void ProgressInfo::reserveSearchHeader() {
     matchResults.text = maximalSearchCounts;
     matchResults.text += data.searchEngine == SearchEngine::Boost ? "(Regex): "

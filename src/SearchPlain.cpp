@@ -142,7 +142,6 @@ bool progressiveSearch(ProgressInfo& pi) {
         pip.preClear();
         switch (req.command.verb) {
         case SearchCommand::FindAll:
-            pip.hitSet->add(found, foundEnd);
             pip.documentMatches.add(found, foundEnd);
             break;
         case SearchCommand::Select:
@@ -198,8 +197,6 @@ SearchResult multipleSearch(SearchRequest& req) {
     sci.SetSearchFlags(searchFlags);
     sci.SetIndicatorCurrent(data.indicator);
     sci.SetIndicatorValue(1);
-    pip.hitSet = std::make_unique<ProgressInfo::HitSet>();
-    pip.hitSet->searchString = "(Text): " + req.find;
     if (auto cp = sci.CodePage(); cp != CP_UTF8) {
         pip.find = fromWide(utf8to16(req.find), cp);
         pip.repl = fromWide(utf8to16(req.repl), cp);
@@ -233,8 +230,6 @@ SearchResult openDocumentsSearch(SearchRequest& req) {
     ProgressOpenDocumentsPlain pip(req);
     if (data.wholeWord) pip.searchFlags |= Scintilla::FindOption::WholeWord;
     if (data.matchCase) pip.searchFlags |= Scintilla::FindOption::MatchCase;
-    pip.hitSet = std::make_unique<ProgressInfo::HitSet>();
-    pip.hitSet->searchString = "(Text): " + req.find;
     pip.openDocuments(progressiveSearch, openDocumentsPrepare);
     return pip.result;
 }

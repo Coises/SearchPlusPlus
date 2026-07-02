@@ -25,42 +25,6 @@ class ProgressiveDocumentsList;
 
 struct ProgressInfo {
 
-    // A HitLine contains a list of every hit that begins in that line.
-    // The text of the line includes the line ending.
-    // A HitLine can include zero hits if it is included because a hit
-    // on an earlier line extends into it.
-
-    struct HitLine {
-        std::vector<Scintilla::CharacterRangeFull> hits;
-        std::string text;
-        Scintilla::Line line;
-        Scintilla::Position position;
-        size_t count() const { return hits.size(); }
-    };
-
-    // A HitBlock contains all the hits from a single search in a single file.
-
-    struct HitBlock {
-        std::vector<HitLine> hitLines;
-        std::string documentPath;
-        UINT_PTR    bufferID;
-        UINT        codepage;
-        size_t count() const { size_t n = 0; for (const auto& x : hitLines) n += x.count(); return n; }
-    };
-
-    // A HitSet contains all the HitBlocks from a single search.
-    // Ownership of a HitSet is passed to the HitList routines
-    // after a search is completed.
-
-    struct HitSet {
-        std::vector<HitBlock> hitBlocks;
-        std::string searchString;
-        void add(Scintilla::Position cpMin, Scintilla::Position cpMax);
-        size_t count() const { size_t n = 0; for (const auto& x : hitBlocks) n += x.count(); return n; }
-    };
-
-    std::unique_ptr<HitSet> hitSet;
-
     // matchResults contains a cumulative list of all matches found in a search.
     // It is consumed by ShowHitList(MatchResults).
     // 

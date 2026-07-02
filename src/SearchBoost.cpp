@@ -134,7 +134,6 @@ bool progressiveSearch(ProgressInfo& pi) {
         pib.preClear();
         switch (req.command.verb) {
         case SearchCommand::FindAll:
-            pib.hitSet->add(found, found + length);
             pib.documentMatches.add(found, found + length);
             break;
         case SearchCommand::Select:
@@ -199,8 +198,6 @@ SearchResult multipleSearch(SearchRequest& req) {
     if (!rxMessage.empty()) return SearchResult(L"Invalid regular expression.", rxMessage);
     sci.SetIndicatorCurrent(data.indicator);
     sci.SetIndicatorValue(1);
-    pib.hitSet = std::make_unique<ProgressInfo::HitSet>();
-    pib.hitSet->searchString = "(Regex): " + req.find;
     pib.exec(progressiveSearch);
     if (pib.result.success() && req.command.verb == SearchCommand::ReplaceAll) req.context->calcIsValid = false;
     return pib.result;
@@ -228,8 +225,6 @@ SearchResult openDocumentsSearch(SearchRequest& req) {
     pib.rx.setup(sci);
     std::string rxMessage = pib.rx.find(pib.req.find, data.matchCase, data.dotAll, data.freeSpacing);
     if (!rxMessage.empty()) return SearchResult(L"Invalid regular expression.", rxMessage);
-    pib.hitSet = std::make_unique<ProgressInfo::HitSet>();
-    pib.hitSet->searchString = "(Regex): " + pib.req.find;
     pib.openDocuments(progressiveSearch, openDocumentsPrepare);
     if (pib.result.success() && req.command.verb == SearchCommand::ReplaceAll) req.context->calcIsValid = false;
     return pib.result;
