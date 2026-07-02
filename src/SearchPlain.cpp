@@ -143,6 +143,7 @@ bool progressiveSearch(ProgressInfo& pi) {
         switch (req.command.verb) {
         case SearchCommand::FindAll:
             pip.hitSet->add(found, foundEnd);
+            pip.documentMatches.add(found, foundEnd);
             break;
         case SearchCommand::Select:
             if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) pi.req.scrollIntoView(found, position);

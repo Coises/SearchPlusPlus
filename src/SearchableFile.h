@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 #include "MatchResults.h"
+#include "RegexUTF16.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4324)           // Suppress padding warning -- padding allows cache alignment, desired for multiple tasks
@@ -79,6 +80,8 @@ private:
     bool is_canceled();
     bool read(char* smallBuffer, size_t smallBufferSize);
     void release();
+
+    template<typename CurrentLine>bool searchByLines(RegularExpression& rx);  // returns true if canceled
 
 public:
 

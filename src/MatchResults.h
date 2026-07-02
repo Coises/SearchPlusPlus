@@ -34,8 +34,8 @@
 struct MatchResults {
     struct LineIndex {
         struct SingleMatch {
-            intptr_t offset;                // offset into the (UTF-8 translation of) the line in which the match begins
-            intptr_t length;                // length of the (UTF-8 translation of) the match
+            intptr_t offset;                // offset into (the UTF-8 translation of) the line in which the match begins
+            intptr_t length;                // length of (the UTF-8 translation of) the match
         }; 
         std::vector<SingleMatch> matches;   // list of all matches that begin in this line
         intptr_t lineNumber;                // line number in the original file (negative if this is a header line)
@@ -43,4 +43,5 @@ struct MatchResults {
     };
     std::vector<LineIndex> index;           // one entry for each line containing text that is part of any match
     std::string            text;            // text of all lines containing matches, including line endings, translated to UTF-8
+    intptr_t               offset = 0;      // offset into text where actual text begins; used to reserve space ahead of time
 };

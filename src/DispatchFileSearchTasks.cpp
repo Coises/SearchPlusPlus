@@ -116,7 +116,7 @@ void dispatchSearchTasks(HWND inform) {
                         auto& sf = SearchableFile::queue[i];
                         if (sf.matches_found > 0) {
                             size_t linesMatched = sf.results.index.size();
-                            std::string fileHeader = utf16to8(std::format(UserLocale, L"-- {:Ld} match{:s} in {:Ld} line{:s}: ",
+                            std::string fileHeader = utf16to8(std::format(UserLocale, L"   {:Ld} match{:s} in {:Ld} line{:s}: ",
                                 sf.matches_found, sf.matches_found == 1 ? L"" : L"es",
                                 linesMatched, linesMatched == 1 ? L"" : L"s")
                                 + sf.filePath) + "\r\n";

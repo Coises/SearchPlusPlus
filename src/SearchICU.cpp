@@ -162,6 +162,7 @@ bool progressiveSearch(ProgressInfo& pi) {
         switch (req.command.verb) {
         case SearchCommand::FindAll:
             pii.hitSet->add(matchStart, matchEnd);
+            pii.documentMatches.add(matchStart, matchEnd);
             break;
         case SearchCommand::Select:
             if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) pi.req.scrollIntoView(matchStart, matchEnd);

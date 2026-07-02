@@ -24,55 +24,9 @@
 #include "Framework/UtilityFrameworkMIT.h"
 #include "Framework/UnicodeFormatTranslation.h"
 #include "RegularExpression.h"
+#include "RegularExpressionExtension.h"
 #include "Unicode/UnicodeRegexTraits.h"
 #include <mbstring.h>
-
-
-class RegularExpression::Mono {
-public:
-    boost::basic_regex<char32_t, utf32_regex_traits> uFind;
-    Scintilla::ScintillaCall* sci = 0;
-    mutable intptr_t    end = 0;
-    mutable intptr_t    gap = 0;
-    mutable const char* pt1 = 0;
-    mutable const char* pt2 = 0;
-    unsigned int codepage = 0;
-    bool regexValid = false;
-    void ensureValid() {
-        if (!sci) {
-            regexValid = false;
-            MessageBox(0, L"A search requiring a Scintilla pointer has been called without a pointer. This is a logic error. "
-                          L"Searching is not possible.",
-                          L"Search++: Error in regular expression search", MB_ICONERROR);
-            return;
-        }
-        if (pt1 == 0 && pt2 == 0) {
-            end = sci->Length();
-            gap = sci->GapPosition();
-            pt1 = gap > 0 ? reinterpret_cast<const char*>(sci->RangePointer(0, gap)) : 0;
-            pt2 = gap < end ? reinterpret_cast<const char*>(sci->RangePointer(gap, end - gap)) - gap : 0;
-        }
-    }
-};
-
-
-class RegularExpression::Poly {
-protected:
-    Mono& mono;
-public:
-    Poly(Mono& mono) : mono(mono) {}
-    virtual ~Poly() {}
-    virtual std::string  format(const std::string& replacement)                                  const = 0;
-    virtual intptr_t     length(int n = 0)                                                       const = 0;
-    virtual intptr_t     position(int n = 0)                                                     const = 0;
-    virtual bool         search(std::string_view s, size_t from           , std::string* errmsg)       = 0;
-    virtual bool         search(intptr_t from, intptr_t to, intptr_t start, std::string* errmsg)       = 0;
-    virtual size_t       size()                                                                  const = 0;
-    virtual std::string  str(int n = 0)                                                          const = 0;
-    virtual std::string  str(std::string_view n)                                                 const = 0;
-    virtual std::wstring wstr(int n = 0)                                                         const = 0;
-    virtual std::wstring wstr(std::string_view n)                                                const = 0;
-};
 
 
 class RegularExpressionNone : public RegularExpression::Poly {
@@ -288,7 +242,7 @@ public:
     std::wstring wstr(int              n) const override { return utf8to16(str(n)); }
     std::wstring wstr(std::string_view n) const override { return utf8to16(str(n)); }
 
-};
+    };
 
 
 class RegularExpressionSBCS : public RegularExpression::Poly {
@@ -359,7 +313,7 @@ public:
     RegularExpressionSBCS(RegularExpression::Mono& mono) : Poly(mono) {}
 
     std::string format(const std::string& replacement) const override {
-        return fromWide(utf32to16(uMatch.format(utf8to32(replacement), boost::format_all)), 0);
+        return fromWide(utf32to16(uMatch.format(utf8to32(replacement), boost::format_all)), mono.codepage);
     }
 
     intptr_t length(int n = 0) const override {
@@ -561,7 +515,7 @@ public:
     RegularExpressionDBCS(RegularExpression::Mono& mono) : Poly(mono) {}
 
     std::string format(const std::string& replacement) const override {
-        return fromWide(utf32to16(uMatch.format(utf8to32(replacement), boost::format_all)), 0);
+        return fromWide(utf32to16(uMatch.format(utf8to32(replacement), boost::format_all)), mono.codepage);
     }
 
     intptr_t length(int n = 0) const override {
@@ -713,12 +667,6 @@ RegularExpression& RegularExpression::setup(unsigned int codepage) {
         mono->codepage = codepage;
         if (poly) delete poly;
         switch (codepage) {
-        case 1200:
-            poly = new RegularExpressionNone(*mono);  // Will be UTF-16 LE, not yet implemented
-            break;
-        case 1201:
-            poly = new RegularExpressionNone(*mono);  // Will be UTF-16 BE, not yet implemented
-            break;
         case 20127:
         case CP_UTF8:
             poly = new RegularExpressionU(*mono);

@@ -17,9 +17,10 @@
 #include "CommonData.h"
 #include "resource.h"
 #include "ProgressInfo.h"
+#include <format>
 #include <set>
 
-void showHitlist(ProgressInfo& pi);
+void showHitlist(MatchResults& matchResults);
 
 namespace {
     struct OpenDocument {
@@ -40,6 +41,8 @@ public:
 namespace {
 
     std::locale userLocale("");
+
+    constexpr char maximalSearchCounts[] = " 00,000,000,000,000,000,000 matches in 00,000,000,000,000,000,000 files ";
 
     INT_PTR CALLBACK progressDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
@@ -182,6 +185,8 @@ SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
         if (req.ranges.front().cpMin >= rangeEnd) return SearchResult(L"Nothing to search before current position or selection.");
     }
 
+    if (req.command.verb == SearchCommand::FindAll) reserveSearchHeader();
+
     position = rangeStart;
     result   = SearchResult(SearchResult::Success, L"");
     message  = req.command.verb == SearchCommand::ReplaceAll ? L"Matches replaced"
@@ -238,7 +243,12 @@ SearchResult ProgressInfo::exec(bool (*worker)(ProgressInfo&)) {
         result = !count     ? SearchResult(SearchResult::Failure, L"No matches found" + suffix)
                : count == 1 ? SearchResult(SearchResult::Success, verb + L"1 match" + suffix)
                             : SearchResult(SearchResult::Success, verb + std::format(userLocale, L"{:Ld} matches", count) + suffix);
-        if (req.command.verb == SearchCommand::FindAll && count > 0) showHitlist(*this);
+
+        if (req.command.verb == SearchCommand::FindAll && count > 0) {
+            appendDocumentMatches();
+            updateSearchHeader(1);
+            showHitlist(matchResults);
+        }
     }
     return result;
 
@@ -249,6 +259,7 @@ void ProgressInfo::nextDocument() {
     if (count > pdl->priorCount) {
         ++pdl->fileHits;
         pdl->priorCount = count;
+        if (req.command.verb == SearchCommand::FindAll) appendDocumentMatches();
     }
     if (result.error()) return;
     if (documentIndex > 0 && req.command.verb == SearchCommand::ReplaceAll) sci.EndUndoAction();
@@ -312,6 +323,8 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
             documents.emplace_back(npp(NPPM_GETBUFFERIDFROMPOS, pos, originalView), pos, originalView);
     }
 
+    if (req.command.verb == SearchCommand::FindAll) reserveSearchHeader();
+
     documentCount = documents.size();
     nextDocument();
 
@@ -339,7 +352,13 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
         tickBefore = tickAfter;
     }
 
+    if (count > pdl->priorCount) ++pdl->fileHits;
+
     if (req.command.verb == SearchCommand::ReplaceAll) sci.EndUndoAction();
+    else if (req.command.verb == SearchCommand::FindAll && count > 0) {
+        appendDocumentMatches();
+        updateSearchHeader(pdl->fileHits);
+    }
 
     if (originalView == 0) {
         if (req.command.extent == SearchCommand::Open && originalDocIndex1 >= 0) npp(NPPM_ACTIVATEDOC, 1, originalDocIndex1);
@@ -370,23 +389,26 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
         result = !count     ? SearchResult(SearchResult::Failure, L"No matches found" + suffix)
                : count == 1 ? SearchResult(SearchResult::Success, verb + L"1 match" + suffix)
                             : SearchResult(SearchResult::Success, verb + std::format(userLocale, L"{:Ld} matches", count) + suffix);
-        if (req.command.verb == SearchCommand::FindAll && count > 0) showHitlist(*this);
+        
+        if (req.command.verb == SearchCommand::FindAll && count > 0) showHitlist(matchResults);
+
     }
+
     return result;
 
 }
 
 
-// The two-parameter version of ProgressInfo::HitSet::add (bufferID and codepage omitted, set to 0) must be called
-// with the document in the active buffer and Scintilla pointers (plugin.getScintillaPointers()) already set.
+// ProgressInfo::HitSet::add must be called with the document in the active buffer
+// and Scintilla pointers (plugin.getScintillaPointers()) already set.
 
-void ProgressInfo::HitSet::add(Scintilla::Position cpMin, Scintilla::Position cpMax, UINT_PTR bufferID, UINT codepage) {
-    UINT_PTR resolvedBufferID = bufferID == 0 ? npp(NPPM_GETCURRENTBUFFERID, 0, 0) : bufferID;
-    if (hitBlocks.empty() || hitBlocks.back().bufferID != resolvedBufferID) {
+void ProgressInfo::HitSet::add(Scintilla::Position cpMin, Scintilla::Position cpMax) {
+    UINT_PTR bufferID = npp(NPPM_GETCURRENTBUFFERID, 0, 0);
+    if (hitBlocks.empty() || hitBlocks.back().bufferID != bufferID) {
         hitBlocks.emplace_back();
-        hitBlocks.back().bufferID = resolvedBufferID;
-        hitBlocks.back().codepage = bufferID == 0 ? sci.CodePage() : codepage;
-        hitBlocks.back().documentPath = utf16to8(getFilePath(resolvedBufferID));
+        hitBlocks.back().bufferID = bufferID;
+        hitBlocks.back().codepage = sci.CodePage();
+        hitBlocks.back().documentPath = utf16to8(getFilePath(bufferID));
     }
     Scintilla::Line firstLine = sci.LineFromPosition(cpMin);
     HitBlock& hb = hitBlocks.back();
@@ -404,4 +426,210 @@ void ProgressInfo::HitSet::add(Scintilla::Position cpMin, Scintilla::Position cp
         hb.hitLines.back().position = sci.PositionFromLine(line);
         hb.hitLines.back().text = sci.GetLine(line);
     }
+}
+
+
+
+void ProgressInfo::reserveSearchHeader() {
+    matchResults.text = maximalSearchCounts;
+    matchResults.text += data.searchEngine == SearchEngine::Boost ? "(Regex): "
+        : data.searchEngine == SearchEngine::ICU ? "(ICU Regex): "
+        : "(Text): ";
+    for (size_t i = 0; i < req.find.length(); ++i) {
+        switch (req.find[i]) {
+        case '\t':
+            matchResults.text += reinterpret_cast<const char*>(u8"\u2B72");
+            break;
+        case '\n':
+            matchResults.text += reinterpret_cast<const char*>(u8"\u240A");
+            break;
+        case '\r':
+            if (i + 1 < req.find.length() && req.find[i + 1] == '\n') {
+                matchResults.text += reinterpret_cast<const char*>(u8"\u21A9");
+                ++i;
+            }
+            else matchResults.text += reinterpret_cast<const char*>(u8"\u240D");
+            break;
+        default:
+            matchResults.text += req.find[i];
+        }
+    }
+    matchResults.text += "\r\n";
+    matchResults.index.emplace_back();
+    matchResults.index.back().lineNumber = -2;
+    matchResults.index.back().length = matchResults.text.length();
+}
+
+
+void ProgressInfo::updateSearchHeader(size_t documentsMatched) {
+    // Using wide character formatting because it honors the userLocale more reliably
+    std::string searchCounts = utf16to8(std::format(userLocale, L" {:Ld} match{:s} in {:Ld} file{:s} ",
+        count, count == 1 ? L"" : L"es", documentsMatched, documentsMatched == 1 ? L"" : L"s"));
+    matchResults.offset = sizeof(maximalSearchCounts) - 1 - searchCounts.length();
+    std::copy(searchCounts.begin(), searchCounts.end(), matchResults.text.begin() + matchResults.offset);
+    matchResults.index[0].length -= matchResults.offset;
+}
+
+
+void ProgressInfo::DocumentMatches::add(Scintilla::Position cpMin, Scintilla::Position cpMax) {
+    Scintilla::Line firstLine = sci.LineFromPosition(cpMin);
+    Scintilla::Line lastLine = cpMax == cpMin ? firstLine : sci.LineFromPosition(cpMax - 1);
+    if (index.empty() || firstLine != index.back().lineNumber) {
+        auto& idx = index.emplace_back();
+        idx.lineNumber = firstLine;
+        idx.position = sci.PositionFromLine(firstLine);
+        idx.length = sci.LineLength(firstLine);
+    }
+    index.back().matches.emplace_back(cpMin - index.back().position, cpMax - cpMin);
+    for (Scintilla::Line line = firstLine + 1; line <= lastLine; ++line) {
+        auto& idx = index.emplace_back();
+        idx.lineNumber = line;
+        idx.position = sci.PositionFromLine(line);
+        idx.length = sci.LineLength(line);
+    }
+}
+
+
+void ProgressInfo::appendDocumentMatches() {
+
+    if (documentMatches.index.empty()) return;
+
+    const int codepage = sci.CodePage();
+    const std::wstring documentPath = getFilePath();
+
+    size_t countMatches = 0;
+    size_t totalTextLength = 0;
+    intptr_t maximumLineLength = 0;
+    for (const auto& idx : documentMatches.index) {
+        countMatches += idx.matches.size();
+        totalTextLength += idx.length;
+        if (maximumLineLength < idx.length) maximumLineLength = idx.length;
+    }
+
+    // Using wide character formatting because it honors the userLocale more reliably
+
+    const std::string fileHeader = utf16to8(std::format(userLocale, L"   {:Ld} match{:s} in {:Ld} line{:s}: ",
+        countMatches, countMatches == 1 ? L"" : L"es",
+        documentMatches.index.size(), documentMatches.index.size() == 1 ? L"" : L"s")
+        + documentPath) + "\r\n";
+
+    // Calculate / estimate the required additional size to reserve for matchResults.text.
+    // This should be exact for UTF-8 files; for legacy codepages, it's better to guess a little high,
+    // but allocation will still work if the guess is too small, it will just be slower.
+
+    size_t textAllocationEstimate = fileHeader.size() + 2;  // +2 because the last line might not include a line ending
+    textAllocationEstimate = codepage == CP_UTF8 ? totalTextLength : (3 * totalTextLength) / 2;
+
+    matchResults.index.reserve(matchResults.index.size() + documentMatches.index.size() + 1);
+    matchResults.text.reserve(matchResults.text.size() + textAllocationEstimate);
+
+    matchResults.index.emplace_back();
+    matchResults.index.back().lineNumber = -1;
+    matchResults.index.back().length = fileHeader.length();
+    matchResults.text += fileHeader;
+
+    if (codepage == CP_UTF8) {
+        for (auto& idx : documentMatches.index) {
+            auto& mri = matchResults.index.emplace_back();
+            mri.matches = std::move(idx.matches);
+            mri.length = idx.length;
+            mri.lineNumber = idx.lineNumber;
+            size_t pos = matchResults.text.length();
+            matchResults.text.resize(pos + idx.length);
+            Scintilla::TextRangeFull trf = { idx.position, idx.position + idx.length, matchResults.text.data() + pos };
+            sci.GetTextRangeFull(&trf);
+        }
+    }
+
+    else {
+
+        struct Buffers {
+            Scintilla::TextRangeFull trf;
+            std::string  legacy;
+            std::wstring wide;
+            std::string  unicode;
+            int codepage = 0;
+            void sciToUni(intptr_t cpMin, intptr_t cpMax) {
+                trf.chrg.cpMin = cpMin;
+                trf.chrg.cpMax = cpMax;
+                trf.lpstrText  = legacy.data();
+                sci.GetTextRangeFull(&trf);
+                int wlen = MultiByteToWideChar(codepage, 0, legacy.data(), static_cast<int>(cpMax - cpMin),
+                                               wide.data(), static_cast<int>(wide.length()));
+                unicode = utf16to8(std::wstring_view(wide.data(), wlen));
+            }
+        } buffers;
+
+        buffers.legacy .resize(maximumLineLength);
+        buffers.wide   .resize(maximumLineLength);
+        buffers.unicode.reserve(maximumLineLength * 3);
+        buffers.codepage = codepage;
+
+        MatchResults::LineIndex::SingleMatch* multiLineMatch = 0;
+        intptr_t multiLineMatchEnd = 0;
+
+        for (size_t i = 0; i < documentMatches.index.size(); ++i) {
+
+            const auto& idx = documentMatches.index[i];
+            auto& mri = matchResults.index.emplace_back();
+            mri.lineNumber = idx.lineNumber;
+            mri.length = 0;
+            intptr_t pos = idx.position;
+
+            if (multiLineMatch && multiLineMatchEnd <= idx.position + idx.length) {
+                buffers.sciToUni(pos, multiLineMatchEnd);
+                matchResults.text += buffers.unicode;
+                mri.length += buffers.unicode.length();
+                multiLineMatch->length += buffers.unicode.length();
+                pos = multiLineMatchEnd;
+                multiLineMatch = 0;
+            }
+
+            if (idx.matches.empty()) {
+                if (pos < idx.position + idx.length) {
+                    buffers.sciToUni(pos, idx.position + idx.length);
+                    matchResults.text += buffers.unicode;
+                    mri.length = buffers.unicode.length();
+                    if (multiLineMatch) multiLineMatch->length += buffers.unicode.length();
+                }
+            }
+
+            else {
+                mri.matches.resize(idx.matches.size());
+                mri.length = 0;
+                for (size_t j = 0; j < idx.matches.size(); ++j) {
+                    auto& match = idx.matches[j];
+                    if (pos < match.offset + idx.position) /* unmatched text before this match */ {
+                        buffers.sciToUni(pos, idx.position + match.offset);
+                        matchResults.text += buffers.unicode;
+                        mri.length += buffers.unicode.length();
+                    }
+                    pos = idx.position + std::min(idx.length, match.offset + match.length);
+                    buffers.sciToUni(idx.position + match.offset, pos);
+                    mri.matches[j].offset = mri.length;
+                    mri.matches[j].length = buffers.unicode.length();
+                    matchResults.text += buffers.unicode;
+                    mri.length += buffers.unicode.length();
+                }
+
+                if (pos < idx.position + idx.length) /* unmatched text after the last match */ {
+                    buffers.sciToUni(pos, idx.position + idx.length);
+                    matchResults.text += buffers.unicode;
+                    mri.length += buffers.unicode.length();
+                }
+                else if (pos < idx.position + idx.matches.back().offset + idx.matches.back().length) {
+                    multiLineMatch = &mri.matches.back();
+                    multiLineMatchEnd = idx.position + idx.matches.back().offset + idx.matches.back().length;
+                }
+            }
+        }
+    }
+
+    if (matchResults.index.back().length == 0 || (matchResults.text.back() != '\n' && matchResults.text.back() != '\r')) {
+        matchResults.text += "\r\n";
+        matchResults.index.back().length += 2;
+    }
+
+    documentMatches.index.clear();
+
 }

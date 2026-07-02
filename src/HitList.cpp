@@ -577,7 +577,8 @@ void showHitlist(MatchResults& matchResults) {
 
     sciHits.SetReadOnly(false);
     sciHits.SetTargetRange(0, 0);
-    sciHits.ReplaceTarget(matchResults.text);
+    sciHits.ReplaceTarget(std::string_view(matchResults.text.data() + matchResults.offset,
+                                           matchResults.text.length() - matchResults.offset));
     matchResults.text.clear();
     cumulativeLineIndex.insert(cumulativeLineIndex.begin(), std::make_move_iterator(matchResults.index.begin())
                                                           , std::make_move_iterator(matchResults.index.end()));
@@ -587,18 +588,20 @@ void showHitlist(MatchResults& matchResults) {
     sciHits.StartStyling  (0, 0);
     sciHits.SetStyling    (cumulativeLineIndex[0].length, Style_Search);
     sciHits.MarkerAdd     (0, Marker_Search);
-    sciHits.MarginSetText (0, "====");
+//    sciHits.MarginSetText (0, "====");
     sciHits.MarginSetStyle(0, Style_Search);
     sciHits.SetFoldLevel  (0, Level_Search);
 
+    bool indicatorSwap = false;
     intptr_t position = cumulativeLineIndex[0].length;
+
     for (intptr_t line = 1; line < newLines; ++line) {
         const MatchResults::LineIndex& mld = cumulativeLineIndex[line];
         if (mld.lineNumber < 0) /* file header line */ {
             sciHits.StartStyling  (position, 0);
             sciHits.SetStyling    (mld.length, Style_Document);
             sciHits.MarkerAdd     (line, Marker_Document);
-            sciHits.MarginSetText (line, "--");
+//            sciHits.MarginSetText (line, "--");
             sciHits.MarginSetStyle(line, Style_Document);
             sciHits.SetFoldLevel  (line, Level_Document);
         }
@@ -608,7 +611,6 @@ void showHitlist(MatchResults& matchResults) {
             sciHits.MarginSetStyle(line, STYLE_LINENUMBER);
             sciHits.SetFoldLevel  (line, Scintilla::FoldLevel::Base);
             if (newMargin < lineNumber) newMargin = lineNumber;
-            bool indicatorSwap = false;
             for (const auto& hit : mld.matches) {
                 Scintilla::Position hitStart;
                 hitStart = hit.offset + position;
@@ -661,7 +663,7 @@ void showHitlist(ProgressInfo& pi) {
         for (const auto& hl : hb.hitLines) textlen += hl.text.length();
     }
 
-    std::string singleLineFindText = std::format(userLocale, " {:Ld} match{:s} in {:Ld} file{:s}: ",
+    std::string singleLineFindText = std::format(userLocale, " {:Ld} match{:s} in {:Ld} file{:s} ",
                                                  matches, matches == 1 ? "" : "es", files, files == 1 ? "" : "s");
     for (size_t i = 0; i < pi.hitSet->searchString.length(); ++i) {
         switch (pi.hitSet->searchString[i]) {

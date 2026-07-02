@@ -163,12 +163,12 @@ bool SearchableFile::read(char* smallBuffer, size_t smallBufferSize) {
         codepage = CP_UTF8;
     }
     else if (size >= 2 && data[0] == '\xFF' && data[1] == '\xFE') {
-        text = std::string_view(data + 2, size - 2);
+        text = std::string_view(data + 2, (size - 2) & ~static_cast<size_t>(1));
         encoding = Encoding::UTF16LE;
         codepage = 1200;
     }
     else if (size >= 2 && data[0] == '\xFE' && data[1] == '\xFF') {
-        text = std::string_view(data + 2, size - 2);
+        text = std::string_view(data + 2, (size - 2) & ~static_cast<size_t>(1));
         encoding = Encoding::UTF16BE;
         codepage = 1201;
     }
@@ -206,6 +206,142 @@ bool SearchableFile::read(char* smallBuffer, size_t smallBufferSize) {
 
 }
 
+namespace {
+
+    size_t utf16to8Length(const std::wstring_view w, InvalidUnicode errs = InvalidUnicode::Substitute) {
+        size_t s = 0;
+        for (size_t i = 0; i < w.length(); ++i) {
+            wchar_t c = w[i];
+            if (c < 0x80) s += 1;
+            else if (c < 0x800) s += 2;
+            else if (c < 0xD800 || c > 0xDFFF) s += 3;
+            else {
+                if (i + 1 < w.length() && c < 0xDC00 && w[i + 1] >= 0xDC00 && w[i + 1] <= 0xDFFF) {
+                    s += 4;
+                    ++i;
+                }
+                else if (errs == InvalidUnicode::Preserve_8 && (c >= 0xDC80 && c <= 0xDCFF)) s += 1;
+                else s += 3;
+            }
+        }
+        return s;
+    }
+
+    size_t utf16BEto8Length(const std::string_view be, InvalidUnicode errs = InvalidUnicode::Substitute) {
+        size_t s = 0;
+        for (size_t i = 0; i < be.length(); i += 2) {
+            wchar_t c = (static_cast<unsigned short>(be[i]) << 8) | static_cast<unsigned char>(be[i + 1]);
+            if (c < 0x80) s += 1;
+            else if (c < 0x800) s += 2;
+            else if (c < 0xD800 || c > 0xDFFF) s += 3;
+            else {
+                if (i + 3 < be.length() && c < 0xDC00 && static_cast<unsigned char>(be[i + 2]) >= 0xDC
+                                                      && static_cast<unsigned char>(be[i + 2]) <= 0xDF) {
+                    s += 4;
+                    i += 2;
+                }
+                else if (errs == InvalidUnicode::Preserve_8 && (c >= 0xDC80 && c <= 0xDCFF)) s += 1;
+                else s += 3;
+            }
+        }
+        return s;
+    }
+
+    inline std::string utf16BEto8(const std::string_view be, InvalidUnicode errs = InvalidUnicode::Substitute) {
+        std::string s;
+        for (size_t i = 0; i < be.length(); i += 2) {
+            wchar_t c = (static_cast<unsigned short>(be[i]) << 8) | static_cast<unsigned char>(be[i + 1]);
+            if (c < 0x80) s += static_cast<char>(c);
+            else if (c < 0x800) {
+                s += static_cast<char>((c >> 6) | 0xC0);
+                s += static_cast<char>((c & 0x3F) | 0x80);
+            }
+            else if (c < 0xD800 || c > 0xDFFF) {
+                s += static_cast<char>((c >> 12) | 0xE0);
+                s += static_cast<char>(((c >> 6) & 0x3F) | 0x80);
+                s += static_cast<char>((c & 0x3F) | 0x80);
+            }
+            else {
+                if (i + 3 < be.length() && c < 0xDC00 && static_cast<unsigned char>(be[i + 2]) >= 0xDC
+                                                      && static_cast<unsigned char>(be[i + 2]) <= 0xDF) {
+                    char32_t u = ((static_cast<char32_t>(c & 0x3FF) << 10)
+                               | ((static_cast<char32_t>(be[i + 2]) << 8) & 0x0300)
+                               | (static_cast<char32_t>(be[i + 3]) & 0xFF)) + 0x10000;
+                    s += static_cast<char>((u >> 18) | 0xF0);
+                    s += static_cast<char>(((u >> 12) & 0x3F) | 0x80);
+                    s += static_cast<char>(((u >> 6) & 0x3F) | 0x80);
+                    s += static_cast<char>((u & 0x3F) | 0x80);
+                    i += 2;
+                }
+                else if (errs == InvalidUnicode::Preserve_8 && (c >= 0xDC80 && c <= 0xDCFF)) s += static_cast<char>(0xFF & c);
+                else if (errs == InvalidUnicode::Preserve_16) {
+                    s += static_cast<char>(0xED);
+                    s += static_cast<char>(((c >> 6) & 0x3F) | 0x80);
+                    s += static_cast<char>((c & 0x3F) | 0x80);
+                }
+                else s += "\xEF\xBF\xBD";
+            }
+        }
+        return s;
+    }
+
+}
+
+
+template<typename CurrentLine>
+bool SearchableFile::searchByLines(RegularExpression& rx) {
+
+    struct CurrentMatch {
+        SearchableFile& sf;
+        RegularExpression& rx;
+        size_t pos, len;
+        bool valid = false;
+        CurrentMatch(SearchableFile& sf, RegularExpression& rx) : sf(sf), rx(rx), pos(0), len(0) {}
+        bool begin(size_t start = 0) {
+            if (!rx.search(sf.text, start, sf.message)) {
+                valid = false;
+                return false;
+            }
+            pos = rx.position();
+            len = rx.length();
+            ++sf.matches_found;
+            valid = true;
+            return true;
+        }
+        bool next() {
+            if (pos == sf.text.length()) return valid = false;
+            return begin(len ? pos + len : pos + 1);
+        }
+    };
+
+    CurrentMatch match(*this, rx);
+
+    if (match.begin()) {
+        CurrentLine line(*this);
+        do {
+            if (match.pos >= line.end) continue;                 // the current match starts in a later line
+            if (match.pos < line.pos) {                          // the current match extends from an earlier line onto this line:
+                line.push();                                     //     keep a copy of this line
+                if (match.pos + match.len > line.end) continue;  //     the current match extends beyond this line
+                if (!match.next()) break;                        //     get the next match; escape if there are no more matches
+                if (is_canceled()) return true;
+                if (match.pos >= line.end) continue;             //     the next (now current) match starts in a later line
+            }
+            for (;;) {                                           // until there are no more matches that start on this line:
+                line.push(match.pos, match.len);                 //     save the current match in this lines' index
+                if (match.pos + match.len > line.end) break;     //     the current match extends beyond this line
+                if (!match.next()) break;                        //     get the next match; escape if there are no more matches
+                if (is_canceled()) return true;
+                if (match.pos >= line.end) break;                //     the next (now current) match starts in a later line
+            }
+            if (!match.valid) break;
+        } while (line.advance());
+        if (match.valid) line.push(match.pos, match.len);        // This will happen when there is a null match at end of file
+    }
+    return false;
+
+}
+
 
 void SearchableFile::search() {
 
@@ -221,111 +357,179 @@ void SearchableFile::search() {
     }
     if (is_canceled()) return;
 
+    RegularExpression rx(sif.rx);
     status = Status::Searching;
 
-    RegularExpression rx(sif.rx);
-    rx.setup(codepage);
+    if (encoding == Encoding::UTF16LE) {
 
-    if (encoding == Encoding::UTF16LE || encoding == Encoding::UTF16BE) {
-        const size_t text_len  = text.length();
-        const size_t wtext_len = text.length() / 2;
-        const std::wstring_view wtext(reinterpret_cast<const wchar_t*>(text.data()), wtext_len);
-        const wchar_t        LF   = encoding == Encoding::UTF16LE ? L'\n'   : L'\x0a00'      ;
-        const wchar_t        CR   = encoding == Encoding::UTF16LE ? L'\r'   : L'\x0d00'      ;
-        const wchar_t* const CRLF = encoding == Encoding::UTF16LE ? L"\r\n" : L"\x0d00\x0a00";
-        intptr_t line_idx = -1;
-        size_t   line_pos = 0;
-        size_t   next_pos = 0;
-        for (size_t index = 0;;) {
-            if (!rx.search(text, index, message)) break;
-            ++matches_found;
-            const size_t match_pos = rx.position();
-            bytes_processed = index = match_pos + rx.length();
-            if (match_pos >= next_pos) {
-                while (match_pos >= next_pos) {
-                    ++line_idx;
-                    if (!(line_idx & 0xff)) if (is_canceled()) return;
-                    line_pos = next_pos;
-                    size_t next_wpos = wtext.find_first_of(CRLF, line_pos / 2);
-                    if (next_wpos == std::wstring::npos) {
-                        next_pos = text_len;
-                        if (match_pos == text_len) break;
-                    }
-                    else {
-                        if (wtext[next_wpos++] == CR && next_wpos < text_len / 2 && wtext[next_wpos] == LF) ++next_wpos;
-                        next_pos = 2 * next_wpos;
-                    }
+        struct CurrentLine {
+            SearchableFile& sf;
+            size_t idx, pos, end;
+            CurrentLine(SearchableFile& sf) : sf(sf), idx(0), pos(0), end(endFromPos(sf.text, 0)) {}
+            size_t endFromPos(std::string_view s, size_t p) {
+                const uint16_t* const w = reinterpret_cast<const uint16_t* const>(s.data());
+                const size_t len = s.length();
+                size_t wlen = len / 2;
+                for (size_t i = p / 2; i < wlen; ++i) {
+                    if (w[i] == 0x000A) return (i + 1) * 2;
+                    if (w[i] == 0x000D) return (i + 1 < wlen && w[i + 1] == 0x000A) ? (i + 2) * 2 : (i + 1) * 2;
                 }
-                results.index.emplace_back();
-                results.index.back().lineNumber = line_idx;
-                if (encoding == Encoding::UTF16LE) {
-                    std::string lineText = utf16to8(wtext.substr(line_pos / 2, (next_pos - line_pos) / 2));
-                    results.index.back().length = lineText.length();
-                    results.text += lineText;
+                return len;
+            }
+            bool advance() {
+                if (pos == end) return false;
+                if (end == sf.text.length()) {
+                    if (sf.text[end - 1] != 0 || (sf.text[end - 2] != '\r' && sf.text[end - 2] != '\n')) return false;
+                    pos = end;
+                    ++idx;
+                    return true;
                 }
-                else {
-                    // something
+                pos = end;
+                ++idx;
+                end = endFromPos(sf.text, pos);
+                sf.bytes_processed = pos;
+                return true;
+            }
+            void push() {
+                if (sf.results.index.empty()) {  // guess at some initial allocations
+                    sf.results.text.reserve(std::min(sf.text.length(), std::max(7 * (end - pos), static_cast<size_t>(4096))));
+                    sf.results.index.reserve(16);
                 }
+                auto& mri = sf.results.index.emplace_back();
+                mri.lineNumber = idx;
+                std::string lineText =
+                    utf16to8(std::wstring_view(reinterpret_cast<const wchar_t*>(sf.text.data() + pos), (end - pos) / 2));
+                mri.length = lineText.length();
+                sf.results.text += lineText;
             }
-            if (encoding == Encoding::UTF16LE) {
-                size_t p = match_pos == line_pos ? 0 : utf16to8(wtext.substr(line_pos / 2, (match_pos - line_pos) / 2)).length();
-                size_t q = index == match_pos ? 0 : utf16to8(wtext.substr(match_pos / 2, (index - match_pos) / 2)).length();
-                results.index.back().matches.emplace_back(p, q);
+            void push(size_t matchPos, size_t matchLen) {
+                if (sf.results.index.empty() || sf.results.index.back().lineNumber != static_cast<intptr_t>(idx)) push();
+                const std::wstring_view w(reinterpret_cast<const wchar_t*>(sf.text.data()), sf.text.length() / 2);
+                size_t p = matchPos == pos ? 0 : utf16to8Length(w.substr(pos / 2, (matchPos - pos) / 2));
+                size_t q = matchLen == 0 ? 0 : utf16to8Length(w.substr(matchPos / 2, matchLen / 2));
+                sf.results.index.back().matches.emplace_back(p, q);
             }
-            else {
-                // something
+
+        };
+
+        rx.custom<RegularExpressionLE>();
+        if (searchByLines<CurrentLine>(rx)) return;
+
+    }
+
+    else if (encoding == Encoding::UTF16BE) {
+
+        struct CurrentLine {
+            SearchableFile& sf;
+            size_t idx, pos, end;
+            CurrentLine(SearchableFile& sf) : sf(sf), idx(0), pos(0), end(endFromPos(sf.text, 0)) {}
+            size_t endFromPos(std::string_view s, size_t p) {
+                const uint16_t* const w = reinterpret_cast<const uint16_t* const>(s.data());
+                const size_t len = s.length();
+                size_t wlen = len / 2;
+                for (size_t i = p / 2; i < wlen; ++i) {
+                    if (w[i] == 0x0A00) return (i + 1) * 2;
+                    if (w[i] == 0x0D00) return (i + 1 < wlen && w[i + 1] == 0x0A00) ? (i + 2) * 2 : (i + 1) * 2;
+                }
+                return len;
             }
-            if (index == match_pos) ++index;
-            if (is_canceled()) return;
-        }
+            bool advance() {
+                if (pos == end) return false;
+                if (end == sf.text.length()) {
+                    if (sf.text[end - 2] != 0 || (sf.text[end - 1] != '\r' && sf.text[end - 1] != '\n')) return false;
+                    pos = end;
+                    ++idx;
+                    return true;
+                }
+                pos = end;
+                ++idx;
+                end = endFromPos(sf.text, pos);
+                sf.bytes_processed = pos;
+                return true;
+            }
+            void push() {
+                if (sf.results.index.empty()) {  // guess at some initial allocations
+                    sf.results.text.reserve(std::min(sf.text.length(), std::max(7 * (end - pos), static_cast<size_t>(4096))));
+                    sf.results.index.reserve(16);
+                }
+                auto& mri = sf.results.index.emplace_back();
+                mri.lineNumber = idx;
+                std::string lineText = utf16BEto8(sf.text.substr(pos, end - pos));
+                mri.length = lineText.length();
+                sf.results.text += lineText;
+            }
+            void push(size_t matchPos, size_t matchLen) {
+                if (sf.results.index.empty() || sf.results.index.back().lineNumber != static_cast<intptr_t>(idx)) push();
+                size_t p = matchPos == pos ? 0 : utf16BEto8Length(sf.text.substr(pos, matchPos - pos));
+                size_t q = matchLen == 0 ? 0 : utf16BEto8Length(sf.text.substr(matchPos, matchLen));
+                sf.results.index.back().matches.emplace_back(p, q);
+            }
+
+        };
+
+        rx.custom<RegularExpressionBE>();
+        if (searchByLines<CurrentLine>(rx)) return;
+
     }
 
     else {
-        const size_t text_len = text.length();
-        intptr_t line_idx = -1;
-        size_t   line_pos = 0;
-        size_t   next_pos = 0;
-        for (size_t index = 0;;) {
-            if (!rx.search(text, index, message)) break;
-            ++matches_found;
-            const size_t match_pos = rx.position();
-            bytes_processed = index = match_pos + rx.length();
-            if (match_pos >= next_pos) {
-                while (match_pos >= next_pos) {
-                    ++line_idx;
-                    if (!(line_idx & 0xff)) if (is_canceled()) return;
-                    line_pos = next_pos;
-                    next_pos = text.find_first_of("\r\n", line_pos);
-                    if (next_pos == std::string::npos) {
-                        next_pos = text_len;
-                        if (match_pos == text_len) break;
-                    }
-                    else if (text[next_pos++] == '\r' && next_pos < text_len && text[next_pos] == '\n') ++next_pos;
+
+        struct CurrentLine {
+            SearchableFile& sf;
+            size_t idx, pos, end;
+            CurrentLine(SearchableFile& sf) : sf(sf), idx(0), pos(0), end(endFromPos(sf.text, 0)) {}
+            size_t endFromPos(std::string_view s, size_t p) {
+                size_t e = s.find_first_of("\r\n", p);
+                if (e == std::string::npos) return s.length();
+                if (s[e++] == '\r' && e < s.length() && s[e] == '\n') ++e;
+                return e;
+            }
+            bool advance() {
+                if (pos == end) return false;
+                if (end == sf.text.length()) {
+                    if (sf.text[end - 1] != '\r' && sf.text[end - 1] != '\n') return false;
+                    pos = end;
+                    ++idx;
+                    return true;
                 }
-                results.index.emplace_back();
-                results.index.back().lineNumber = line_idx;
-                if (codepage == CP_UTF8) {
-                    results.index.back().length = next_pos - line_pos;
-                    results.text += text.substr(line_pos, next_pos - line_pos);
+                pos = end;
+                ++idx;
+                end = endFromPos(sf.text, pos);
+                sf.bytes_processed = pos;
+                return true;
+            }
+            void push() {
+                if (sf.results.index.empty()) {  // guess at some initial allocations
+                    sf.results.text.reserve(std::min(sf.text.length(), std::max(10 * (end - pos), static_cast<size_t>(4096))));
+                    sf.results.index.reserve(16);
                 }
+                auto& mri = sf.results.index.emplace_back();
+                mri.lineNumber = idx;
+                if (sf.codepage == CP_UTF8) sf.results.text += sf.text.substr(pos, mri.length = end - pos);
                 else {
-                    std::string lineText = utf16to8(toWide(text.substr(line_pos, next_pos - line_pos), codepage));
-                    results.index.back().length = lineText.length();
-                    results.text += lineText;
+                    std::string lineText = utf16to8(toWide(sf.text.substr(pos, end - pos), sf.codepage));
+                    mri.length = lineText.length();
+                    sf.results.text += lineText;
                 }
             }
-            if (codepage == CP_UTF8) results.index.back().matches.emplace_back(match_pos - line_pos, index - match_pos);
-            else {
-                size_t p = match_pos == line_pos ? 0 : utf16to8(toWide(text.substr(line_pos, match_pos - line_pos), codepage)).length();
-                size_t q = index == match_pos ? 0 : utf16to8(toWide(text.substr(match_pos, index - match_pos), codepage)).length();
-                results.index.back().matches.emplace_back(p, q);
+            void push(size_t matchPos, size_t matchLen) {
+                if (sf.results.index.empty() || sf.results.index.back().lineNumber != static_cast<intptr_t>(idx)) push();
+                if (sf.codepage == CP_UTF8) sf.results.index.back().matches.emplace_back(matchPos - pos, matchLen);
+                else {
+                    size_t p = matchPos == pos ? 0 : utf16to8Length(toWide(sf.text.substr(pos, matchPos - pos), sf.codepage));
+                    size_t q = matchLen == 0 ? 0 : utf16to8Length(toWide(sf.text.substr(matchPos, matchLen), sf.codepage));
+                    sf.results.index.back().matches.emplace_back(p, q);
+                }
             }
-            if (index == match_pos) ++index;
-            if (is_canceled()) return;
-        }
+
+        };
+
+        rx.setup(codepage);
+        if (searchByLines<CurrentLine>(rx)) return;
+
     }
 
-    if (matches_found && results.text.back() != '\r' && results.text.back() != '\n') {
+    if (matches_found && (results.index.back().length == 0 || (results.text.back() != '\r' && results.text.back() != '\n'))) {
         results.index.back().length += 2;
         results.text += "\r\n";
     }

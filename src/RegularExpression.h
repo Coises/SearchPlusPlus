@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <concepts>
 #include "Framework/ScintillaCallEx.h"
 
 class RegularExpression {
@@ -54,4 +55,13 @@ public:
     std::string        str(std::string_view n) const;
     std::wstring       wstr(int n = 0) const;
     std::wstring       wstr(std::string_view n) const;
+
+    template <typename P, typename... Args> requires std::derived_from<P, Poly>
+    RegularExpression& custom(Args&&... args) {
+        invalidate();
+        if (poly) delete poly;
+        poly = new P(*mono, std::forward<Args>(args)...);
+        return *this;
+    }
+
 };

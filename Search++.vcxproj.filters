@@ -133,6 +133,12 @@
     <ClInclude Include="src\SearchRequest.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\RegularExpressionExtension.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\RegexUTF16.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\About.cpp">

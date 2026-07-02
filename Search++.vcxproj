@@ -35,7 +35,9 @@
     <ClInclude Include="src\nlohmann\json.hpp" />
     <ClInclude Include="src\Numeric.h" />
     <ClInclude Include="src\ProgressInfo.h" />
+    <ClInclude Include="src\RegexUTF16.h" />
     <ClInclude Include="src\RegularExpression.h" />
+    <ClInclude Include="src\RegularExpressionExtension.h" />
     <ClInclude Include="src\RegularExpressionTS.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\Host\BoostRegexSearch.h" />
