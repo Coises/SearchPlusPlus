@@ -98,13 +98,35 @@ void ApplyQueueSorting(HWND lv) {
     switch (queueSortColumn) {
 
     case QueueColumn::Path:
-        std::stable_sort(queueSortedIndices.begin(), queueSortedIndices.end(), [](size_t a, size_t b) {
-            const auto& itemA = SearchableFile::queue[queueSortAscending ? a : b];
-            const auto& itemB = SearchableFile::queue[queueSortAscending ? b : a];
-            return StrCmpLogicalW(itemA.filePath.data(), itemB.filePath.data()) < 0;
+    {
+        std::vector<std::vector<std::wstring>> path(SearchableFile::queue.size());
+        const size_t prefixLength = sif.fileSpecification.path.length() + 1;
+        for (size_t i = 0; i < path.size(); ++i) {
+            std::wstring_view fp = SearchableFile::queue[i].filePath;
+            if (fp.length() <= prefixLength) /* should never happen; if it does, insert a null string so the next step won't crash */ {
+                path[i].push_back(L"");
+                continue;
+            }
+            fp = fp.substr(prefixLength);
+            size_t split = 0;
+            for (size_t next; next = fp.find_first_of(L'\\', split), next != std::wstring::npos; split = next + 1)
+                path[i].emplace_back(fp.substr(split, next - split));
+            path[i].emplace_back(fp.substr(split));
+        }
+        std::stable_sort(queueSortedIndices.begin(), queueSortedIndices.end(), [path](size_t a, size_t b) {
+                auto& itemA = path[queueSortAscending ? a : b];
+                auto& itemB = path[queueSortAscending ? b : a];
+                for (size_t level = 0;; ++level) {
+                    bool lastA = level + 1 == itemA.size();
+                    bool lastB = level + 1 == itemB.size();
+                    if (lastA && !lastB) return true;
+                    if (lastB && !lastA) return false;
+                    int compare = StrCmpLogicalW(itemA[level].data(), itemB[level].data());
+                    if (compare || lastA) return compare < 0;
+                }
             });
         break;
-
+    }
     case QueueColumn::Matches:
     {
         std::vector<size_t> freeze(SearchableFile::queue.size());
@@ -125,21 +147,21 @@ void ApplyQueueSorting(HWND lv) {
 
     case QueueColumn::Status: 
     {
-        std::vector<int> freeze(SearchableFile::queue.size());
+        std::vector<intptr_t> freeze(SearchableFile::queue.size());
         for (size_t i = 0; i < freeze.size(); ++i) {
             switch (SearchableFile::queue[i].status) {
             case SearchableFile::Status::Reading:
             case SearchableFile::Status::Examining:
-            case SearchableFile::Status::Searching: freeze[i] = 1; break;
-            case SearchableFile::Status::Waiting:   freeze[i] = 2; break;
-            case SearchableFile::Status::Error:     freeze[i] = 3; break;
-            case SearchableFile::Status::Finished:  freeze[i] = 4; break;
-            case SearchableFile::Status::Canceled:  freeze[i] = 5; break;
-            default:                                freeze[i] = 6;
+            case SearchableFile::Status::Searching: freeze[i] = std::numeric_limits<intptr_t>::max()    ; break;
+            case SearchableFile::Status::Error:     freeze[i] = std::numeric_limits<intptr_t>::max() - 1; break;
+            case SearchableFile::Status::Waiting:   freeze[i] = std::numeric_limits<intptr_t>::max() - 2; break;
+            case SearchableFile::Status::Finished:  freeze[i] = SearchableFile::queue[i].matches_found; break;
+            case SearchableFile::Status::Canceled:  freeze[i] = -1; break;
+            default:                                freeze[i] = -2;
             }
         }
         std::stable_sort(queueSortedIndices.begin(), queueSortedIndices.end(), [freeze](size_t a, size_t b) {
-            return queueSortAscending ? freeze[a] < freeze[b] : freeze[b] < freeze[a];
+            return queueSortAscending ? freeze[b] < freeze[a] : freeze[a] < freeze[b];
             });
         break;
     }
@@ -564,6 +586,12 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
         ListView_SetColumnOrderArray(qlv, 5, normalOrder);
         col.fmt = LVCFMT_RIGHT; col.pszText = const_cast<wchar_t*>(L"File Size"); ListView_SetColumn(qlv, 2, &col);
         col.fmt = LVCFMT_LEFT ; col.pszText = const_cast<wchar_t*>(L"Status"   ); ListView_SetColumn(qlv, 3, &col);
+        HWND lvheader = ListView_GetHeader(qlv);
+        HDITEM lvheaderitem;
+        lvheaderitem.mask = HDI_FORMAT;
+        Header_GetItem(lvheader, 3, &lvheaderitem);
+        lvheaderitem.fmt |= HDF_SORTUP;
+        Header_SetItem(lvheader, 3, &lvheaderitem);
 
         SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SIF_BROWSE          ), subclassOther, 0, 0);
         SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SIF_SUBFOLDERS      ), subclassOther, 0, 0);
@@ -678,7 +706,7 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
         }
         SetWindowText(GetDlgItem(hwndDlg, IDC_SIF_MESSAGE),
             canceled || errors
-            ? std::format(UserLocale, L"Finished; found {:Ld} match{:s} in {:Ld} of {:Ld} files; canceled: {:Ld}, errors: {:Ld}.",
+            ? std::format(UserLocale, L"Finished; found {:Ld} match{:s} in {:Ld} of {:Ld} files; canceled: {:Ld}; errors: {:Ld}.",
                 matches, matches == 1 ? L"" : L"es", files, SearchableFile::queue.size(), canceled, errors).data()
             : std::format(UserLocale, L"Finished; found {:Ld} match{:s} in {:Ld} of {:Ld} files.",
                 matches, matches == 1 ? L"" : L"es", files, SearchableFile::queue.size()).data()
@@ -934,6 +962,16 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             QueueColumn selected = static_cast<QueueColumn>(nmlv.iSubItem);
             if (queueSortColumn == selected) queueSortAscending = !queueSortAscending;
             else { queueSortColumn = selected; queueSortAscending = true; }
+            HWND header = ListView_GetHeader(nmhdr.hwndFrom);
+            int headerCount = Header_GetItemCount(header);
+            for (int i = 0; i < headerCount; ++i) {
+                HDITEM hi;
+                hi.mask = HDI_FORMAT;
+                Header_GetItem(header, i, &hi);
+                hi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
+                if (i == static_cast<int>(selected)) hi.fmt |= queueSortAscending ? HDF_SORTUP : HDF_SORTDOWN;
+                Header_SetItem(header, i, &hi);
+            }
             return TRUE;
         }
 
