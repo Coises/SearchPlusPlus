@@ -957,85 +957,121 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
         const NMHDR& nmhdr = *reinterpret_cast<NMHDR*>(lParam);
 
-        if (nmhdr.code == LVN_COLUMNCLICK) /* Change sort for file list */ {
-            const NMLISTVIEW& nmlv = *reinterpret_cast<NMLISTVIEW*>(lParam);
-            QueueColumn selected = static_cast<QueueColumn>(nmlv.iSubItem);
-            if (queueSortColumn == selected) queueSortAscending = !queueSortAscending;
-            else { queueSortColumn = selected; queueSortAscending = true; }
-            HWND header = ListView_GetHeader(nmhdr.hwndFrom);
-            int headerCount = Header_GetItemCount(header);
-            for (int i = 0; i < headerCount; ++i) {
-                HDITEM hi;
-                hi.mask = HDI_FORMAT;
-                Header_GetItem(header, i, &hi);
-                hi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
-                if (i == static_cast<int>(selected)) hi.fmt |= queueSortAscending ? HDF_SORTUP : HDF_SORTDOWN;
-                Header_SetItem(header, i, &hi);
-            }
-            return TRUE;
-        }
+        switch (nmhdr.idFrom) {
 
-        if (nmhdr.code == LVN_GETDISPINFO) /* Provide data for one entry in file list */ {
-            NMLVDISPINFO& lvdi = *reinterpret_cast<NMLVDISPINFO*>(lParam);
-            if (!(lvdi.item.mask & LVIF_TEXT)) return FALSE;
-            size_t idx = lvdi.item.iItem;
-            if (idx >= queueSortedIndices.size() || queueSortedIndices[idx] >= SearchableFile::queue.size()) return FALSE;
-            const SearchableFile& sf = SearchableFile::queue[queueSortedIndices[idx]];
-            switch (static_cast<QueueColumn>(lvdi.item.iSubItem)) {
-            case QueueColumn::Path:
-                lvdi.item.pszText = const_cast<wchar_t*>(sf.filePath.data()) + sif.fileSpecification.path.length() + 1;
-                break;
-            case QueueColumn::Matches:
-                wcsncpy_s(lvdi.item.pszText, lvdi.item.cchTextMax,
-                    std::format(UserLocale, L"{:Ld}", sf.matches_found).data(),
-                    lvdi.item.cchTextMax - 1);
-                break;
-            case QueueColumn::Size:
-                wcsncpy_s(lvdi.item.pszText, lvdi.item.cchTextMax,
-                    sf.size < 1024LL                   ? std::format(UserLocale, L"{:Ld} B", sf.size).data()
-                  : sf.size < 1024LL * 1024LL          ? std::format(UserLocale, L"{:.1Lf} KiB", sf.size / 1024.0).data()
-                  : sf.size < 1024LL * 1024LL * 1024LL ? std::format(UserLocale, L"{:.1Lf} MiB", sf.size / (1024.0 * 1024.0)).data()
-                                                       : std::format(UserLocale, L"{:.1Lf} GiB", sf.size / (1024.0 * 1024.0 * 1024.0)).data(),
-                    lvdi.item.cchTextMax - 1);
-                break;
-            case QueueColumn::Status:
+        case IDC_SIF_LIST:
+
+            switch (nmhdr.code) {
+
+            case LVN_COLUMNCLICK:  // Change sort for file list
             {
-                const wchar_t* p;
-                switch (sf.status) {
-                case SearchableFile::Status::Canceled : p = L"Canceled" ; break;
-                case SearchableFile::Status::Examining: p = L"Examining"; break;
-                case SearchableFile::Status::Finished : p = L"Finished" ; break;
-                case SearchableFile::Status::Reading  : p = L"Reading"  ; break;
-                case SearchableFile::Status::Searching: p = L"Searching"; break;
-                case SearchableFile::Status::Waiting  : p = L"Waiting"  ; break;
-                case SearchableFile::Status::Error:
-                {
-                    switch (sf.error) {
-                    case SearchableFile::ErrorType::NotDisk  : p = L"Error: Not Disk" ; break;
-                    case SearchableFile::ErrorType::Creating : p = L"Error: Creating" ; break;
-                    case SearchableFile::ErrorType::Buffering: p = L"Error: Buffering"; break;
-                    case SearchableFile::ErrorType::Reading  : p = L"Error: Reading"  ; break;
-                    case SearchableFile::ErrorType::Searching: p = L"Error: Searching"; break;
-                    default: p = L"Error";
+                const NMLISTVIEW& nmlv = *reinterpret_cast<NMLISTVIEW*>(lParam);
+                QueueColumn selected = static_cast<QueueColumn>(nmlv.iSubItem);
+                if (queueSortColumn == selected) queueSortAscending = !queueSortAscending;
+                else { queueSortColumn = selected; queueSortAscending = true; }
+                HWND header = ListView_GetHeader(nmhdr.hwndFrom);
+                int headerCount = Header_GetItemCount(header);
+                for (int i = 0; i < headerCount; ++i) {
+                    HDITEM hi;
+                    hi.mask = HDI_FORMAT;
+                    Header_GetItem(header, i, &hi);
+                    hi.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
+                    if (i == static_cast<int>(selected)) hi.fmt |= queueSortAscending ? HDF_SORTUP : HDF_SORTDOWN;
+                    Header_SetItem(header, i, &hi);
+                }
+                return TRUE;
+            }
+
+            case NM_DBLCLK:  // Process a double-click in the file list
+            {
+                const NMITEMACTIVATE& ia = *reinterpret_cast<NMITEMACTIVATE*>(lParam);
+                LVHITTESTINFO lvhti;
+                lvhti.pt = ia.ptAction;
+                if (ListView_SubItemHitTest(nmhdr.hwndFrom, &lvhti) < 0) return FALSE;
+                if (ia.iItem < 0 || ia.iItem >= queueSortedIndices.size()) return FALSE;
+                std::wstring filePath = SearchableFile::queue[queueSortedIndices[ia.iItem]].filePath;
+                if (ia.iSubItem == 0) {
+                    if (!npp(NPPM_DOOPEN, 0, filePath.data())) {
+                        TaskDialog(hwndDlg, 0, L"Search++", L"Notepad++ could not open this file:",
+                            filePath.data(), TDCBF_OK_BUTTON, TD_ERROR_ICON, 0);
                     }
+                }
+                else {
+                    if (processingStatus != ProcessingStatus::Canceled && processingStatus != ProcessingStatus::Finished) return FALSE;
+                    if (SearchableFile::queue[queueSortedIndices[ia.iItem]].matches_found == 0) return FALSE;
+                    if (!sif.matchResults.text.empty()) showHitlist(sif.matchResults);
+                    showHitlist(utf16to8(filePath));
+                }
+                return TRUE;
+            }
+
+            case LVN_GETDISPINFO:  // Provide data for one entry in file list
+            {
+                NMLVDISPINFO& lvdi = *reinterpret_cast<NMLVDISPINFO*>(lParam);
+                if (!(lvdi.item.mask & LVIF_TEXT)) return FALSE;
+                size_t idx = lvdi.item.iItem;
+                if (idx >= queueSortedIndices.size() || queueSortedIndices[idx] >= SearchableFile::queue.size()) return FALSE;
+                const SearchableFile& sf = SearchableFile::queue[queueSortedIndices[idx]];
+                switch (static_cast<QueueColumn>(lvdi.item.iSubItem)) {
+                case QueueColumn::Path:
+                    lvdi.item.pszText = const_cast<wchar_t*>(sf.filePath.data()) + sif.fileSpecification.path.length() + 1;
+                    break;
+                case QueueColumn::Matches:
+                    wcsncpy_s(lvdi.item.pszText, lvdi.item.cchTextMax,
+                        std::format(UserLocale, L"{:Ld}", sf.matches_found).data(),
+                        lvdi.item.cchTextMax - 1);
+                    break;
+                case QueueColumn::Size:
+                    wcsncpy_s(lvdi.item.pszText, lvdi.item.cchTextMax,
+                        sf.size < 1024LL                   ? std::format(UserLocale, L"{:Ld} B", sf.size).data()
+                      : sf.size < 1024LL * 1024LL          ? std::format(UserLocale, L"{:.1Lf} KiB", sf.size / 1024.0).data()
+                      : sf.size < 1024LL * 1024LL * 1024LL ? std::format(UserLocale, L"{:.1Lf} MiB", sf.size / (1024.0 * 1024.0)).data()
+                                                           : std::format(UserLocale, L"{:.1Lf} GiB", sf.size / (1024.0 * 1024.0 * 1024.0)).data(),
+                        lvdi.item.cchTextMax - 1);
+                    break;
+                case QueueColumn::Status:
+                {
+                    const wchar_t* p;
+                    switch (sf.status) {
+                    case SearchableFile::Status::Canceled : p = L"Canceled" ; break;
+                    case SearchableFile::Status::Examining: p = L"Examining"; break;
+                    case SearchableFile::Status::Finished : p = L"Finished" ; break;
+                    case SearchableFile::Status::Reading  : p = L"Reading"  ; break;
+                    case SearchableFile::Status::Searching: p = L"Searching"; break;
+                    case SearchableFile::Status::Waiting  : p = L"Waiting"  ; break;
+                    case SearchableFile::Status::Error:
+                    {
+                        switch (sf.error) {
+                        case SearchableFile::ErrorType::NotDisk  : p = L"Error: Not Disk" ; break;
+                        case SearchableFile::ErrorType::Creating : p = L"Error: Creating" ; break;
+                        case SearchableFile::ErrorType::Buffering: p = L"Error: Buffering"; break;
+                        case SearchableFile::ErrorType::Reading  : p = L"Error: Reading"  ; break;
+                        case SearchableFile::ErrorType::Searching: p = L"Error: Searching"; break;
+                        default: p = L"Error";
+                        }
+                        break;
+                    }
+                    default: p = L"Unknown";
+                    }
+                    lvdi.item.pszText = const_cast<wchar_t*>(p);
                     break;
                 }
-                default: p = L"Unknown";
+                case QueueColumn::Progress:
+                    if (sf.size > 0) {
+                        wcsncpy_s(lvdi.item.pszText, lvdi.item.cchTextMax,
+                            std::format(UserLocale, L"{:Ld}%", (sf.bytes_processed * 100 + (sf.size / 2)) / sf.size).data(),
+                            lvdi.item.cchTextMax - 1);
+                    }
+                    else if (sf.status == SearchableFile::Status::Finished) lvdi.item.pszText = const_cast<wchar_t*>(L"100%");
+                    else                                                    lvdi.item.pszText = const_cast<wchar_t*>(L"0%");
+                    break;
                 }
-                lvdi.item.pszText = const_cast<wchar_t*>(p);
-                break;
+                return TRUE;
             }
-            case QueueColumn::Progress:
-                if (sf.size > 0) {
-                    wcsncpy_s(lvdi.item.pszText, lvdi.item.cchTextMax,
-                        std::format(UserLocale, L"{:Ld}%", (sf.bytes_processed * 100 + (sf.size / 2)) / sf.size).data(),
-                        lvdi.item.cchTextMax - 1);
-                }
-                else if (sf.status == SearchableFile::Status::Finished) lvdi.item.pszText = const_cast<wchar_t*>(L"100%");
-                else                                                    lvdi.item.pszText = const_cast<wchar_t*>(L"0%");
-                break;
+
             }
-            return TRUE;
+
+            return FALSE;
         }
 
         return FALSE;
