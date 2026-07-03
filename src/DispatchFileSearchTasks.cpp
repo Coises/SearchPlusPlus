@@ -55,12 +55,9 @@ void dispatchSearchTasks(HWND inform) {
             }
             catch (const concurrency::task_canceled&) {}
 
-            if (cancel_token.is_canceled()) {
+            if (cancel_token.is_canceled())
                 for (auto& sf : SearchableFile::queue)
                     if (sf.status == SearchableFile::Status::Waiting) sf.status = SearchableFile::Status::Canceled;
-                PostMessage(inform, WM_APP_SEARCH_CANCELED, 0, 0);
-                return;
-            }
 
             if (const size_t queueSize = SearchableFile::queue.size()) {
                 std::vector<size_t> alphaOrder(queueSize);
@@ -132,7 +129,7 @@ void dispatchSearchTasks(HWND inform) {
                 }
             }
 
-            PostMessage(inform, WM_APP_SEARCH_COMPLETE, 0, 0);
+            PostMessage(inform, cancel_token.is_canceled() ? WM_APP_SEARCH_CANCELED : WM_APP_SEARCH_COMPLETE, 0, 0);
 
         }, cancel_token);
 

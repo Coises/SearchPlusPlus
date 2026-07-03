@@ -95,11 +95,56 @@ bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position
         end = start + length;
     }
     data.context.clear();
-    HWND curSci = plugin.currentScintilla();
-    UpdateWindow(curSci);             // These lines are needed to ensure that Scintilla calculates layout
-    sci.EnsureVisible(lineNumber);    // at least up to the line containg the start of the match
-    sci.WrapCount(lineNumber);        // so that scrolling will be accurate.
-    scrollIntoView(curSci, data.searchDialog, start, end, true);
+
+//
+// Following does not always work; occasionally results in an odd crash. Reason not yet determined.
+// 
+//    HWND curSci = plugin.currentScintilla();
+//    UpdateWindow(curSci);             // These lines are needed to ensure that Scintilla calculates layout
+//    sci.EnsureVisible(lineNumber);    // at least up to the line containg the start of the match
+//    sci.WrapCount(lineNumber);        // so that scrolling will be accurate.
+//    scrollIntoView(curSci, data.searchDialog, start, end, true);
+//
+// Following adapted from Searching::displaySectionCentered in FindReplaceDlg.cpp in Notepad++:
+
+    {
+        sci.EnsureVisible(sci.LineFromPosition(start));
+        sci.EnsureVisible(sci.LineFromPosition(end));
+
+        // Jump-scroll to center, if current position is out of view
+        sci.SetVisiblePolicy(static_cast<Scintilla::VisiblePolicy>(CARET_JUMPS | CARET_EVEN), 0);
+        sci.EnsureVisibleEnforcePolicy(sci.LineFromPosition(end));
+        sci.GotoPos(end);
+        sci.SetVisiblePolicy(static_cast<Scintilla::VisiblePolicy>(CARET_EVEN), 0);
+        sci.EnsureVisibleEnforcePolicy(sci.LineFromPosition(end));
+
+        // Adjust so that we see the entire match; primarily horizontally
+        sci.ScrollRange(start, end);
+
+        // make sure won't start/end the selection in the middle of a multibyte character,
+        // or in between a CR/LF pair for Windows files
+        // (needed for stale search-results where user has made doc edits after the search)
+        if (start > 0)
+        {
+            start = sci.PositionBefore(start);
+            start = sci.PositionAfter (start);
+        }
+        if (end > 0)
+        {
+            end = sci.PositionBefore(end);
+            end = sci.PositionAfter (end);
+        }
+
+        // Move cursor to end of result and select result
+        sci.GotoPos(end);
+        sci.SetAnchor(start);
+
+        // Update Scintilla's knowledge about what column the caret is in, so that if user
+        // does up/down arrow as first navigation after the search result is selected,
+        // the caret doesn't jump to an unexpected column
+        sci.ChooseCaretX();
+    }
+
     if (!switchFocus) {
         if (start == end) {
             char c;

@@ -457,6 +457,35 @@ void showScintillaTip(HWND scintilla, std::string bubble) {
 }
 
 
+void showErrorDetails(HWND owner, const SearchableFile& sf) {
+    std::wstring msg;
+    switch (sf.error) {
+    case SearchableFile::ErrorType::Creating : msg = L"An error occurred while opening "    + sf.filePath + L':'; break;
+    case SearchableFile::ErrorType::Buffering: msg = L"An error occurred while buffering "  + sf.filePath + L':'; break;
+    case SearchableFile::ErrorType::Reading  : msg = L"An error occurred while reading "    + sf.filePath + L':'; break;
+    case SearchableFile::ErrorType::Searching: msg = L"An error occurred while searching "  + sf.filePath + L':'; break;
+    case SearchableFile::ErrorType::NotDisk  : msg = L"An error occurred while opening "    + sf.filePath + L':'; break;
+    default                                  : msg = L"An error occurred while processing " + sf.filePath + L':';
+    }
+    std::wstring msg2;
+    if (!sf.message.empty()) msg2 = utf8to16(sf.message);
+    else if (sf.error == SearchableFile::ErrorType::NotDisk)
+        msg2 = L"The file does not appear to be a disk file. The storage media is not supported.";
+    else if (sf.errcode) {
+        wchar_t* sysmsg = 0;
+        if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            0, sf.errcode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<wchar_t*>(&sysmsg), 0, 0)) {
+            if (sysmsg) {
+                msg2 = sysmsg;
+                LocalFree(sysmsg);
+            }
+        }
+    }
+    if (msg2.empty()) msg2 = L"No further details are available.";
+    TaskDialog(owner, 0, L"Search++", msg.data(), msg2.data(), TDCBF_OK_BUTTON, TD_ERROR_ICON, 0);
+}
+
+
 INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
     switch (uMsg) {
@@ -989,18 +1018,14 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
                 lvhti.pt = ia.ptAction;
                 if (ListView_SubItemHitTest(nmhdr.hwndFrom, &lvhti) < 0) return FALSE;
                 if (ia.iItem < 0 || ia.iItem >= queueSortedIndices.size()) return FALSE;
-                std::wstring filePath = SearchableFile::queue[queueSortedIndices[ia.iItem]].filePath;
-                if (ia.iSubItem == 0) {
-                    if (!npp(NPPM_DOOPEN, 0, filePath.data())) {
-                        TaskDialog(hwndDlg, 0, L"Search++", L"Notepad++ could not open this file:",
-                            filePath.data(), TDCBF_OK_BUTTON, TD_ERROR_ICON, 0);
-                    }
-                }
+                SearchableFile& sf = SearchableFile::queue[queueSortedIndices[ia.iItem]];
+                if (ia.iSubItem == 0) npp(NPPM_DOOPEN, 0, sf.filePath.data());
+                else if (ia.iSubItem == 3 && sf.status == SearchableFile::Status::Error) showErrorDetails(hwndDlg, sf);
                 else {
                     if (processingStatus != ProcessingStatus::Canceled && processingStatus != ProcessingStatus::Finished) return FALSE;
-                    if (SearchableFile::queue[queueSortedIndices[ia.iItem]].matches_found == 0) return FALSE;
+                    if (sf.matches_found == 0) return FALSE;
                     if (!sif.matchResults.text.empty()) showHitlist(sif.matchResults);
-                    showHitlist(utf16to8(filePath));
+                    showHitlist(utf16to8(sf.filePath));
                 }
                 return TRUE;
             }
@@ -1043,7 +1068,7 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
                     {
                         switch (sf.error) {
                         case SearchableFile::ErrorType::NotDisk  : p = L"Error: Not Disk" ; break;
-                        case SearchableFile::ErrorType::Creating : p = L"Error: Creating" ; break;
+                        case SearchableFile::ErrorType::Creating : p = L"Error: Opening"  ; break;
                         case SearchableFile::ErrorType::Buffering: p = L"Error: Buffering"; break;
                         case SearchableFile::ErrorType::Reading  : p = L"Error: Reading"  ; break;
                         case SearchableFile::ErrorType::Searching: p = L"Error: Searching"; break;
@@ -1112,6 +1137,8 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             AppendMenu(menu, MF_STRING, 2, L"&Open file");
             AppendMenu(menu, MF_STRING, 3, L"&Show file in explorer");
             AppendMenu(menu, MF_STRING, 4, L"&Go to match results");
+            if (selections.size() == 1 && SearchableFile::queue[selections[0]].status == SearchableFile::Status::Error)
+                AppendMenu(menu, MF_STRING, 5, L"&Error details...");
             bool can_cancel = false;
             bool can_view   = false;
             for (size_t i : selections) {
@@ -1167,6 +1194,9 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             case 4:
                 if (!sif.matchResults.text.empty()) showHitlist(sif.matchResults);
                 showHitlist(utf16to8(SearchableFile::queue[selections[0]].filePath));
+                break;
+            case 5:
+                showErrorDetails(hwndDlg, SearchableFile::queue[selections[0]]);
                 break;
             }
             DestroyMenu(menu);
