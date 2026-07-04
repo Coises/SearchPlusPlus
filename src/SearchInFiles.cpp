@@ -88,11 +88,11 @@ void ApplyQueueSorting(HWND lv) {
 
     std::vector<size_t> selections;
     for (int i = -1; (i = ListView_GetNextItem(lv, i, LVNI_SELECTED)) != -1;) {
-        if (i >= queueSortedIndices.size() || queueSortedIndices[i] >= SearchableFile::queue.size()) continue;
+        if (i >= static_cast<int>(queueSortedIndices.size()) || queueSortedIndices[i] >= SearchableFile::queue.size()) continue;
         selections.push_back(queueSortedIndices[i]);
     }
     int focusedIndex = ListView_GetNextItem(lv, -1, LVNI_FOCUSED);
-    focusedIndex = focusedIndex >= 0 && focusedIndex < queueSortedIndices.size()
+    focusedIndex = focusedIndex >= 0 && focusedIndex < static_cast<int>(queueSortedIndices.size())
         ? static_cast<int>(queueSortedIndices[focusedIndex]) : -1;
 
     switch (queueSortColumn) {
@@ -187,7 +187,7 @@ void ApplyQueueSorting(HWND lv) {
         ListView_SetItemState(lv, -1, 0, LVIS_SELECTED | LVIS_FOCUSED);
         for (size_t i = 0; i < queueSortedIndices.size(); ++i) {
             size_t q = queueSortedIndices[i];
-            bool focus = q == focusedIndex;
+            bool focus = static_cast<int>(q) == focusedIndex;
             bool selected = std::ranges::find(selections, q) != selections.end();
             ListView_SetItemState(lv, static_cast<int>(i), (focus ? LVIS_FOCUSED : 0) | (selected ? LVIS_SELECTED : 0),
                 LVIS_SELECTED | LVIS_FOCUSED);
@@ -1027,7 +1027,7 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
                 LVHITTESTINFO lvhti;
                 lvhti.pt = ia.ptAction;
                 if (ListView_SubItemHitTest(nmhdr.hwndFrom, &lvhti) < 0) return FALSE;
-                if (ia.iItem < 0 || ia.iItem >= queueSortedIndices.size()) return FALSE;
+                if (ia.iItem < 0 || ia.iItem >= static_cast<int>(queueSortedIndices.size())) return FALSE;
                 SearchableFile& sf = SearchableFile::queue[queueSortedIndices[ia.iItem]];
                 if (ia.iSubItem == 0) npp(NPPM_DOOPEN, 0, sf.filePath.data());
                 else if (ia.iSubItem == 3 && sf.status == SearchableFile::Status::Error) showErrorDetails(hwndDlg, sf);
@@ -1123,7 +1123,7 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
         {
             std::vector<size_t> selections;
             for (int i = -1; (i = ListView_GetNextItem(contextControl, i, LVNI_SELECTED)) != -1;) {
-                if (i >= queueSortedIndices.size() || queueSortedIndices[i] >= SearchableFile::queue.size()) continue;
+                if (i >= static_cast<int>(queueSortedIndices.size()) || queueSortedIndices[i] >= SearchableFile::queue.size()) continue;
                 selections.push_back(queueSortedIndices[i]);
             }
             if (selections.empty()) /* unexpected; ignore it */ return FALSE;

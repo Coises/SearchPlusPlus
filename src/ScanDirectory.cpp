@@ -50,6 +50,7 @@ void scanDirectory(const std::wstring& targetDir, concurrency::cancellation_toke
         uli.HighPart = fd.nFileSizeHigh;
         uint64_t size = uli.QuadPart;
         if (size < sif.fileSpecification.minSize || size > sif.fileSpecification.maxSize) continue;
+        if constexpr (sizeof(std::size_t) < sizeof(uint64_t)) /* Win32 */ if (size > 3ULL * 512 * 1024 * 1024) continue;
         if (sif.fileSpecification.timePoint != FileSpecification::TimeNone) {
             switch (sif.fileSpecification.timePoint) {
             case FileSpecification::TimeAccess:
@@ -74,7 +75,7 @@ void scanDirectory(const std::wstring& targetDir, concurrency::cancellation_toke
         SearchableFile& sf = SearchableFile::queue.emplace_back();
         sf.cancel_source = Concurrency::cancellation_token_source::create_linked_source(token);
         sf.status        = SearchableFile::Status::Waiting;
-        sf.size          = size;
+        sf.size          = static_cast<size_t>(size);
         sf.filePath      = fullPath;
         if (SearchableFile::queue.size() % 200 == 0) {
             PostMessage(inform, WM_APP_UPDATE_COUNT, SearchableFile::queue.size(), 0);

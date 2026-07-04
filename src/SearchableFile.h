@@ -43,10 +43,10 @@ public:
 
     enum class Status : uint64_t { None, Error, Canceled, Waiting, Reading, Examining, Searching, Finished };
 
-    Status   status          = Status::None;
-    uint64_t matches_found   = 0;
-    uint64_t bytes_processed = 0;
-    uint64_t size            = 0;
+    Status status          = Status::None;
+    size_t matches_found   = 0;
+    size_t bytes_processed = 0;
+    size_t size            = 0;
 
     concurrency::cancellation_token_source cancel_source;
     std::wstring filePath;
