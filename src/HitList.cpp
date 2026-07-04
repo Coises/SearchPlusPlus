@@ -23,6 +23,7 @@
 #include "Shlwapi.h"
 #include <windowsx.h>
 
+void closeSearchInFilesDialog();
 void scrollIntoView(HWND scintilla, HWND avoid, Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select);
 void showSearchDialog();
 void showSearchInFilesDialog();
@@ -398,8 +399,11 @@ HWND setupScintilla() {
             case 'D':
                 prevDocument();
                 return true;
-            case 'F':
+            case 'g':
                 showSearchInFilesDialog();
+                return true;
+            case 'G':
+                closeSearchInFilesDialog();
                 return true;
             case 'h':
                 showSearchDialog();

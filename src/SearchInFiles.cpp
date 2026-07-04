@@ -215,6 +215,12 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     case WM_KEYDOWN:
         if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') break;
         switch (wParam) {
+        case 'G':
+            if (GetKeyState(VK_SHIFT) & 0x8000) {
+                SetFocus(plugin.currentScintilla());
+                closeSearchInFilesDialog();
+            }
+            break;
         case 'H':
             if (GetKeyState(VK_SHIFT) & 0x8000) hideHitlist();
             else                                showHitlist();
@@ -264,6 +270,10 @@ bool processScintillaShortcut(ScintillaControl& sc, char key) {
         sc.SetSel(-1, sc.TargetEnd());
         return true;
     }
+    case 'G':
+        SetFocus(plugin.currentScintilla());
+        closeSearchInFilesDialog();
+        return true;
     case 'H':
         hideHitlist();
         return true;
@@ -339,9 +349,9 @@ void enableDisableDependentControls(HWND hwndDlg) {
     }
     else {
         EnableWindow(ucd.filterCntl.handle, TRUE);
-        ucd.filterCntl.StyleSetFore(0            , sci.StyleGetFore(1));
-        ucd.filterCntl.StyleSetBack(0            , sci.StyleGetBack(1));
-        ucd.filterCntl.StyleSetBack(STYLE_DEFAULT, sci.StyleGetBack(1));
+        ucd.filterCntl.StyleSetFore(0            ,  ucd.filterCntl.StyleGetFore(1));
+        ucd.filterCntl.StyleSetBack(0            ,  ucd.filterCntl.StyleGetBack(1));
+        ucd.filterCntl.StyleSetBack(STYLE_DEFAULT,  ucd.filterCntl.StyleGetBack(1));
     }
 
     bool sizeFilter = SendDlgItemMessage(hwndDlg, IDC_SIF_SIZE , BM_GETCHECK, 0, 0) == BST_CHECKED;
@@ -741,7 +751,7 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
                 matches, matches == 1 ? L"" : L"es", files, SearchableFile::queue.size()).data()
         );
         EnableWindow(GetDlgItem(hwndDlg, IDC_SIF_FIND), TRUE);
-        EnableWindow(GetDlgItem(hwndDlg, IDC_SIF_REPLACE), TRUE);
+        // EnableWindow(GetDlgItem(hwndDlg, IDC_SIF_REPLACE), TRUE);
         SetDlgItemText(hwndDlg, IDC_SIF_CLOSECANCEL, L"&Close");
         if (uMsg == WM_APP_SEARCH_COMPLETE && !sif.matchResults.text.empty()) showHitlist(sif.matchResults);
         return TRUE;

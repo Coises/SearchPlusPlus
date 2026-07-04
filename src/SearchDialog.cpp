@@ -275,7 +275,8 @@ INT_PTR CALLBACK removeMarksDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, L
 // Tools button and shortcuts processing
 
 namespace ToolsCommand {
-    constexpr unsigned char SearchInFiles      = 'F';
+
+    constexpr unsigned char SearchInFiles      = 'g';
     constexpr unsigned char BookmarkWhenMark   = 'b';
     constexpr unsigned char JumpReplace        = 'j';
     constexpr unsigned char HideAll            = 'Q';
@@ -289,6 +290,11 @@ namespace ToolsCommand {
     constexpr unsigned char ClearMarksMultiple =   1;
     constexpr unsigned char ClearHitlist       =   2;
     constexpr unsigned char Settings           = 'E';
+
+    // Following are not on the Tools menu, but use this mechanism to implement dialog-wide shortcuts
+
+    constexpr unsigned char SearchInFiles_Close = 'G';
+
 };
 
 bool processToolsCommand(unsigned char command) {
@@ -494,6 +500,10 @@ bool processToolsCommand(unsigned char command) {
         SetFocus(focus);
         break;
     }
+
+    case ToolsCommand::SearchInFiles_Close:
+        closeSearchInFilesDialog();
+        break;
 
     default:
         return false;
@@ -1168,7 +1178,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
         case IDC_SEARCH_TOOLS:
         {
             HMENU pum = CreatePopupMenu();
-            AppendMenu(pum, MF_STRING, ToolsCommand::SearchInFiles, L"Search in &Files/Folders\tCtrl+Shift+F");
+            AppendMenu(pum, MF_STRING, ToolsCommand::SearchInFiles, L"Search in &Files...\tCtrl+G");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, ToolsCommand::BookmarkWhenMark, L"&Bookmark lines when marking text\tCtrl+B");
             AppendMenu(pum, MF_STRING, ToolsCommand::JumpReplace     , L"&Jump to next match after Replace\tCtrl+J");

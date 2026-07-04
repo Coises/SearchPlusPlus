@@ -165,14 +165,15 @@ window.addEventListener("load", doPageLoad);
 <main>
 
 <nav class=pagenav><a href="#introduction">Introduction</a>
-<a href="#purpose" >Purpose</a>
-<a href="#search"  >Search dialog</a>
-<a href="#commands">Search commands</a>
-<a href="#results" >Search results window</a>
-<a href="#regular" >Regular expressions</a>
-<a href="#formulas">Formulas</a>
-<a href="#settings">Settings</a>
-<a href="#about"   >Help/About</a></nav>
+<a href="#purpose"      >Purpose</a>
+<a href="#search"       >Search dialog</a>
+<a href="#commands"     >Search commands</a>
+<a href="#results"      >Search results window</a>
+<a href="#regular"      >Regular expressions</a>
+<a href="#formulas"     >Formulas</a>
+<a href="#searchinfiles">Search in Files</a>
+<a href="#settings"     >Settings</a>
+<a href="#about"        >Help/About</a></nav>
 
 <article>
 
@@ -210,13 +211,15 @@ window.addEventListener("load", doPageLoad);
 <li>Regular expression searches in <strong>Search++</strong> perform a fully Unicode-based search using a customized combination of <a href="https://www.boost.org/doc/libs/latest/libs/regex/doc/html/index.html">Boost.Regex</a> and <a href="https://unicode-org.github.io/icu/userguide/icu4c/">ICU4C</a>. In particular, this produces fewer “surprising” results than the native Notepad++ search with Unicode characters above 0xFFFF (including most emoji) and when searching in documents using a DBCS code page (which in Notepad++ can be Chinese, Japanese or Korean files that are in the system default encoding instead of in Unicode).
 
 <li>Regular expression replacements in <strong>Search++</strong> can include numeric calculations. The <a href="#formulas">replacement syntax</a> is similar to the one introduced in <a href="https://github.com/Coises/ColumnsPlusPlus">Columns++</a>.
+
+<li><strong>Search++</strong> includes a <strong>Search in Files</strong> function which uses all cores of your CPU to search multiple files simultaneously. This search supports more extensive filtering of which files to examine, including a regular expression file name match and restrictions by size and/or date.
 </ul>
 
 </section>
 
 <section id=search><h2>Search dialog</h2>
 
-<p>Everything <strong>Search++</strong> does begins with the Search dialog, which you can open by selecting <strong>Search...</strong> from the <strong>Search++</strong> sub-menu on the <strong>Plugins</strong> menu. If you use <strong>Search++</strong> often, you will probably want to assign a key combination to this using <strong>Shortcut Mapper...</strong> from the <strong>Settings</strong> menu in Notepad++.</p>
+<p>Open the main <strong>Search++</strong> dialog by selecting <strong>Search...</strong> from the <strong>Search++</strong> sub-menu on the <strong>Plugins</strong> menu. If you use <strong>Search++</strong> often, you will probably want to assign a key combination to this using <strong>Shortcut Mapper...</strong> from the <strong>Settings</strong> menu in Notepad++. This dialog can be either a regular dialog or a docking dialog. By default, it opens docked to the right side of the Notepad++ window. You can change this in the <a href="#settings">Settings</a>.</p>
 
 <h3 id="search-engine">Search engine selection</h3>
 
@@ -244,9 +247,9 @@ window.addEventListener("load", doPageLoad);
 
 <li><strong>Zoom</strong> submenu: You can change the size of text in the Find and Replace boxes by zooming; you can use the Ctrl key with the mouse wheel, Ctrl with the plus and minus keys on the numeric keypad, or the <strong>Zoom</strong> commands from the context menu.
 
-<li><strong>Insert/Exchange</strong> submenu: <strong>Insert selection</strong> (<strong>Ctrl+I</strong>) inserts whatever is selected in the active Notepad++ document into the Find or Replace box. <strong class=nowrap>Find 🠆 Replace</strong> (<strong>Ctrl+F</strong>) copies the Find box text to the Replace box. <strong class=nowrap>Find 🠄 Replace</strong> (<strong>Ctrl+R</strong>) copies the Replace box text to the Find box. <strong class=nowrap>Exchange Find/Replace</strong> (<strong>Ctrl+E</strong>) exchanges the contents of the Find and Replace boxes.
+<li><strong>Insert/Exchange</strong> submenu: <strong>Insert selection</strong> (<strong>Ctrl+I</strong>) pastes whatever is selected in the active Notepad++ document at the caret or in place of the current selection. <strong class=nowrap>Copy Find</strong> (<strong>Ctrl+F</strong>) pastes a copy of the Find box text. (If you are already in the Find box, it replaces the Replace box text with the Find box text.) <strong class=nowrap>Copy Replace</strong> (<strong>Ctrl+R</strong>) pastes a copy of the Replace box text. (If you are already in the Replace box, it replaces the Find box text with the Replace box text.) <strong class=nowrap>Exchange Find/Replace</strong> (<strong>Ctrl+E</strong>) exchanges the contents of the Find and Replace boxes.
 
-<li>The bottom section of the context menu lets you select from a history of the last twelve strings you have used for searches.
+<li>The bottom section of the context menu lets you select from a history of the last twelve strings you used in searches.
 
 </ul>
 
@@ -272,7 +275,7 @@ window.addEventListener("load", doPageLoad);
 
 <li><strong>Dot matches line breaks</strong> applies only to regular expression searches. It indicates that the period (<strong>.</strong>) matches any one Unicode code point. When not checked, the period does not match the characters that end lines in Notepad++ (linefeed and carriage return).
 
-se<li><strong>Free spacing</strong> applies only to regular expression searches. It indicates that unescaped “white space” (spaces, tabs and line-endings) and comments (a <strong>#</strong> sign and all text following it on the same line) in the search string are to be ignored by the regular expression engine, so you can use these characters to make complex search strings easier to read and edit.
+<li><strong>Free spacing</strong> applies only to regular expression searches. It indicates that unescaped “white space” (spaces, tabs and line-endings) and comments (a <strong>#</strong> sign and all text following it on the same line) in the search string are to be ignored by the regular expression engine, so you can use these characters to make complex search strings easier to read and edit.
 
 <li><strong>Unicode word boundaries</strong> enables the use of a sophisticated definition of word boundaries developed as part of the <a href="https://www.unicode.org/reports/tr29/#Word_Boundaries">Unicode Standard</a>. At present this option is only available for the ICU search engine.
 
@@ -283,6 +286,7 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 <p>The <strong>Tools</strong> button opens a menu that offers some convenient settings and actions you might want to use in conjunction with searching; you can also use the keyboard shortcuts shown when focus is in the Search dialog:
 
 <table>
+<tr><th>Search in Files...</th><th>Ctrl+G</th><td>opens the <a href="#searchinfiles">Search in Files</a> dialog.</td></tr>
 <tr><th>Bookmark lines when marking text</th><th>Ctrl+B</th><td>This is a toggle. When checked, <strong>Mark</strong> and <strong>Show</strong> commands also bookmark each line in which they find a match.</td></tr>
 <tr><th>Jump to next match after Replace</th><th>Ctrl+J</th><td>This is a toggle. When checked, <strong>Replace</strong> commands automatically select and scroll to the next occurrence of the find string after replacing text. When not checked, after text is replaced the replaced text is highlighted and the document remains scrolled to show the replacement; the next <strong>Replace</strong> command finds the next occurrence, the next replaces, and so on.</td></tr>
 <tr><th>Hide All Lines</th><th>Ctrl+Shift+Q</th><td>hides all lines in the active document.</td></tr>
@@ -308,15 +312,17 @@ se<li><strong>Free spacing</strong> applies only to regular expression searches.
 
 <h3 id="search-keyboard">Keyboard navigation</h3>
 
-<p>The search dialog responds to the usual methods of keyboard navigation for a dialog (e.g., type an underlined character alone or with the Alt key). In addition, there are six general navigation commands you can use in the search dialog and in the <a href="#results">search results window</a>:</p>
+<p>The search dialog responds to the usual methods of keyboard navigation for a dialog (such as typing an underlined character with the Alt key). In addition, there are several general navigation commands you can use in the Search dialog, the <a href="#searchinfiles">Search in Files</a> dialog and the <a href="#results">Search results window</a>:</p>
 
 <table>
+<tr><th>Ctrl+G</th><td>Open the Search in Files dialog if it is not already open, and switch keyboard focus to it.</td></tr>
 <tr><th>Ctrl+H</th><td>Swap keyboard focus between the search dialog and the search results window. If the target dialog or window is not visible, open it.</td></tr>
 <tr><th>Ctrl+N</th><td>Return keyboard focus to the active Notepad++ document.</td></tr>
-<tr><th>Ctrl+O</th><td>If keyboard focus is in the Find box, switch to the Replace box; otherwise, switch focus to the Find box. If focus is in the search results window and the search dialog is not visible, open it.</td></tr>
-<tr><th>Ctrl+Shift+H</th><td>Close the search results window if it is open. If focus was in the search results window, return it to the active Notepad++ document.</td></tr>
-<tr><th>Ctrl+Shift+N</th><td>Close the search dialog and the search results window, and return focus to the active Notepad++ document.</td></tr>
-<tr><th>Ctrl+Shift+O</th><td>Close the search dialog if it is open. If focus was in the search dialog, return it to the active Notepad++ document.</td></tr>
+<tr><th>Ctrl+O</th><td>If keyboard focus is in the Find box in the Search dialog, switch to the Replace box; otherwise, switch focus to the Find box. If focus is in the Search results window or the Search in Files dialog and the Search dialog is not visible, open it.</td></tr>
+<tr><th>Ctrl+Shift+G</th><td>Close the Search in Files dialog if it is open. If focus was in the Search in Files dialog, return it to the active Notepad++ document.</td></tr>
+<tr><th>Ctrl+Shift+H</th><td>Close the Search results window if it is open. If focus was in the Search results window, return it to the active Notepad++ document.</td></tr>
+<tr><th>Ctrl+Shift+N</th><td>Close the Search dialog, the Search in Files dialog and the Search results window, and return focus to the active Notepad++ document.</td></tr>
+<tr><th>Ctrl+Shift+O</th><td>Close the Search dialog if it is open. If focus was in the Search dialog, return it to the active Notepad++ document.</td></tr>
 </table>
 
 <h3 id="search-status">Status messages</h3>
@@ -526,7 +532,7 @@ d="M90 20h820v960h-820v-960zM180 110v780h640v-780h-640z" />
 
 <section id=results><h2>Search results window</h2>
 
-<p>The <strong>Find All</strong> command and its variants, like <strong>Find All in Open Documents</strong> or <strong>Find All in Marked Text</strong>, list the matches found in the <strong>Search++ Results</strong> window. This is a docking window which, by default, appears at the bottom of the Notepad++ window. Once a search results window is initialized, its content is kept as long as Notepad++ remains open unless you explicitly clear it. Newer <strong>Find All</strong> commands add results to the top of the window. You can close the window, and if you later reopen it (by doing another <strong>Find All</strong> command or by pressing <strong>Ctrl+H</strong> in the search dialog) during the same Notepad++ session, the content will still be there.</p>
+<p>The <strong>Find All</strong> command and its variants, like <strong>Find All in Open Documents</strong> or <strong>Find All in Marked Text</strong>, list the matches found in the <strong>Search++ Results</strong> window. The <a href="#searchinfiles">Search in Files</a> dialog also sends results to this window. The Results window is a docking window which, by default, appears at the bottom of the Notepad++ window. Once a search results window is initialized, its content is kept as long as Notepad++ remains open unless you explicitly clear it. Newer commands add results to the top of the window. You can close the window, and if you later reopen it (by doing another <strong>Find All</strong> command or by pressing <strong>Ctrl+H</strong> in the search dialog) during the same Notepad++ session, the content will still be there.</p>
 
 <p>Each search is headed by a gold-colored line showing the number of matches and the find string. Below that is a section for each document in which matches were found, beginning with a header line giving the file name and the number of lines in that file that contain matches. Below that, each line which has any matches is listed and the matches are highlighted.</p>
 
@@ -534,13 +540,13 @@ d="M90 20h820v960h-820v-960zM180 110v780h640v-780h-640z" />
 
 <p>You can double-click at any position on a match line and the corresponding document will be activated with the caret set to the corresponding position in the document. If you double-click on a highlighted selection, the corresponding selection will be highlighted in the document.</p>
 
-<p class=note>Note that this only works if the document is still open in Notepad++ and has not been modified since the search. If the document is not open, Search++ will not attempt to reopen it. If the document has changed, positions will go “out of sync” and where you double-click will not be where the caret winds up.</p>
+<p class=note>Note that if the document has changed since you searched, positions can go “out of sync”; where you double-click will not necessarily be where the caret winds up.</p>
 
 <p>The same wrap and zoom options are available as in the Find and Replace boxes. You can right-click or use the <strong>Apps</strong> key or <strong>Shift+F10</strong> to open a context menu, which includes navigation, wrap and zoom options as well as commands to <strong>Clear all searches in this list</strong> and <strong>Clear all searches below this one</strong> (that is, searches older than the one in which the caret is positioned).</p>
 
 <p>You can navigate the search results window by keyboard. The <strong>Tab</strong> key moves to the next match; <strong>Shift+Tab</strong> moves to the previous match. You can press the <strong>Enter</strong> key to show the position in the document corresponding to the position of the caret in the search results <em>without</em> moving focus to the document; use <strong>Shift+Enter</strong> to scroll to location and put focus in the document. You can use <strong>Ctrl+Shift+D</strong> and <strong>Ctrl+D</strong> to move to the document headers above or below the current position, and <strong>Ctrl+Shift+S</strong> and <strong>Ctrl+S</strong> to move to the search headers above or below the current position.</p>
 
-<p>You can use the <a href="#search-keyboard">general navigation</a> keyboard shortcuts described for the search dialog in the search results window, too.</p>
+<p>You can use the <a href="#search-keyboard">general navigation</a> keyboard shortcuts described for the Search dialog in the Search results window, too.</p>
 
 </section>
 
@@ -884,6 +890,74 @@ Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer tha
 </table>
 
 <p>ExprTk expressions have many more features which are described in Sections 8, 12, 13 and 20 of the <a href="https://github.com/ArashPartow/exprtk#readme">documentation</a> for ExprTk.</p>
+
+</section>
+
+<section id=searchinfiles><h2>Search in Files</h2>
+
+<p>The <strong>Search in Files</strong> dialog lets you search files on disk without first loading them into Notepad++. Results are displayed in the <a href="#results">Search++ results window</a>. You can open the Search in Files dialog from the <strong>Tools</strong> button menu or from the Search++ plugin menu; these actions also switch focus to the dialog if it is already open. You can drag the sides of the dialog to make it wider and/or taller, but you can’t dock it.</p>
+
+<p>The text entry boxes in the Search in Files dialog (Folder, Filter, Find and Replace) are similar to the <a href="#search-boxes" class=wrappable>Find and Replace boxes</a> in the main Search dialog, and they have similar context menus and shortcuts. The <strong>Copy Find (Ctrl+F)</strong> and <strong>Copy Replace (Ctrl+R)</strong> actions on the <strong>Insert/Exchange</strong> sub-menus copy the from the Find and Replace boxes on the <em>main</em> Search dialog.</p>
+
+<p>The <a href="#search-keyboard">general navigation</a> keyboard shortcuts described for the main Search dialog also work in the Search in Files dialog.</p>
+
+<p>There are three sections in the Search in Files dialog. The top section lets you specify which files to search. The middle section specifies the details of the search and begins the search, cancels it or closes the dialog. At the bottom there is a list which tracks the files being searched and the progress in each.</p>
+
+<h3 id="#searchinfiles-whichfiles">Which files to search</h3>
+
+<p>Search in files considers files within a folder and (optionally) its subfolders. Choose the folder at the top left, either by typing the full path in the <strong>Folder</strong> box or by using the <strong>Browse</strong> button to select a folder. Check or uncheck the <strong>Subfolders</strong> and <strong>Hidden files</strong> boxes to control whether to include those in the search.</p>
+
+<p>You can filter which files to search based on the files’ extensions or on a regular expression:</p>
+
+<table>
+<tr><th colspan=2 class=group>Filter options</strong></th></tr>
+<tr><th>None</th><td>All file names are processed. The content of the Filter text box is ignored.</td></tr>
+<tr><th>Extensions</th><td>Only files with the file extension(s) listed are processed. You can list as many extensions as you like, separated by blanks, semicolons or vertical bars (<code>|</code>). You can include the leading period, but it is not required: <code>xml</code> and <code>.xml</code> both limit the search to files ending in <code>.xml</code>.</td></tr>
+<tr><th>Exclude</th><td>All files are processed <em>except</em> those with one of the extensions you list.</td></tr>
+<tr><th>Reg. exp.</th><td>The filter box contains a regular expression, which is matched against the portion of the file path beginning after the back slash (<code>\</code>) following the Folder. The expression must match the entire file sub-path following the chosen folder (so, for example, to match HTML files in subfolders named <code>acting</code>, you could write <code>(^|.*\\)acting\\[^\\]+\.html?</td></tr>
+</table>
+
+<p>Below the Folder and Filter boxes are controls to limit the sizes and dates of files to be searched. Check the <strong>Size</strong> box and/or the <strong>Date</strong> box to enable the corresponding limits. For Size, chose the lower and upper bounds; for Date, choose the type of date (Created, Modified or Accessed) to test and pick the earliest and latest dates to be considered.</p>
+
+<h3 id="searchinfiles-search">Search specifications</h3>
+
+The search options are similar to those in the main search dialog:
+
+<ul>
+
+<li><strong>Regular expression</strong> indicates the text in the Find box is a <a href="#regular">regular expression</a>. When this box is not checked, the search looks for the text in the Find box just as it is.
+
+<li><strong>Match case</strong> indicates that the case of letters matters: that is, <strong>A</strong> is different from <strong>a</strong>. When this box is not checked, letters match regardless of case (<strong>A</strong> matches <strong>A</strong> or <strong>a</strong>).
+
+<li><strong>Whole word only</strong> indicates matches cannot match only part of a word (e.g., <strong>the</strong> will not match the “the” in <strong>anthem</strong>. This option is not available for regular expression searches.
+
+<li><strong>Dot matches line breaks</strong> applies only to regular expression searches. It indicates that the period (<strong>.</strong>) matches any one Unicode code point. When not checked, the period does not match the characters that end lines in Notepad++ (linefeed and carriage return).
+
+<li><strong>Free spacing</strong> applies only to regular expression searches. It indicates that unescaped “white space” (spaces, tabs and line-endings) and comments (a <strong>#</strong> sign and all text following it on the same line) in the search string are to be ignored by the regular expression engine, so you can use these characters to make complex search strings easier to read and edit.
+
+</ul>
+
+<p>The two large text entry boxes in the middle of the Search in Files dialog are the Find and Replace boxes, similar to <a href="#search-boxes" class=wrappable>those</a> in the main Search dialog. (At present, <strong>Replace in Files</strong> has not been implemented; so while you can enter text in the Replace box, it isn’t used for anything yet.) Enter the string or regular expression for which you want to search in the left (Find) box.</p>
+
+<p>Click the <strong>Find in Files</strong> button to begin searching. The middle button will change to <strong>Cancel All</strong> and the progress of the search will be displayed in the bottom section of the dialog. A message will indicate when the search is complete, and the middle button will change back to <strong>Close</strong>. If you do not cancel the search, when it is complete results will be shown in the <a href="#results" class=wrappable>Search results window</a>.</p>
+
+<p>The middle button is labeled <strong>Cancel All</strong> when a search is in progress and <strong>Close</strong> otherwise. Use <strong>Cancel All</strong> to stop all searches in progress as soon as possible. (The nature of the search engine implementation is that searches will not always stop immediately on request.)</p>
+
+<h3 id="searchinfiles-progress">Progress and file list</h3>
+
+<p>The bottom section of the Search in Files dialog shows a message about the progress of the search and a list of the files searched. By default, the list is sorted by Status; you can click on a column heading to change the sort order. You can right-click a line in the list for a context menu:</p>
+
+<ul>
+<li><strong>Cancel search</strong> is enabled if searching this file has not yet finished; clicking it stops the search as soon as possible.
+<li><strong>Open file</strong> opens the file in Notepad++.
+<li><strong>Show file in explorer</strong> opens a Windows File Explorer window to the folder containing the file and selects the file.
+<li><strong>Go to match results</strong> is enabled for files with matches after the entire search is complete. Clicking it focuses the Search++ results window and scrolls it to the start of the matches for that file.
+<li><strong>Error details...</strong> appears only for files showing <strong>Error</strong> in the <strong>Status</strong> column; it opens a message box showing whatever details are available about the error.
+</ul>
+
+<p>You can select multiple files using ordinary Windows multiple selection techniques (such as Shift+click to select a range, Ctrl+click to add a line). Only <strong>Cancel search</strong> and <strong>Open file</strong> are available when right-clicking a multiple selection.</p>
+
+<p>You can also double-click in the File Path to open the file in Notepad++; double-click an Error in the Status column to show the error details; and, once the entire search is finished, double-click on a non-zero number in the Matches column to go to those match results.</p>
 
 </section>
 
