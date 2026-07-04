@@ -736,11 +736,10 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             switch (sf.status) {
             case SearchableFile::Status::Canceled: ++canceled; break;
             case SearchableFile::Status::Error: ++errors; break;
-            default:
-                if (sf.matches_found) {
-                    matches += sf.matches_found;
-                    ++files;
-                }
+            }
+            if (sf.matches_found) {
+                matches += sf.matches_found;
+                ++files;
             }
         }
         SetWindowText(GetDlgItem(hwndDlg, IDC_SIF_MESSAGE),
@@ -1094,7 +1093,7 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
                 case QueueColumn::Progress:
                     if (sf.size > 0) {
                         wcsncpy_s(lvdi.item.pszText, lvdi.item.cchTextMax,
-                            std::format(UserLocale, L"{:Ld}%", (sf.bytes_processed * 100 + (sf.size / 2)) / sf.size).data(),
+                            std::format(UserLocale, L"{:Ld}%", (sf.bytes_processed * 100LL + (sf.size / 2)) / sf.size).data(),
                             lvdi.item.cchTextMax - 1);
                     }
                     else if (sf.status == SearchableFile::Status::Finished) lvdi.item.pszText = const_cast<wchar_t*>(L"100%");
