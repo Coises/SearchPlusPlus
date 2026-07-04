@@ -611,7 +611,7 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
         col.mask = LVCF_TEXT | LVCF_FMT;
         col.fmt = LVCFMT_LEFT ; col.pszText = const_cast<wchar_t*>(L"File Path"        ); ListView_InsertColumn(qlv, 0, &col);
         col.fmt = LVCFMT_RIGHT; col.pszText = const_cast<wchar_t*>(L"Matches"          ); ListView_InsertColumn(qlv, 1, &col);
-        col.fmt = LVCFMT_RIGHT; col.pszText = const_cast<wchar_t*>(L"8888.8 WiB"       ); ListView_InsertColumn(qlv, 2, &col);
+        col.fmt = LVCFMT_RIGHT; col.pszText = const_cast<wchar_t*>(L"8,888.8 WiB"      ); ListView_InsertColumn(qlv, 2, &col);
         col.fmt = LVCFMT_LEFT ; col.pszText = const_cast<wchar_t*>(L"Error: BufferingX"); ListView_InsertColumn(qlv, 3, &col);
         col.fmt = LVCFMT_RIGHT; col.pszText = const_cast<wchar_t*>(L"Progress"         ); ListView_InsertColumn(qlv, 4, &col);
         const int normalOrder[5] = { 0, 1, 2, 3, 4 };
