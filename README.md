@@ -23,6 +23,8 @@ Search++ uses the [C++ Mathematical Expression Toolkit Library
 
 * Regular expression replacements in Search++ can include numeric calculations. The replacement syntax is similar to the one introduced in Columns++.
 
+* Search++ includes a **Search in Files** function which uses all cores of your CPU to search multiple files simultaneously. This search supports extensive filtering of which files to examine, including a regular expression file name match and restrictions by size and/or date.
+
 * There is a [help file](https://coises.github.io/SearchPlusPlus/help.htm).
 
 ## Quirks and features with poor discoverability
@@ -45,13 +47,11 @@ Search++ uses the [C++ Mathematical Expression Toolkit Library
 
 ## Missing and Planned Features, and things I know don’t work quite right yet
 
-* **Search++** does not yet support Find or Replace in all open documents or in files in a directory. I plan to add those capabilities, but I have not determined how I can/will do it.
+* **Search in Files** doesn’t do replacements yet.
+
+* The calendar controls in the Search in Files dialog don’t adjust to dark mode,
 
 * I plan to add a **Save** function that will let you save searches you might want to use again. Of course, once it is possible to save, it has to be possible to delete and rename and edit and organize... I haven’t designed a user interface for any of that yet.
-
-* The Search++ Results window doesn’t show matches clearly in dark mode. I might be able to fix that without requiring user intervention; but depending on user experience, I suspect I might need to add the ability to customize colors and perhaps other details of all the Scintilla windows (Find/Replace and Search Results).
-
-* If you edit a document that has results in the Search++ Results window, the results will no longer be “in sync” with the document and you won’t be able to navigate accurately to matches following the edit point. I don’t know if it is possible to overcome this, but I would like to do so if I find that I can.
 
 * I’ve implemented a sort of “collision detection” when doing stepwise Find or Replace with the regular (non-docking) dialog or locating matches from the search results, so the document will be scrolled as needed to avoid the found text being obscured by the search window. I know it doesn’t work as well as it could yet. (It’s a surprisingly tricky problem to solve, and I couldn’t find any examples of it being solved already.)
 

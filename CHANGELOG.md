@@ -1,5 +1,10 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.6 -- July 5th, 2026
+
+* Add **Search in Files**. Find in files works, Replace in files is not yet implemented.
+* Various fixes to minor issues as I have come across them.
+
 ## Version 0.5.5 -- April 24th, 2026
 
 * Fix Replace All with ICU search engine should give "Command not implemented" message.
