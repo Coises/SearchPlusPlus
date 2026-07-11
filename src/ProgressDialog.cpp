@@ -42,7 +42,7 @@ namespace {
 
     std::locale userLocale("");
 
-    constexpr char maximalSearchCounts[] = " 00,000,000,000,000,000,000 matches in 00,000,000,000,000,000,000 files ";
+    constexpr char maximalSearchCounts[] = " 00,000,000,000,000,000,000 matches in 00,000,000,000,000,000,000 documents ";
 
     INT_PTR CALLBACK progressDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
@@ -401,9 +401,15 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
 
 void ProgressInfo::reserveSearchHeader() {
     matchResults.text = maximalSearchCounts;
-    matchResults.text += data.searchEngine == SearchEngine::Boost ? "(Regex): "
-        : data.searchEngine == SearchEngine::ICU ? "(ICU Regex): "
-        : "(Text): ";
+    matchResults.text += data.searchEngine == SearchEngine::Boost ? "(Regex"
+                       : data.searchEngine == SearchEngine::ICU   ? "(ICU Regex"
+                                                                  : "(Plain text";
+    if (                                            data.matchCase   ) matchResults.text += ", match case";
+    if (data.searchEngine == SearchEngine::Plain && data.wholeWord   ) matchResults.text += ", whole word";
+    if (data.searchEngine != SearchEngine::Plain && data.dotAll      ) matchResults.text += ", dot all";
+    if (data.searchEngine != SearchEngine::Plain && data.freeSpacing ) matchResults.text += ", free spacing";
+    if (data.searchEngine == SearchEngine::ICU   && data.uniWordBound) matchResults.text += ", Unicode words";
+    matchResults.text += "): ";
     for (size_t i = 0; i < req.find.length(); ++i) {
         switch (req.find[i]) {
         case '\t':
@@ -432,7 +438,7 @@ void ProgressInfo::reserveSearchHeader() {
 
 void ProgressInfo::updateSearchHeader(size_t documentsMatched) {
     // Using wide character formatting because it honors the userLocale more reliably
-    std::string searchCounts = utf16to8(std::format(userLocale, L" {:Ld} match{:s} in {:Ld} file{:s} ",
+    std::string searchCounts = utf16to8(std::format(userLocale, L" {:Ld} match{:s} in {:Ld} document{:s} ",
         count, count == 1 ? L"" : L"es", documentsMatched, documentsMatched == 1 ? L"" : L"s"));
     matchResults.offset = sizeof(maximalSearchCounts) - 1 - searchCounts.length();
     std::copy(searchCounts.begin(), searchCounts.end(), matchResults.text.begin() + matchResults.offset);

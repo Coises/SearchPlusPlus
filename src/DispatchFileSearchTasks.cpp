@@ -19,6 +19,7 @@
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "SearchInFiles.h"
+#include "SearchInFilesConfiguration.h"
 #include <Shlwapi.h>
 #include <format>
 
@@ -80,9 +81,15 @@ void dispatchSearchTasks(HWND inform) {
                 }
                 if (matches) {
                     // Using wide character formatting because it honors the UserLocale more reliably
-                    std::string singleLineFindText = utf16to8(std::format(UserLocale, L" {:Ld} match{:s} in {:Ld} file{:s}: ",
+                    std::string singleLineFindText = utf16to8(std::format(UserLocale, L" {:Ld} match{:s} in {:Ld} of {:Ld} file{:s} ",
                         matches, matches == 1 ? L"" : L"es",
-                        files, files == 1 ? L"" : L"s"));
+                        files, SearchableFile::queue.size(), SearchableFile::queue.size() == 1 ? L"" : L"s"));
+                    singleLineFindText += ucd.regex ? "(Regex" : "(Plain text";
+                    if (              ucd.matchCase   ) singleLineFindText += ", match case";
+                    if (!ucd.regex && ucd.wholeWord   ) singleLineFindText += ", whole word";
+                    if ( ucd.regex && ucd.dotAll      ) singleLineFindText += ", dot all";
+                    if ( ucd.regex && ucd.freeSpacing ) singleLineFindText += ", free spacing";
+                    singleLineFindText += "): ";
                     for (size_t i = 0; i < sif.findString.length(); ++i) {
                         switch (sif.findString[i]) {
                         case '\t':
