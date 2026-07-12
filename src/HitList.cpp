@@ -589,6 +589,13 @@ INT_PTR CALLBACK hitlistDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
         case SCN_DOUBLECLICK:
             processDoubleClick(sciHits.lastLButtonDown);
             return TRUE;
+        case SCN_MARGINCLICK:
+        {
+            const Scintilla::NotificationData& scn = *reinterpret_cast<Scintilla::NotificationData*>(lParam);
+            if (scn.modifiers != Scintilla::KeyMod::Norm && scn.modifiers != Scintilla::KeyMod::Shift) return FALSE;
+            processDoubleClickOrEnterKey(scn.position, scn.position, false, scn.modifiers == Scintilla::KeyMod::Shift);
+            return TRUE;
+        }
         }
         return FALSE;
 
@@ -662,8 +669,11 @@ void showHitlist(MatchResults& matchResults) {
     intptr_t newLines = matchResults.index.size();
 
     sciHits.SetReadOnly(false);
-    if (data.purgeSearchResults) sciHits.TargetWholeDocument();
-                            else sciHits.SetTargetRange(0, 0);
+    if (data.purgeSearchResults) {
+        sciHits.TargetWholeDocument();
+        cumulativeLineIndex.clear();
+    }
+    else sciHits.SetTargetRange(0, 0);
     sciHits.ReplaceTarget(std::string_view(matchResults.text.data() + matchResults.offset,
                                            matchResults.text.length() - matchResults.offset));
     matchResults.text.clear();
