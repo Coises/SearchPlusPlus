@@ -65,11 +65,30 @@ bool caretLineIsBackground = false;               // Set when caret line indicat
 
 // Handling for double-clicks and the Enter key
 
-bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position cpMax, bool switchFocus) {
+bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position cpMax, bool isEnter, bool isShift) {
     const Scintilla::Line lnMin = sciHits.LineFromPosition(cpMin);
     if (lnMin >= static_cast<Scintilla::Line>(cumulativeLineIndex.size())) return false;
-    if (Scintilla::LevelIsHeader(sciHits.FoldLevel(lnMin))) /* a search or document header: toggle fold */ {
-        sciHits.ToggleFold(lnMin);
+    Scintilla::FoldLevel foldLevel = sciHits.FoldLevel(lnMin);
+    if (foldLevel == Level_Search) {
+        if (isShift) {
+            if (sciHits.FoldExpanded(lnMin) && sciHits.FoldExpanded(lnMin + 1)) {
+                sciHits.FoldChildren(lnMin, Scintilla::FoldAction::Contract);
+                sciHits.ToggleFold(lnMin);
+            }
+            else sciHits.FoldChildren(lnMin, Scintilla::FoldAction::Expand);
+        }
+        else sciHits.ToggleFold(lnMin);
+        return true;
+    }
+    else if (foldLevel == Level_Document) {
+        if (isShift) {
+            const std::string lineText = sciHits.GetLine(lnMin);
+            const size_t fn = lineText.find(": ");
+            if (fn == std::string::npos || fn >= lineText.length() - 4) return false;
+            if (!npp(NPPM_DOOPEN, 0, utf8to16(lineText.substr(fn + 2, lineText.length() - fn - 4)).data())) return false;
+            if (isEnter) npp(NPPM_DMMSHOW, 0, hitlist);
+        }
+        else sciHits.ToggleFold(lnMin);
         return true;
     }
     const Scintilla::Line parentLine = sciHits.FoldParent(lnMin);
@@ -146,7 +165,7 @@ bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position
         sci.ChooseCaretX();
     }
 
-    if (!switchFocus) {
+    if (isEnter != isShift) {
         if (start == end) {
             char c;
             if (zlmIndicator == 0 || start == sci.Length()
@@ -167,7 +186,7 @@ bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position
     return true;
 }
 
-bool processDoubleClick(POINT click, bool switchFocus = true) {
+bool processDoubleClick(POINT click) {
     Scintilla::Position position1 = sciHits.CharPositionFromPoint(click.x, click.y);
     Scintilla::Position position2 = sciHits.PositionFromPoint(click.x, click.y);
     Scintilla::Position cpMin, cpMax;
@@ -177,11 +196,11 @@ bool processDoubleClick(POINT click, bool switchFocus = true) {
     }
     else cpMin = cpMax = position2;
     sciHits.SetSel(cpMin, cpMax);
-    return processDoubleClickOrEnterKey(cpMin, cpMax, switchFocus);
+    return processDoubleClickOrEnterKey(cpMin, cpMax, false, GetKeyState(VK_SHIFT) & 0x8000);
 }
 
-bool processEnterKey(bool switchFocus = true) {
-    return processDoubleClickOrEnterKey(sciHits.SelectionStart(), sciHits.SelectionEnd(), switchFocus);
+bool processEnterKey(bool shift) {
+    return processDoubleClickOrEnterKey(sciHits.SelectionStart(), sciHits.SelectionEnd(), true, shift);
 }
 
 
@@ -487,6 +506,7 @@ INT_PTR CALLBACK hitlistDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
             MapWindowPoints(sciHits.handle, 0, &screenLocation, 1);
         }
         bool hasSelection = !sciHits.SelectionEmpty();
+        Scintilla::FoldLevel foldLevel = sciHits.FoldLevel(sciHits.LineFromPosition(sciHits.CurrentPos()));
         int zoom = sciHits.Zoom();
         std::wstring zoomText = (zoom > 0 ? L"&Zoom (+" : L"&Zoom (") + std::to_wstring(zoom) + L")";
         HMENU menu = GetSubMenu(LoadMenu(plugin.dllInstance, MAKEINTRESOURCE(IDR_SEARCH_CONTEXT)), 1);
@@ -494,7 +514,19 @@ INT_PTR CALLBACK hitlistDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
         mii.cbSize     = sizeof mii;
         mii.fMask      = MIIM_STRING;
         mii.dwTypeData = zoomText.data();
-        SetMenuItemInfo(menu, 14, TRUE, &mii);
+        SetMenuItemInfo(menu, GetMenuItemCount(menu) - 1, TRUE, &mii);
+        if (foldLevel == Level_Search) {
+            mii.dwTypeData = const_cast<wchar_t*>(L"E&xpand/Collapse Search\tEnter");
+            SetMenuItemInfo(menu, ID_SCMSCI_LOCATE, FALSE, &mii);
+            mii.dwTypeData = const_cast<wchar_t*>(L"Expa&nd/Collapse Documents\tShift+Enter");
+            SetMenuItemInfo(menu, ID_SCMSCI_MOVEHERE, FALSE, &mii);
+        }
+        else if (foldLevel == Level_Document) {
+            mii.dwTypeData = const_cast<wchar_t*>(L"E&xpand/Collapse Document\tEnter");
+            SetMenuItemInfo(menu, ID_SCMSCI_LOCATE, FALSE, &mii);
+            mii.dwTypeData = const_cast<wchar_t*>(L"&Open Document\tShift+Enter");
+            SetMenuItemInfo(menu, ID_SCMSCI_MOVEHERE, FALSE, &mii);
+        }
         EnableMenuItem(menu, ID_SCMSCI_COPY       , hasSelection   ? MF_ENABLED : MF_GRAYED);
         EnableMenuItem(menu, ID_SCMSCI_ZOOMIN     , zoom < 60      ? MF_ENABLED : MF_GRAYED);
         EnableMenuItem(menu, ID_SCMSCI_ZOOMOUT    , zoom > -10     ? MF_ENABLED : MF_GRAYED);
@@ -507,26 +539,31 @@ INT_PTR CALLBACK hitlistDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
         SetMenuItemInfo(menu, ID_SCMSCI_WRAPCHAR, FALSE, &mii);
         mii.fState = sciHits.WrapMode() == Scintilla::Wrap::Word ? MFS_CHECKED : 0;
         SetMenuItemInfo(menu, ID_SCMSCI_WRAPWORD, FALSE, &mii);
-        int result = TrackPopupMenu(menu, TPM_NONOTIFY | TPM_RETURNCMD,
-                                    screenLocation.x, screenLocation.y, 0, sciHits.handle, 0);
+        mii.fMask = MIIM_STATE;
+        mii.fState = data.purgeSearchResults ? MFS_CHECKED : 0;
+        SetMenuItemInfo(menu, ID_SCMSCI_PURGE, FALSE, &mii);
+        int result = TrackPopupMenu(menu, TPM_NONOTIFY | TPM_RETURNCMD, screenLocation.x, screenLocation.y, 0, sciHits.handle, 0);
         DestroyMenu(menu);
         switch (result) {
-        case ID_SCMSCI_NEXTMATCH  : nextMatch        (); break;
-        case ID_SCMSCI_PREVMATCH  : prevMatch        (); break;
-        case ID_SCMSCI_NEXTDOC    : nextDocument     (); break;
-        case ID_SCMSCI_PREVDOC    : prevDocument     (); break;
-        case ID_SCMSCI_NEXTSEARCH : nextSearch       (); break;
-        case ID_SCMSCI_PREVSEARCH : prevSearch       (); break;
-        case ID_SCMSCI_CLEARALL   : clearAll         (); break;
-        case ID_SCMSCI_CLEARBELOW : clearBelow       (); break;
-        case ID_SCMSCI_COPY       : sciHits.Copy     (); break;
-        case ID_SCMSCI_SELECTALL  : sciHits.SelectAll(); break;
-        case ID_SCMSCI_ZOOMIN     : sciHits.ZoomIn   (); break;
-        case ID_SCMSCI_ZOOMOUT    : sciHits.ZoomOut  (); break;
-        case ID_SCMSCI_ZOOMDEFAULT: sciHits.SetZoom (0); break;
+        case ID_SCMSCI_LOCATE     : processEnterKey  (false); break;
+        case ID_SCMSCI_MOVEHERE   : processEnterKey  (true ); break;
+        case ID_SCMSCI_NEXTMATCH  : nextMatch        (     ); break;
+        case ID_SCMSCI_PREVMATCH  : prevMatch        (     ); break;
+        case ID_SCMSCI_NEXTDOC    : nextDocument     (     ); break;
+        case ID_SCMSCI_PREVDOC    : prevDocument     (     ); break;
+        case ID_SCMSCI_NEXTSEARCH : nextSearch       (     ); break;
+        case ID_SCMSCI_PREVSEARCH : prevSearch       (     ); break;
+        case ID_SCMSCI_CLEARALL   : clearAll         (     ); break;
+        case ID_SCMSCI_CLEARBELOW : clearBelow       (     ); break;
+        case ID_SCMSCI_COPY       : sciHits.Copy     (     ); break;
+        case ID_SCMSCI_SELECTALL  : sciHits.SelectAll(     ); break;
+        case ID_SCMSCI_ZOOMIN     : sciHits.ZoomIn   (     ); break;
+        case ID_SCMSCI_ZOOMOUT    : sciHits.ZoomOut  (     ); break;
+        case ID_SCMSCI_ZOOMDEFAULT: sciHits.SetZoom  (0    ); break;
         case ID_SCMSCI_WRAPNONE   : sciHits.SetWrapMode(sciHits.configWrap = Scintilla::Wrap::None); break;
         case ID_SCMSCI_WRAPCHAR   : sciHits.SetWrapMode(sciHits.configWrap = Scintilla::Wrap::Char); break;
         case ID_SCMSCI_WRAPWORD   : sciHits.SetWrapMode(sciHits.configWrap = Scintilla::Wrap::Word); break;
+        case ID_SCMSCI_PURGE      : data.purgeSearchResults = !data.purgeSearchResults; break;
         }
         return TRUE;
     }
@@ -625,7 +662,8 @@ void showHitlist(MatchResults& matchResults) {
     intptr_t newLines = matchResults.index.size();
 
     sciHits.SetReadOnly(false);
-    sciHits.SetTargetRange(0, 0);
+    if (data.purgeSearchResults) sciHits.TargetWholeDocument();
+                            else sciHits.SetTargetRange(0, 0);
     sciHits.ReplaceTarget(std::string_view(matchResults.text.data() + matchResults.offset,
                                            matchResults.text.length() - matchResults.offset));
     matchResults.text.clear();
