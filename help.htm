@@ -532,19 +532,39 @@ d="M90 20h820v960h-820v-960zM180 110v780h640v-780h-640z" />
 
 <section id=results><h2>Search results window</h2>
 
-<p>The <strong>Find All</strong> command and its variants, like <strong>Find All in Open Documents</strong> or <strong>Find All in Marked Text</strong>, list the matches found in the <strong>Search++ Results</strong> window. The <a href="#searchinfiles">Search in Files</a> dialog also sends results to this window. The Results window is a docking window which, by default, appears at the bottom of the Notepad++ window. Once a search results window is initialized, its content is kept as long as Notepad++ remains open unless you explicitly clear it. Newer commands add results to the top of the window. You can close the window, and if you later reopen it (by doing another <strong>Find All</strong> command or by pressing <strong>Ctrl+H</strong> in the search dialog) during the same Notepad++ session, the content will still be there.</p>
+<p>The <strong>Find All</strong> command and its variants, like <strong>Find All in Open Documents</strong> or <strong>Find All in Marked Text</strong>, list the matches found in the <strong>Search++ Results</strong> window. The <a href="#searchinfiles">Search in Files</a> dialog also sends results to this window. The Results window is a docking window which, by default, appears at the bottom of the Notepad++ window. Once a search results window is initialized, its content is kept as long as Notepad++ remains open unless you explicitly clear it or enable <strong>Automatically purge prior searches</strong>. Newer commands add results to the top of the window. You can close the window, and if you later reopen it (by doing another <strong>Find All</strong> command or by pressing <strong>Ctrl+H</strong> in the search dialog) during the same Notepad++ session, the content will still be there.</p>
 
 <p>Each search is headed by a gold-colored line showing the number of matches and the find string. Below that is a section for each document in which matches were found, beginning with a header line giving the file name and the number of lines in that file that contain matches. Below that, each line which has any matches is listed and the matches are highlighted.</p>
 
-<p>You can double-click on a header line to “fold” the content beneath it; double-click again to open it up.</p>
+<p>There are a number of commands recognized in the Search++ Results list. You can right-click or use the <strong>Apps</strong> key or <strong>Shift+F10</strong> to open a context menu. Most commands also have keyboard shortcuts, and some can be activated using the mouse:</p>
 
-<p>You can double-click at any position on a match line and the corresponding document will be activated with the caret set to the corresponding position in the document. If you double-click on a highlighted selection, the corresponding selection will be highlighted in the document.</p>
-
-<p class=note>Note that if the document has changed since you searched, positions can go “out of sync”; where you double-click will not necessarily be where the caret winds up.</p>
-
-<p>The same wrap and zoom options are available as in the Find and Replace boxes. You can right-click or use the <strong>Apps</strong> key or <strong>Shift+F10</strong> to open a context menu, which includes navigation, wrap and zoom options as well as commands to <strong>Clear all searches in this list</strong> and <strong>Clear all searches below this one</strong> (that is, searches older than the one in which the caret is positioned).</p>
-
-<p>You can navigate the search results window by keyboard. The <strong>Tab</strong> key moves to the next match; <strong>Shift+Tab</strong> moves to the previous match. You can press the <strong>Enter</strong> key to show the position in the document corresponding to the position of the caret in the search results <em>without</em> moving focus to the document; use <strong>Shift+Enter</strong> to scroll to location and put focus in the document. You can use <strong>Ctrl+Shift+D</strong> and <strong>Ctrl+D</strong> to move to the document headers above or below the current position, and <strong>Ctrl+Shift+S</strong> and <strong>Ctrl+S</strong> to move to the search headers above or below the current position.</p>
+<table>
+<t><th colspan=5r class=group>Search++ Results list commands that apply to specific line types</th></tr>
+<tr><th>applies to</th><th>context menu</th><th>shortcut</th><th>mouse</th><th>action</th></tr>
+<tr><td rowspan=2>Search headers</td><td>Expand/Collapse Search</td><td>Enter</td><td class=nowrap>double-click<br>or<br>click margin</td><td>Expand or collapse the list of documents and matches for this search.</td></tr>
+<tr><td>Expand/Collapse Documents</td><td>Shift+Enter</td><td class=nowrap>Shift+double-click<br>or<br>Shift+click margin</td><td>Expand or collapse the lists of matches for all documents within this search, while leaving the document headers visible.</td></tr>
+<tr><td rowspan=2>Document headers</td><td>Expand/Collapse Document</td><td>Enter</td><td class=nowrap>double-click<br>or<br>click margin</td><td>Expand or collapse the list of matches for this document.</td></tr>
+<tr><td>Open Document</td><td>Shift+Enter</td><td class=nowrap>Shift+double-click<br>or<br>Shift+click margin</td><td>Open this document in Notepad++ if it is not already open, and switch to it.</td></tr>
+<tr><td rowspan=2>Matched lines</td><td>Locate in Document</td><td>Enter</td><td class=nowrap><p>Shift+double-click<br>or<br>Shift+click margin</td><td>Open this document in Notepad++ if it is not already open; switch to it; set the caret or selection in the document to match the caret or selection in the results list and scroll to make it visible; leave keyboard focus in the search results list.</p><p>When double-clicking within a match, the entire match is selected both in the Search++ Results list and in the document. When clicking in the margin, the caret is positioned at the beginning of the line in the document and nothing is selected; the caret or selection in the Search++ Results window is unchanged.</p></td></tr>
+<tr><td>Move Here in Document</td><td>Shift+Enter</td><td class=nowrap>double-click<br>or<br>click margin</td><td><p>Open this document in Notepad++ if it is not already open; switch to it; set the caret or selection in the document to match the caret or selection in the results list and scroll to make it visible; switch keyboard focus to the document.</p><p>When double-clicking within a match, the entire match is selected both in the Search++ Results list and in the document. When clicking in the margin, the caret is positioned at the beginning of the line in the document and nothing is selected; the caret or selection in the Search++ Results window is unchanged.</p></td></tr>
+</table>
+<table>
+<tr><th colspan=3 class=group>Search++ Results list commands that are available on all lines</th></tr>
+<tr><th>context menu</th><th>shortcut</th><th>action</th></tr>
+<tr><td>Go to Next Match</td><td>Tab</td><td>Select the first match in the results list following the caret position.</td></tr>
+<tr><td>Go to Previous Match</td><td>Shift+Tab</td><td>Select the first match in the results list preceding the caret position.</td></tr>
+<tr><td>Go to Document Below</td><td>Ctrl+D</td><td>Move the caret to the beginning of the first document header line following the caret position.</td></tr>
+<tr><td>Go to Document Above</td><td>Ctrl+Shift+D</td><td>Move the caret to the beginning of the first document header line preceding the caret position.</td></tr>
+<tr><td>Go to Search Below</td><td>Ctrl+S</td><td>Move the caret to the beginning of the first search header line following the caret position.</td></tr>
+<tr><td>Go to Search Above</td><td>Ctrl+Shift+S</td><td>Move the caret to the beginning of the first search header line preceding the caret position.</td></tr>
+<tr><td>Clear all searches in this list</td><td></td><td>Remove everything from the Search++ Results list.</td></tr>
+<tr><td>Clear all searches below this one</td><td></td><td>Remove from the Search++ results list all searches, documents and matches beginning with the first search header following the caret position.</td></tr>
+<tr><td>Automatically purge prior searches</td><td></td><td>This is a toggle. When checked, everything is removed from the Search++ results list before adding new results from Find All or Find in Files searches.</td></tr>
+<tr><td>Copy</td><td>Ctrl+C</td><td>Copy whatever is selected in the Search++ Results list to the clipboard.</td></tr>
+<tr><td>Select All</td><td>Ctrl+A</td><td>Select everything in the Search++ Results list.</td></tr>
+<tr><td>Wrap</td><td>Ctrl+W</td><td>Switch between wrap modes: no wrap (scroll left and right), character wrapping (lines wrap immediately after the last character that fits on a line) or word wrapping (lines wrap at word breaks, if possible, otherwise after the last character that fits).</td></tr>
+<tr><td>Zoom</td><td>Ctrl+Num+, Ctrl+Num-, Ctrl+Num/</td><td>Increase, decrease or reset the size of text in the Search++ Results list.</td></tr>
+</table>
 
 <p>You can use the <a href="#search-keyboard">general navigation</a> keyboard shortcuts described for the Search dialog in the Search results window, too.</p>
 
