@@ -387,9 +387,12 @@ void configureSciHits() {
     sciHits.StyleSetFore(Style_Document, documentFore);
     sciHits.StyleSetBack(Style_Document, documentBack);
 
-    sciHits.SetRepresentationColour("\n", Scintilla::ColourAlpha(0));
-    sciHits.SetRepresentationColour("\r", Scintilla::ColourAlpha(0));
-    sciHits.SetRepresentationColour("\r\n", Scintilla::ColourAlpha(0));
+    sciHits.SetRepresentation("\n"  , " ");
+    sciHits.SetRepresentation("\r"  , " ");
+    sciHits.SetRepresentation("\r\n", " ");
+    sciHits.SetRepresentationAppearance("\n"  , Scintilla::RepresentationAppearance::Plain);
+    sciHits.SetRepresentationAppearance("\r"  , Scintilla::RepresentationAppearance::Plain);
+    sciHits.SetRepresentationAppearance("\r\n", Scintilla::RepresentationAppearance::Plain);
     sciHits.SetCursor(Scintilla::CursorShape::Arrow);
     sciHits.SetReadOnly(true);
 
