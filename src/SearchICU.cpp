@@ -62,12 +62,12 @@ std::wstring rxError(UErrorCode ec, const std::wstring genericErrorText = L"An u
 
 class UTextObject : public UText {
 public:
-    UTextObject()                                          { *static_cast<UText*>(this) = UTEXT_INITIALIZER; }
+    UTextObject()                                          : UText(UTEXT_INITIALIZER) {}
     ~UTextObject()                                         { utext_close(this); }
     int64_t    getNativeIndex(                     ) const { return utext_getNativeIndex(this); }
     UChar32    next32From    (int64_t start        )       { return utext_next32From(this, start); }
-    UErrorCode openUTF8      (char* cs, int64_t len)       { UErrorCode ec; utext_openUTF8(this, cs, len, &ec); return ec; }
-    UErrorCode openUChars    (UChar* cs, int64_t len)      { UErrorCode ec; utext_openUChars(this, cs, len, &ec); return ec; }
+    UErrorCode openUTF8  (char*  cs, int64_t len) { UErrorCode ec = U_ZERO_ERROR; utext_openUTF8  (this, cs, len, &ec); return ec; }
+    UErrorCode openUChars(UChar* cs, int64_t len) { UErrorCode ec = U_ZERO_ERROR; utext_openUChars(this, cs, len, &ec); return ec; }
 };
 
 
@@ -93,7 +93,8 @@ SearchResult singleFind(SearchRequest& req, bool postReplace = false) {
         auto& r = req.ranges[range];
         if (searchFrom >= r.cpMax) continue;
         UTextObject body;
-        body.openUTF8(reinterpret_cast<char*>(sci.RangePointer(r.cpMin, r.cpMax)), r.cpMax - r.cpMin);
+        if (body.openUTF8(reinterpret_cast<char*>(sci.RangePointer(r.cpMin, r.cpMax)), r.cpMax - r.cpMin) != U_ZERO_ERROR)
+            return req.error(L"Failed to set search text.");
         matcher.reset(&body);
         matcher.reset(std::max(searchFrom, r.cpMin) - r.cpMin, status);
         if (status.isFailure()) return req.error(rxError(status.get(), L"Failed to set search position."));
@@ -146,7 +147,7 @@ bool progressiveSearch(ProgressInfo& pi) {
 
     icu::ErrorCode status;
     UTextObject body;
-    body.openUTF8(reinterpret_cast<char*>(sci.RangePointer(r.cpMin, r.cpMax)), r.cpMax - r.cpMin);
+    if (body.openUTF8(reinterpret_cast<char*>(sci.RangePointer(r.cpMin, r.cpMax)), r.cpMax - r.cpMin) != U_ZERO_ERROR) return false;
     matcher.reset(&body);
     matcher.reset(position + pii.offset2 - r.cpMin, status);
     if (status.isFailure()) return false;
