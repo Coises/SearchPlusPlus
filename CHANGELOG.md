@@ -1,5 +1,11 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.6.2 -- July 14th, 2026
+
+* Fix a critical error that caused ICU searches to crash Notepad++.
+* Fix unwanted characters appearing at the ends of lines in the Results list with Notepad++ rendering mode GDI.
+* Fix regression of line ending symbols being in text color instead of white space color, and switch the CRLF symbol in GDI mode to one that hopefully renders more consistently.
+
 ## Version 0.6.1 -- July 12th, 2026
 
 * Various enhancements to the Search++ Results list, including adding more detail to the search headers, implementing an “automatically purge” toggle and recognizing single-click in the margin.
