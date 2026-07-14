@@ -157,9 +157,10 @@ void ScintillaControl::Configuration::common(Scintilla::ScintillaCall& sciCall) 
     sciCall.SetAdditionalSelectionTyping(true);
     sciCall.SetRepresentation("\n", reinterpret_cast<const char*>(u8"\U0001F807"));
     sciCall.SetRepresentation("\r", reinterpret_cast<const char*>(u8"\U0001F804"));
-    sciCall.SetRepresentation("\r\n", reinterpret_cast<const char*>(u8"\u21A9"));
     sciCall.SetRepresentationAppearance("\n", Scintilla::RepresentationAppearance::Plain);
     sciCall.SetRepresentationAppearance("\r", Scintilla::RepresentationAppearance::Plain);
+    sciCall.SetRepresentation("\r\n", reinterpret_cast<const char*>(
+        sciCall.Technology() == Scintilla::Technology::Default ? u8"\U0001F844" : u8"\u21A9"));
     sciCall.SetRepresentationAppearance("\r\n", Scintilla::RepresentationAppearance::Plain);
     sciCall.ClearCmdKey('B' + (SCMOD_CTRL << 16));
     sciCall.ClearCmdKey('E' + (SCMOD_CTRL << 16));
@@ -221,8 +222,8 @@ ScintillaControl& ScintillaControl::configure(Scintilla::ScintillaCall& referenc
     }
 
 ScintillaControl& ScintillaControl::configure(Configuration& c) {
-    c.put(*this);
     Configuration::common(*this);
+    c.put(*this);
     load();
     return *this;
 }
