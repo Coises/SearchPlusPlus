@@ -159,7 +159,7 @@ public:
     RegularExpressionU(RegularExpression::Mono& mono) : Poly(mono) {}
 
     std::string format(const std::string& replacement) const override {
-        return utf32to8(uMatch.format(utf8to32(replacement), boost::format_all));
+        return utf32to8(uMatch.format(utf8to32(replacement), boost::format_all), InvalidUnicode::Preserve_8);
     }
 
     intptr_t length(int n = 0) const override {
