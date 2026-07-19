@@ -62,7 +62,15 @@ bool SearchableFile::read(char* smallBuffer, size_t smallBufferSize) {
 
     // Attempt to open the file with basic read privileges
 
-    file = CreateFile(filePath.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
+    // Notepad++ can't open absolute file paths longer than MAX_PATH, but there's no reason
+    // not to handle them here. If they aren't handled, the resulting error message is confusing,
+    // indicating that the file can't be found rather than that the path is too long.
+
+    std::wstring longFilePath = filePath.length() < MAX_PATH || filePath.substr(0, 4) == L"\\\\?\\" ? filePath
+        : filePath.substr(0, 2) == L"\\\\" ? L"\\\\?\\UNC\\" + filePath.substr(2)
+        : L"\\\\?\\" + filePath;
+
+    file = CreateFile(longFilePath.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
 
     if (file == INVALID_HANDLE_VALUE) {
         errcode = GetLastError();
