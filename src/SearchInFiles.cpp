@@ -467,6 +467,34 @@ void showScintillaTip(HWND scintilla, std::string bubble) {
 }
 
 
+void showPathInWindowsExplorer(std::wstring path) {
+    HRESULT hrInit = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hrInit) && hrInit != S_FALSE) return;
+    PIDLIST_ABSOLUTE pidlFull = nullptr;
+    HRESULT hr = SHParseDisplayName(path.data(), nullptr, &pidlFull, 0, nullptr);
+    if (SUCCEEDED(hr)) {
+        IShellFolder* pSFParent = nullptr;
+        PCUITEMID_CHILD pidlChild = nullptr;
+        hr = SHBindToParent(pidlFull, IID_PPV_ARGS(&pSFParent), &pidlChild);
+        if (SUCCEEDED(hr)) {
+            PIDLIST_ABSOLUTE pidlParent = nullptr;
+            hr = SHGetIDListFromObject(pSFParent, &pidlParent);
+            if (SUCCEEDED(hr)) {
+                hr = SHOpenFolderAndSelectItems(pidlParent, 1, &pidlChild, 0);
+                if (FAILED(hr)) TaskDialog(0, 0, L"Search Files", L"Unable to show this file in Explorer:",
+                                           path.data(), TDCBF_OK_BUTTON, TD_ERROR_ICON, 0);
+                ILFree(pidlParent);
+            }
+            pSFParent->Release();
+        }
+        ILFree(pidlFull);
+    }
+    else TaskDialog(0, 0, L"Search Files", L"Unable to show this file in Explorer:",
+                    path.data(), TDCBF_OK_BUTTON, TD_ERROR_ICON, 0);
+    CoUninitialize();
+}
+
+
 void showErrorDetails(HWND owner, const SearchableFile& sf) {
     std::wstring msg;
     switch (sf.error) {
@@ -1187,17 +1215,8 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             case 3:
             {
                 std::wstring path = SearchableFile::queue[selections[0]].filePath;
-                if (path.rfind(L"\\\\?\\UNC\\", 0) == 0) path = L"\\\\" + path.substr(8);
-                else if (path.rfind(L"\\\\?\\", 0) == 0) path = path.substr(4);
-                PIDLIST_ABSOLUTE pidlAbsolute = ILCreateFromPath(path.data());
-                if (pidlAbsolute) {
-                    HRESULT hr = SHOpenFolderAndSelectItems(pidlAbsolute, 0, nullptr, 0);
-                    if (FAILED(hr)) TaskDialog(hwndDlg, 0, L"Search Files", L"Unable to show this file in Explorer:",
-                        SearchableFile::queue[selections[0]].filePath.data(), TDCBF_OK_BUTTON, TD_ERROR_ICON, 0);
-                    ILFree(pidlAbsolute);
-                }
-                else TaskDialog(hwndDlg, 0, L"Search Files", L"Unable to show this file in Explorer:",
-                    SearchableFile::queue[selections[0]].filePath.data(), TDCBF_OK_BUTTON, TD_ERROR_ICON, 0);
+                std::thread explorerThread([path]() {showPathInWindowsExplorer(path);});
+                explorerThread.detach();
                 break;
             }
             case 4:
