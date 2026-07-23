@@ -30,7 +30,6 @@ namespace {
     bool configFound = false;
     bool configIgnored = false;
     std::filesystem::file_time_type lastWriteTime;
-    HANDLE multiInstanceTest = 0;
 
 }
 
@@ -51,13 +50,6 @@ void loadConfiguration() {
     configFound = true;
     std::error_code ec;
     lastWriteTime = std::filesystem::last_write_time(filePath, ec);
-
-    std::wstring semaphoreName = filePath;
-    std::replace(semaphoreName.begin(), semaphoreName.end(), L'\\', L'/');
-    if (semaphoreName.length() > MAX_PATH - 20) semaphoreName = semaphoreName.substr(semaphoreName.length() - (MAX_PATH - 20));
-    semaphoreName = L"Local\\NppCppMSVS " + semaphoreName;
-    multiInstanceTest = CreateSemaphore(0, 1000, 1000, semaphoreName.data());
-    if (multiInstanceTest) WaitForSingleObject(multiInstanceTest, 0);
 
     json saved = json::parse(file, 0, false, true);
 
@@ -100,17 +92,29 @@ void loadConfiguration() {
 }
 
 
+namespace {
+    BOOL CALLBACK CountNppInstances(HWND hwnd, LPARAM lParam) {
+        wchar_t className[256];
+        if (GetClassName(hwnd, className, 256)) {
+            if (wcscmp(className, L"Notepad++") == 0) {
+                int* count = reinterpret_cast<int*>(lParam);
+                (*count)++;
+            }
+        }
+        return TRUE;
+    }
+}
+
+
 void saveConfiguration() {
 
     // If you have settings that are not copied to the JSON store whenever they change, copy them here.
 
     // Check for multple instances. Don't save unless this is the last instance.
 
-    if (multiInstanceTest) {
-        LONG previousCount = 0;
-        ReleaseSemaphore(multiInstanceTest, 1, &previousCount);
-        if (previousCount < 999) return;
-    }
+    int nppInstanceCount = 0;
+    EnumWindows(CountNppInstances, reinterpret_cast<LPARAM>(&nppInstanceCount));
+    if (nppInstanceCount > 1) return;
 
     if (configFound) {
         if (configIgnored) {
