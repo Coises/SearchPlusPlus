@@ -1,5 +1,15 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.6.3 -- July 23rd, 2026
+
+* Fix a pair of errors that caused incorrect results when non-BPM characters were used in a regex replacement string and when a capture group included invalid UTF-8.
+
+* Fix problematic behavior for Show file in explorer on context menu for the file list in the Search in Files dialog when the file list is large. The action could become sluggish or fail to complete and interfere with other activity.
+
+* Handle absolute file paths larger than MAX_PATH.
+
+* Avoid "configuration file for this plugin was edited" when running multiple instances of Notepad++: only save when the last instance is closing.
+
 ## Version 0.6.2 -- July 14th, 2026
 
 * Fix a critical error that caused ICU searches to crash Notepad++.
