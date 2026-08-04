@@ -80,6 +80,7 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCI_SETVIEWWS 2021
 #define SCTD_LONGARROW 0
 #define SCTD_STRIKEOUT 1
+#define SCTD_CONTROLCHAR 2
 #define SCI_GETTABDRAWMODE 2698
 #define SCI_SETTABDRAWMODE 2699
 #define SCI_POSITIONFROMPOINT 2022
@@ -871,6 +872,7 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SC_STATUS_OK 0
 #define SC_STATUS_FAILURE 1
 #define SC_STATUS_BADALLOC 2
+#define SC_STATUS_OUTSIDE_DOCUMENT 3
 #define SC_STATUS_WARN_START 1000
 #define SC_STATUS_WARN_REGEX 1001
 #define SCI_SETSTATUS 2382
@@ -1203,6 +1205,8 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCI_RELEASELINECHARACTERINDEX 2712
 #define SCI_LINEFROMINDEXPOSITION 2713
 #define SCI_INDEXPOSITIONFROMLINE 2714
+#define SCI_GETDRAGDROPENABLED 2818
+#define SCI_SETDRAGDROPENABLED 2819
 #define SCI_STARTRECORD 3001
 #define SCI_STOPRECORD 3002
 #define SCI_GETLEXER 4002
@@ -1338,6 +1342,10 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCN_MARGINRIGHTCLICK 2031
 #define SCN_AUTOCSELECTIONCHANGE 2032
 #ifndef SCI_DISABLE_PROVISIONAL
+#define SCALE_TECHNIQUE_DEFAULT 0
+#define SCALE_TECHNIQUE_PIXEL_ALIGNED 1
+#define SCI_SETSCALETECHNIQUE 2820
+#define SCI_GETSCALETECHNIQUE 2821
 #define SC_BIDIRECTIONAL_DISABLED 0
 #define SC_BIDIRECTIONAL_L2R 1
 #define SC_BIDIRECTIONAL_R2L 2

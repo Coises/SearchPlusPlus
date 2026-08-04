@@ -1,5 +1,5 @@
 // This file is part of "NppCppMSVS: Visual Studio Project Template for a Notepad++ C++ Plugin"
-// Copyright 2025 by Randall Joseph Fellmy <software@coises.com>, <http://www.coises.com/software/>
+// Copyright 2025, 2026 by Randall Joseph Fellmy <software@coises.com>, <http://www.coises.com/software/>
 
 // The source code contained in this file is independent of Notepad++ code.
 // It is released under the MIT (Expat) license:
@@ -33,10 +33,11 @@
 
 #pragma once
 #define NOMINMAX
-#include <windows.h>      // For common windows data types and function headers
+#include <windows.h>
 #define STRICT_TYPED_ITEMIDS
 #include "Shlwapi.h"
-#include <shobjidl.h>     // for IFileDialogEvents and IFileDialogControlEvents
+#include <shobjidl.h>
+#include <stdexcept>
 #include <string>
 #include <vector>
 

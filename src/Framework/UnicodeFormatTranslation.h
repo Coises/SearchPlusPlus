@@ -99,7 +99,7 @@ inline std::u32string utf8to32(const std::string_view s, InvalidUnicode errs = I
         case 3:
             if (i + 2 >= s.length() || !utf8byte::isTrail(s[i + 1]) || !utf8byte::isTrail(s[i + 2])) break;
             if ((errs != InvalidUnicode::Preserve_16 || s[i] != 0xED) && utf8byte::badPair(s[i], s[i + 1])) break;
-            u += static_cast<wchar_t>(utf8byte::to32(s[i], s[i + 1], s[i + 2]));
+            u += utf8byte::to32(s[i], s[i + 1], s[i + 2]);
             i += 2;
             continue;
         case 4:

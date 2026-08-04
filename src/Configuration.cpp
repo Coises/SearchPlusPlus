@@ -110,7 +110,7 @@ void saveConfiguration() {
 
     // If you have settings that are not copied to the JSON store whenever they change, copy them here.
 
-    // Check for multple instances. Don't save unless this is the last instance.
+    // Check for multiple instances. Don't save unless this is the last instance.
 
     int nppInstanceCount = 0;
     EnumWindows(CountNppInstances, reinterpret_cast<LPARAM>(&nppInstanceCount));
