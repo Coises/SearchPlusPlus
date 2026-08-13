@@ -49,6 +49,7 @@ public:
     bool regexValid = false;
     void ensureValid() {
         if (sci && pt1 == 0 && pt2 == 0) {
+            sci->CharacterPointer();  // <=== Temporary test fix; should cause gap always to move to the end
             end = sci->Length();
             gap = sci->GapPosition();
             pt1 = gap > 0 ? reinterpret_cast<const char*>(sci->RangePointer(0, gap)) : 0;
