@@ -1,5 +1,9 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.6.3.2 -- August 12th, 2026
+
+* This is a test version intended to verify a possible cause for a specific problem. It is not part of the main release chain.
+
 ## Version 0.6.3.1 -- July 23rd, 2026
 
 * Fix a pair of errors that caused incorrect results when non-BPM characters were used in a regex replacement string and when a capture group included invalid UTF-8.
