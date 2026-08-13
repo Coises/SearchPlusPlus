@@ -51,13 +51,10 @@ public:
 
     class DocumentIterator {
 
-        intptr_t    pos;
-        intptr_t    end;
-        intptr_t    gap;
-        const char* pt1;
-        const char* pt2;
+        const RegularExpression::Mono* mono;
+        intptr_t pos;
 
-        char at(intptr_t cp) const { return cp < gap ? pt1[cp] : pt2[cp]; }
+        char at(intptr_t cp) const { return cp < mono->gap ? mono->pt1[cp] : mono->pt2[cp]; }
 
         // Note: Scintilla shows an invalid byte graphic -- an "x" and two hexadecimal digits on an inverted background -- 
         // for each byte in a sequence that cannot be decoded.  Accordingly, instead of following the standard of counting
@@ -71,7 +68,7 @@ public:
         int length(intptr_t p) const {
             const unsigned char c1 = at(p);
             intptr_t n = utf8byte::implicit_length(c1);
-            if (n < 2 || p + n > end) return 1;
+            if (n < 2 || p + n > mono->end) return 1;
             const unsigned char c2 = at(p + 1);
             if (!utf8byte::isTrail(c2)) return 1;
             if (n == 2) return 2;
@@ -87,7 +84,7 @@ public:
         // after being incremented and decremented, which can break the regular expression algorithm.
 
         void fix_position() {
-            if (pos <= 0 || pos >= end || !utf8byte::isTrail(at(pos)) || utf8byte::isASCII(at(pos - 1))) return;
+            if (pos <= 0 || pos >= mono->end || !utf8byte::isTrail(at(pos)) || utf8byte::isASCII(at(pos - 1))) return;
             int n = length(pos - 1);
             if (n > 1) pos += n - 1;
             else if (pos > 1) {
@@ -108,11 +105,9 @@ public:
         using pointer           = char32_t*;
         using reference         = char32_t&;
 
-        DocumentIterator() : pos(0), end(0), gap(0), pt1(0), pt2(0) {}
-        DocumentIterator(const DocumentIterator& di, intptr_t pos)
-            : pos(pos), end(di.end), gap(di.gap), pt1(di.pt1), pt2(di.pt2) { fix_position(); }
-        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos)
-            : pos(pos), end(mono.end), gap(mono.gap), pt1(mono.pt1), pt2(mono.pt2) { fix_position(); }
+        DocumentIterator() : mono(0), pos(0) {}
+        DocumentIterator(const DocumentIterator& di, intptr_t pos)          : mono(di.mono), pos(pos) { fix_position(); }
+        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos) : mono(&mono  ), pos(pos) { fix_position(); }
 
         bool operator==(const DocumentIterator& other) const { return pos == other.pos; }
         bool operator!=(const DocumentIterator& other) const { return pos != other.pos; }
@@ -159,6 +154,7 @@ public:
     RegularExpressionU(RegularExpression::Mono& mono) : Poly(mono) {}
 
     std::string format(const std::string& replacement) const override {
+        mono.ensureValid();
         return utf32to8(uMatch.format(utf8to32(replacement), boost::format_all), InvalidUnicode::Preserve_8);
     }
 
@@ -189,7 +185,7 @@ public:
             mono.regexValid = false;
             if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
             else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                          L"Search++: Error in regular expression search", MB_ICONERROR);
+                               L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
@@ -210,7 +206,7 @@ public:
             mono.regexValid = false;
             if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
             else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                L"Search++: Error in regular expression search", MB_ICONERROR);
+                               L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
@@ -251,10 +247,8 @@ public:
 
     class DocumentIterator {
 
-        intptr_t    pos;
-        intptr_t    gap;
-        const char* pt1;
-        const char* pt2;
+        const RegularExpression::Mono* mono;
+        intptr_t pos;
 
     public:
 
@@ -264,9 +258,9 @@ public:
         using pointer           = char32_t*;
         using reference         = char32_t&;
 
-        DocumentIterator() : pos(0), gap(0), pt1(0), pt2(0) {}
-        DocumentIterator(const DocumentIterator&        di  , intptr_t pos) : pos(pos), gap(di  .gap), pt1(di  .pt1), pt2(di  .pt2) {}
-        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos) : pos(pos), gap(mono.gap), pt1(mono.pt1), pt2(mono.pt2) {}
+        DocumentIterator() : mono(0), pos(0) {}
+        DocumentIterator(const DocumentIterator&        di  , intptr_t pos) : mono(di.mono), pos(pos) {}
+        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos) : mono(&mono  ), pos(pos) {}
 
         bool operator==(const DocumentIterator& other) const { return pos == other.pos; }
         bool operator!=(const DocumentIterator& other) const { return pos != other.pos; }
@@ -298,7 +292,7 @@ public:
                     }
                 }
             } map;
-            return map.value[static_cast<unsigned char>(pos < gap ? pt1[pos] : pt2[pos])];
+            return map.value[static_cast<unsigned char>(pos < mono->gap ? mono->pt1[pos] : mono->pt2[pos])];
         }
 
     };
@@ -313,6 +307,7 @@ public:
     RegularExpressionSBCS(RegularExpression::Mono& mono) : Poly(mono) {}
 
     std::string format(const std::string& replacement) const override {
+        mono.ensureValid();
         return fromWide(utf32to16(uMatch.format(utf8to32(replacement), boost::format_all)), mono.codepage);
     }
 
@@ -405,13 +400,10 @@ public:
 
     class DocumentIterator {
 
-        mutable intptr_t    pos;
-        mutable intptr_t    end;
-        mutable intptr_t    gap;
-        mutable const char* pt1;
-        mutable const char* pt2;
+        const RegularExpression::Mono* mono;
+        intptr_t pos;
 
-        char at(intptr_t cp) const { return cp < gap ? pt1[cp] : pt2[cp]; }
+        char at(intptr_t cp) const { return cp < mono->gap ? mono->pt1[cp] : mono->pt2[cp]; }
 
         bool canBeLead(intptr_t p) const {
             static const struct Map {
@@ -434,7 +426,7 @@ public:
 
         int length(intptr_t p) const {
             if (!canBeLead(p)) return 1;
-            return p + 1 < end && canBeTrail(p + 1) ? 2 : 1;
+            return p + 1 < mono->end && canBeTrail(p + 1) ? 2 : 1;
         }
 
         // fix_position advances the iterator position if it is on a trailing byte within a valid character
@@ -447,7 +439,7 @@ public:
         // if odd, either pos points to a trail byte or an error byte (invalid trail byte).
 
         void fix_position() {
-            if (pos <= 0 || pos >= end || !canBeTrail(pos)) return;
+            if (pos <= 0 || pos >= mono->end || !canBeTrail(pos)) return;
             intptr_t p = pos;
             while (p > 0 && canBeLead(p - 1)) --p;
             if (((pos - p) & 1)) ++pos;
@@ -461,11 +453,9 @@ public:
         using pointer           = char32_t*;
         using reference         = char32_t&;
 
-        DocumentIterator() : pos(0), end(0), gap(0), pt1(0), pt2(0) {}
-        DocumentIterator(const DocumentIterator& di, intptr_t pos)
-            : pos(pos), end(di.end), gap(di.gap), pt1(di.pt1), pt2(di.pt2) { fix_position(); }
-        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos)
-            : pos(pos), end(mono.end), gap(mono.gap), pt1(mono.pt1), pt2(mono.pt2) { fix_position(); }
+        DocumentIterator() : mono(0), pos(0) {}
+        DocumentIterator(const DocumentIterator& di, intptr_t pos)          : mono(di.mono), pos(pos) { fix_position(); }
+        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos) : mono(&mono  ), pos(pos) { fix_position(); }
 
         bool operator==(const DocumentIterator& other) const { return pos == other.pos; }
         bool operator!=(const DocumentIterator& other) const { return pos != other.pos; }
@@ -515,6 +505,7 @@ public:
     RegularExpressionDBCS(RegularExpression::Mono& mono) : Poly(mono) {}
 
     std::string format(const std::string& replacement) const override {
+        mono.ensureValid();
         return fromWide(utf32to16(uMatch.format(utf8to32(replacement), boost::format_all)), mono.codepage);
     }
 
