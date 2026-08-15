@@ -243,12 +243,34 @@ public:
 
 class RegularExpressionSBCS : public RegularExpression::Poly {
 
+    struct Map {
+        char32_t value[256];
+        Map(unsigned int codepage) {
+            char sbc[1];
+            wchar_t wide[2];
+            for (int i = 0; i < 256; ++i) {
+                sbc[0] = static_cast<unsigned char>(i);
+                switch (MultiByteToWideChar(codepage, MB_ERR_INVALID_CHARS, sbc, 1, wide, 2)) {
+                case 1:
+                    value[i] = wide[0];
+                    break;
+                case 2:
+                    value[i] = (static_cast<char32_t>(wide[0] & 0x7FF) << 10 | (wide[1] & 0x03FF)) + 0x10000;
+                    break;
+                default:
+                    value[i] = 0xDC00 + static_cast<unsigned char>(sbc[0]);  /* Invalid: encode like Python surrogateescape */
+                }
+            }
+        }
+    };
+
 public:
 
     class DocumentIterator {
 
         const RegularExpression::Mono* mono;
         intptr_t pos;
+        const Map* map;
 
     public:
 
@@ -258,9 +280,9 @@ public:
         using pointer           = char32_t*;
         using reference         = char32_t&;
 
-        DocumentIterator() : mono(0), pos(0) {}
-        DocumentIterator(const DocumentIterator&        di  , intptr_t pos) : mono(di.mono), pos(pos) {}
-        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos) : mono(&mono  ), pos(pos) {}
+        DocumentIterator() : mono(0), pos(0), map(0) {}
+        DocumentIterator(const DocumentIterator&        di  , intptr_t pos                ) : mono(di.mono), pos(pos), map(di.map) {}
+        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos, const Map& map) : mono(&mono  ), pos(pos), map(&map  ) {}
 
         bool operator==(const DocumentIterator& other) const { return pos == other.pos; }
         bool operator!=(const DocumentIterator& other) const { return pos != other.pos; }
@@ -272,27 +294,7 @@ public:
         DocumentIterator& operator--() { --pos; return *this; }
 
         char32_t operator*() const {
-            static const struct Map {
-                char32_t value[256];
-                Map() {
-                    char sbc[1];
-                    wchar_t wide[2];
-                    for (int i = 0; i < 256; ++i) {
-                        sbc[0] = static_cast<unsigned char>(i);
-                        switch (MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS, sbc, 1, wide, 2)) {
-                        case 1:
-                            value[i] = wide[0];
-                            break;
-                        case 2:
-                            value[i] = (static_cast<char32_t>(wide[0] & 0x7FF) << 10 | (wide[1] & 0x03FF)) + 0x10000;
-                            break;
-                        default:
-                            value[i] = 0xDC00 + static_cast<unsigned char>(sbc[0]);  /* Invalid: encode like Python surrogateescape */
-                        }
-                    }
-                }
-            } map;
-            return map.value[static_cast<unsigned char>(pos < mono->gap ? mono->pt1[pos] : mono->pt2[pos])];
+            return map->value[static_cast<unsigned char>(pos < mono->gap ? mono->pt1[pos] : mono->pt2[pos])];
         }
 
     };
@@ -301,10 +303,11 @@ private:
 
     friend class DocumentIterator;
     boost::match_results<DocumentIterator> uMatch;
+    const Map map;
 
 public:
 
-    RegularExpressionSBCS(RegularExpression::Mono& mono) : Poly(mono) {}
+    RegularExpressionSBCS(RegularExpression::Mono& mono) : Poly(mono), map(mono.codepage) {}
 
     std::string format(const std::string& replacement) const override {
         mono.ensureValid();
@@ -326,8 +329,8 @@ public:
         mono.pt1 = s.data();
         mono.pt2 = 0;
         try {
-            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, s.length()), uMatch, mono.uFind,
-                                       boost::match_not_dot_newline, DocumentIterator(mono, 0));
+            return boost::regex_search(DocumentIterator(mono, from, map), DocumentIterator(mono, s.length(), map), uMatch, mono.uFind,
+                                       boost::match_not_dot_newline, DocumentIterator(mono, 0, map));
         }
         catch (const boost::regex_error& e) {
             mono.regexValid = false;
@@ -338,7 +341,7 @@ public:
             mono.regexValid = false;
             if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
             else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                L"Search++: Error in regular expression search", MB_ICONERROR);
+                               L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
@@ -347,8 +350,8 @@ public:
         if (!mono.regexValid) return false;
         mono.ensureValid();
         try {
-            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, to), uMatch, mono.uFind,
-                boost::match_not_dot_newline, DocumentIterator(mono, start));
+            return boost::regex_search(DocumentIterator(mono, from, map), DocumentIterator(mono, to, map), uMatch, mono.uFind,
+                                       boost::match_not_dot_newline, DocumentIterator(mono, start, map));
         }
         catch (const boost::regex_error& e) {
             mono.regexValid = false;
@@ -396,29 +399,43 @@ public:
 
 class RegularExpressionDBCS : public RegularExpression::Poly {
 
+    struct Map {
+        bool lead[256];
+        bool trail[256];
+        Map(unsigned int codepage) {
+            if (!codepage) {
+                for (int i = 0; i < 256; ++i) {
+                    lead[i] = _ismbblead(i);
+                    trail[i] = _ismbbtrail(i);
+                }
+            }
+            else {
+                _locale_t loc = _create_locale(LC_CTYPE, ("." + std::to_string(codepage)).data());
+                for (int i = 0; i < 256; ++i) {
+                    lead[i] = _ismbblead_l(i, loc);
+                    trail[i] = _ismbbtrail_l(i, loc);
+                }
+                _free_locale(loc);
+            }
+        }
+    };
+
 public:
 
     class DocumentIterator {
 
         const RegularExpression::Mono* mono;
         intptr_t pos;
+        const Map* map;
 
         char at(intptr_t cp) const { return cp < mono->gap ? mono->pt1[cp] : mono->pt2[cp]; }
 
         bool canBeLead(intptr_t p) const {
-            static const struct Map {
-                bool lead[256];
-                Map() { for (int i = 0; i < 256; ++i) lead[i] = _ismbblead(i); }
-            } map;
-            return map.lead[static_cast<unsigned char>(at(p))];
+            return map->lead[static_cast<unsigned char>(at(p))];
         }
 
         bool canBeTrail(intptr_t p) const {
-            static const struct Map {
-                bool trail[256];
-                Map() { for (int i = 0; i < 256; ++i) trail[i] = _ismbbtrail(i); }
-            } map;
-            return map.trail[static_cast<unsigned char>(at(p))];
+            return map->trail[static_cast<unsigned char>(at(p))];
         }
 
         // length(p) returns the length of the sequence indexed by p if it is a valid sequence, or 1 if it is not a valid sequence
@@ -453,9 +470,9 @@ public:
         using pointer           = char32_t*;
         using reference         = char32_t&;
 
-        DocumentIterator() : mono(0), pos(0) {}
-        DocumentIterator(const DocumentIterator& di, intptr_t pos)          : mono(di.mono), pos(pos) { fix_position(); }
-        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos) : mono(&mono  ), pos(pos) { fix_position(); }
+        DocumentIterator() : mono(0), pos(0), map(0) {}
+        DocumentIterator(const DocumentIterator& di         , intptr_t pos                ) : mono(di.mono), pos(pos), map(di.map) { fix_position(); }
+        DocumentIterator(const RegularExpression::Mono& mono, intptr_t pos, const Map& map) : mono(&mono  ), pos(pos), map(&map  ) { fix_position(); }
 
         bool operator==(const DocumentIterator& other) const { return pos == other.pos; }
         bool operator!=(const DocumentIterator& other) const { return pos != other.pos; }
@@ -499,10 +516,11 @@ private:
 
     friend class DocumentIterator;
     boost::match_results<DocumentIterator> uMatch;
+    const Map map;
 
 public:
 
-    RegularExpressionDBCS(RegularExpression::Mono& mono) : Poly(mono) {}
+    RegularExpressionDBCS(RegularExpression::Mono& mono) : Poly(mono), map(mono.codepage) {}
 
     std::string format(const std::string& replacement) const override {
         mono.ensureValid();
@@ -521,8 +539,8 @@ public:
         mono.pt1 = s.data();
         mono.pt2 = 0;
         try {
-            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, s.length()), uMatch, mono.uFind,
-                                       boost::match_not_dot_newline, DocumentIterator(mono, 0));
+            return boost::regex_search(DocumentIterator(mono, from, map), DocumentIterator(mono, s.length(), map), uMatch, mono.uFind,
+                                       boost::match_not_dot_newline, DocumentIterator(mono, 0, map));
         }
         catch (const boost::regex_error& e) {
             mono.regexValid = false;
@@ -533,7 +551,7 @@ public:
             mono.regexValid = false;
             if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
             else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                L"Search++: Error in regular expression search", MB_ICONERROR);
+                               L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
@@ -542,8 +560,8 @@ public:
         if (!mono.regexValid) return false;
         mono.ensureValid();
         try {
-            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, to), uMatch, mono.uFind,
-                boost::match_not_dot_newline, DocumentIterator(mono, start));
+            return boost::regex_search(DocumentIterator(mono, from, map), DocumentIterator(mono, to, map), uMatch, mono.uFind,
+                boost::match_not_dot_newline, DocumentIterator(mono, start, map));
         }
         catch (const boost::regex_error& e) {
             mono.regexValid = false;
@@ -554,7 +572,7 @@ public:
             mono.regexValid = false;
             if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
             else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                L"Search++: Error in regular expression search", MB_ICONERROR);
+                               L"Search++: Error in regular expression search", MB_ICONERROR);
         }
         return false;
     }
