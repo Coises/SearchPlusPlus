@@ -1,5 +1,9 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.6.5 -- August 16th, 2026
+
+* Update to ICU 78.3 and use static linking for ICU. This is expected to fix problems some testers have had running Search++ on older systems or on minimal Windows installs (like Windows Sandbox). For most users there will be no functional difference.
+
 ## Version 0.6.4 -- August 15th, 2026
 
 * Fix an error that could cause regular expression replacements to contain random incorrect characters.

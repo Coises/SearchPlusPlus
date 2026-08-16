@@ -43,7 +43,7 @@ Search++ uses the [C++ Mathematical Expression Toolkit Library
 
 * The **Settings...** dialog (available from the Search++ plugin menu or the Tools menu) has quite a few options you might want to review.
 
-* The **ICU** button at the top is there mostly for testing. It uses the regular expression engine built into ICU, which has different syntax than the familiar Boost.Regex engine and does not integrate as well with Scintilla. Replace is not implemented for this search engine, and it only works on Unicode documents. It will probably be removed when Search++ reaches version 1.0, as it really isn’t very useful except as a check on the results from the main Regex engine (since I’ve meddled with the main Regex engine quite a lot, and I haven’t modified the ICU engine in any way).
+* The **ICU** button at the top is there mostly for testing. It uses the regular expression engine built into ICU, which has different syntax than the familiar Boost.Regex engine and does not integrate as well with Scintilla. Replace is not implemented for this search engine, and it only works on Unicode documents. I might remove it before Search++ reaches version 1.0, as it really isn’t very useful except as a check on the results from the main Regex engine (since I’ve meddled with the main Regex engine quite a lot, and I haven’t modified the ICU engine in any way).
 
 ## Missing and Planned Features, and things I know don’t work quite right yet
 
@@ -55,7 +55,24 @@ Search++ uses the [C++ Mathematical Expression Toolkit Library
 
 * I’ve implemented a sort of “collision detection” when doing stepwise Find or Replace with the regular (non-docking) dialog or locating matches from the search results, so the document will be scrolled as needed to avoid the found text being obscured by the search window. I know it doesn’t work as well as it could yet. (It’s a surprisingly tricky problem to solve, and I couldn’t find any examples of it being solved already.)
 
-* I hope to add more features to the regular expression search. The current version is almost identical to the search in Columns++, but presented in what is hopefully a more flexible and user-friendly interface. It should be more accurate for Unicode-derived properties since it uses ICU4C directly instead of working from the home-grown parse of Unicode tables used in Columns++. If I can work out a way, I hope to add Unicode word breaks and more Unicode properties. 
+* I hope to add more features to the regular expression search. The current version is almost identical to the search in Columns++, but presented in what is hopefully a more flexible and user-friendly interface. It should be more accurate for Unicode-derived properties since it uses ICU4C directly instead of working from the home-grown parse of Unicode tables used in Columns++. If I can work out a way, I hope to add Unicode word breaks and more Unicode properties.
+
+## Building
+
+As of version 0.6.5, Search++ uses [ICU4C](https://github.com/unicode-org/icu/) by means of the [vcpkg](https://github.com/microsoft/vcpkg) package manager. This keeps the complex build requirements of ICU separate from the relatively simple Search++ build, but it requires an extra step. You can install vcpkg by choosing a folder to contain its code and downloads and then running these commands:
+
+```
+git clone https://github.com/microsoft/vcpkg.git
+cd vcpkg
+bootstrap-vcpkg.bat
+.\vcpkg.exe integrate install
+```
+
+Run the first command in the folder where you want to create a vcpkg folder, then enter the new folder (the `cd` command) and run the bootstrap and integrate commands.
+
+The solution file for Search++ is set up to use vcpkg. I *think* that once you’ve done the above, all you need to do is a normal (re)build. The first build might take a long time, as vcpkg has to download and process a lot of files, both to set itself up and to fetch and compile ICU. If something doesn’t work or make sense, submit an issue and I will try to figure it out.
+
+The source code for ICU will be posted in an artifact with each release (e.g., icu4c-78.3-sources.zip). That is for GPL license compliance. As a practical matter you do not need that file: use vcpkg to download and build ICU.
 
 ## Installation
 
