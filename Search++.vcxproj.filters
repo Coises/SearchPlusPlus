@@ -14,12 +14,6 @@
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
     <Filter Include="Support Files" />
-    <Filter Include="ICU x64 DLLs">
-      <UniqueIdentifier>{17b511eb-6efd-4df2-b973-e616efa66883}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ICU x86 DLLs">
-      <UniqueIdentifier>{8c8c8c3c-1523-4e84-9502-8d9020cbb794}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Symbol Font">
       <UniqueIdentifier>{5d48a251-84f8-4108-8162-27c05cb09c96}</UniqueIdentifier>
     </Filter>
@@ -232,36 +226,6 @@
     <CopyFileToFolders Include="README.md">
       <Filter>Documentation</Filter>
     </CopyFileToFolders>
-    <CopyFileToFolders Include="ICU4C\bin64\icudt78.dll">
-      <Filter>ICU x64 DLLs</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="ICU4C\bin64\icuin78.dll">
-      <Filter>ICU x64 DLLs</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="ICU4C\bin64\icuio78.dll">
-      <Filter>ICU x64 DLLs</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="ICU4C\bin64\icutu78.dll">
-      <Filter>ICU x64 DLLs</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="ICU4C\bin64\icuuc78.dll">
-      <Filter>ICU x64 DLLs</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="ICU4C\bin\icudt78.dll">
-      <Filter>ICU x86 DLLs</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="ICU4C\bin\icuin78.dll">
-      <Filter>ICU x86 DLLs</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="ICU4C\bin\icuio78.dll">
-      <Filter>ICU x86 DLLs</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="ICU4C\bin\icutu78.dll">
-      <Filter>ICU x86 DLLs</Filter>
-    </CopyFileToFolders>
-    <CopyFileToFolders Include="ICU4C\bin\icuuc78.dll">
-      <Filter>ICU x86 DLLs</Filter>
-    </CopyFileToFolders>
     <CopyFileToFolders Include="src\symbols\Search++-Private-Symbols.otf">
       <Filter>Symbol Font</Filter>
     </CopyFileToFolders>
@@ -272,6 +236,9 @@
     </None>
     <None Include="ZipForRelease.ps1">
       <Filter>Support Files</Filter>
+    </None>
+    <None Include="vcpkg.json">
+      <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -1,0 +1,12 @@
+{
+  "builtin-baseline": "ddf0518c31a259dcc359fd4c7bcb1ce8a27e9855",
+  "dependencies": [
+    "icu"
+  ],
+  "overrides": [
+    {
+      "name": "icu",
+      "version": "78.3"
+    }
+  ]
+}
