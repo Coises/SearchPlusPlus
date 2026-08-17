@@ -12,6 +12,8 @@
 #define IDD_TOOLS_COPYMARKED            170
 #define IDD_REMOVEMARKS                 180
 #define IDD_SIF                         190
+#define IDI_SEARCH                      900
+#define IDI_LIST                        901
 #define IDC_ABOUT_VERSION               1101
 #define IDC_ABOUT_HELP                  1102
 #define IDC_ABOUT_MORE                  1103

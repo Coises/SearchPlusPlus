@@ -241,4 +241,18 @@
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="icons\search.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="icons\list.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="src\icons\search.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="src\icons\list.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
 </Project>

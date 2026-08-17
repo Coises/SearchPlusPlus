@@ -1769,12 +1769,13 @@ void showSearchDialog() {
         AddFontResourceEx(pip.data(), FR_PRIVATE | FR_NOT_ENUM, 0);
         if (data.dialogLayout == DialogLayout::Docking) {
             data.searchDialog = CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_DOCKINGSEARCH), plugin.nppData._nppHandle, searchDialogProc);
-            NPP::tTbData dock;
+            NPP::DockedWidgetData dock;
             dock.hClient       = data.searchDialog;
-            dock.pszName       = L"Search++";             // title bar text (caption in dialog is replaced)
-            dock.dlgID         = 0;                       // zero-based position in menu to recall dialog at next startup
-            dock.uMask         = DWS_DF_CONT_RIGHT;       // first time display will be docked at the right
-            dock.pszModuleName = L"Search++.dll";         // plugin module name
+            dock.pszName       = L"Search++";                      // title bar text (caption in dialog is replaced)
+            dock.dlgID         = 0;                                // zero-based position in menu to recall dialog at next startup
+            dock.uMask         = DWS_ICONTAB | DWS_DF_CONT_RIGHT;  // icon supplied; first time display will be docked at the right
+            dock.hIconTab      = LoadIcon(plugin.dllInstance, MAKEINTRESOURCE(IDI_SEARCH));  // icon for docking tab
+            dock.pszModuleName = L"Search++.dll";                                            // plugin module name
             npp(NPPM_DMMREGASDCKDLG, 0, &dock);
             data.dockingDialog = data.searchDialog;
         }

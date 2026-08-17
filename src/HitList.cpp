@@ -655,12 +655,13 @@ void showHitlist(MatchResults& matchResults) {
     if (hitlist) npp(NPPM_DMMSHOW, 0, hitlist);
     else {
         hitlist = CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_HITLIST), plugin.nppData._nppHandle, hitlistDialogProc);
-        NPP::tTbData dock;
+        NPP::DockedWidgetData dock;
         dock.hClient       = hitlist;
-        dock.pszName       = L"Search++ Results";       // title bar text (caption in dialog is replaced)
-        dock.dlgID         = -1;                        // zero-based position in menu to recall dialog at next startup
-        dock.uMask         = DWS_DF_CONT_BOTTOM;        // first time display will be docked at the right
-        dock.pszModuleName = L"Search++.dll";           // plugin module name
+        dock.pszName       = L"Search++ Results";               // title bar text (caption in dialog is replaced)
+        dock.dlgID         = -1;                                // zero-based position in menu to recall dialog at next startup
+        dock.uMask         = DWS_ICONTAB | DWS_DF_CONT_BOTTOM;  // icon supplied; first time display will be docked at the bottom
+        dock.hIconTab      = LoadIcon(plugin.dllInstance, MAKEINTRESOURCE(IDI_LIST));  // icon for docking tab
+        dock.pszModuleName = L"Search++.dll";                                          // plugin module name
         npp(NPPM_DMMREGASDCKDLG, 0, &dock);
     }
 

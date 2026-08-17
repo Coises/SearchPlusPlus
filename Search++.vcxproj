@@ -130,6 +130,12 @@
       <FileType>Document</FileType>
     </CopyFileToFolders>
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="icons\list.ico" />
+    <Image Include="icons\search.ico" />
+    <Image Include="src\icons\list.ico" />
+    <Image Include="src\icons\search.ico" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{3a521e30-4808-4cc1-a450-0b4aec8c1f3f}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
