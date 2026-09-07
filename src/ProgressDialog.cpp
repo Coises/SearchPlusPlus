@@ -370,7 +370,7 @@ SearchResult ProgressInfo::openDocuments(bool (*worker)(ProgressInfo&), void (*p
     }
 
     if (!result.error()) {
-        if (count > pdl->priorCount) ++pdl->fileHits;
+
         std::wstring verb = req.command.verb == SearchCommand::ReplaceAll ? L"Replaced "
                           : req.command.verb == SearchCommand::Mark       ? L"Marked "
                                                                           : L"Found ";
