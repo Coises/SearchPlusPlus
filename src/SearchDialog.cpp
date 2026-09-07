@@ -1,4 +1,4 @@
-﻿// This file is part of Search++.
+﻿// This file is part of Search++ (a plugin for Notepad++),
 // Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // This program is free software: you can redistribute it and/or modify
@@ -14,12 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-#include "CommonData.h"
-
-#include "resource.h"
-#include "Shlwapi.h"
-#include <windowsx.h>
 #include "Host/dockingResource.h"
+#include "CommonData.h"
+#include "resource.h"
+#include <windowsx.h>
 
 void showSettingsDialog();
 void clearHitlist();

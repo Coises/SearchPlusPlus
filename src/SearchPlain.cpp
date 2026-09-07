@@ -1,4 +1,4 @@
-// This file is part of Search++.
+// This file is part of Search++ (a plugin for Notepad++),
 // Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // This program is free software: you can redistribute it and/or modify
@@ -14,9 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+#include "Framework/UnicodeFormatTranslation.h"
 #include "CommonData.h"
 #include "ProgressInfo.h"
-#include "Framework/UnicodeFormatTranslation.h"
 
 
 namespace {

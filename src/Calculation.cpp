@@ -1,5 +1,5 @@
-// This file is part of Search++.
-// Copyright 2026 by by Randy Fellmy <https://www.coises.com/>.
+// This file is part of Search++ (a plugin for Notepad++),
+// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // The source code contained in this file is independent of Notepad++ code.
 // It is released under the MIT (Expat) license:
@@ -21,9 +21,9 @@
 
 #pragma once
 
-#include <regex>
 #include "Calculation.h"
 #include "Numeric.h"
+#include <regex>
 
 #pragma warning (push)
 #pragma warning (disable: 4702)

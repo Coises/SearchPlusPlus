@@ -1,4 +1,4 @@
-// This file is part of Search++.
+// This file is part of Search++ (a plugin for Notepad++),
 // Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,6 @@
 
 #include "unicode/errorcode.h"
 #include "unicode/regex.h"
-#include "unicode/ustring.h"
 
 
 namespace {

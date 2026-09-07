@@ -1,7 +1,8 @@
-// This file is part of Coises' SearchFiles,
-// Copyright 2026 by by Randy Fellmy <https://www.coises.com/>.
+// This file is part of Search++ (a plugin for Notepad++),
+// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
-// The source code contained in this file is released under the MIT (Expat) license:
+// The source code contained in this file is independent of Notepad++ code.
+// It is released under the MIT (Expat) license:
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and 
 // associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -18,11 +19,75 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 // SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include "Framework/UnicodeFormatTranslation.h"
 #include "Framework/UtilityFrameworkMIT.h"
+#include "RegexUTF16.h"
 #include "SearchInFiles.h"
+#include <chrono>
+#include <eh.h>
 
 
-std::vector<SearchableFile> SearchableFile::queue;
+std::shared_ptr<std::vector<SearchableFile>> SearchableFile::queue = std::make_shared<std::vector<SearchableFile>>();
+
+
+namespace {
+
+    struct Cancellation_Token_Registration {
+        concurrency::cancellation_token token;
+        concurrency::cancellation_token_registration ctr;
+        Cancellation_Token_Registration(concurrency::cancellation_token token, std::function<void(void)> action)
+            : token(token), ctr(token.register_callback(action)) {
+        }
+        ~Cancellation_Token_Registration() { token.deregister_callback(ctr); }
+    };
+
+    class structured_exception : public std::runtime_error {
+        DWORD        code      = 0;
+        ULONG_PTR    info[3]   = { 0, 0, 0 };
+        mutable char msg[4096] = "";
+    public:
+        structured_exception(EXCEPTION_POINTERS* ep) : runtime_error("A Windows structured exception occurred.") {
+            code = ep->ExceptionRecord->ExceptionCode;
+            for (unsigned int i = 0; i < 3 && i < ep->ExceptionRecord->NumberParameters; ++i)
+                info[i] = ep->ExceptionRecord->ExceptionInformation[i];
+        }
+        const char* what() const {
+            DWORD ntstatus = code == EXCEPTION_IN_PAGE_ERROR && info[2] ? static_cast<DWORD>(info[2]) : code;
+            if (FormatMessageA(FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                               GetModuleHandleA("ntdll.dll"), ntstatus, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                               msg, sizeof msg, 0)) {
+            }
+            if (!msg[0]) *std::format_to(msg,
+                "An unexpected error occurred. The exception code was {:#010X}. No further information is available.", code) = 0;
+            return msg;
+        }
+        static void _cdecl translate(unsigned int, EXCEPTION_POINTERS* ep) { throw structured_exception(ep); }
+    };
+
+}
+
+
+void SearchableFile::shadowQueue() {
+    size_t n = queue->size();
+    auto sq = std::make_shared<std::vector<SearchableFile>>(n);
+    for (size_t i = 0; i < n; ++i) {
+        auto status = (*queue)[i].status.load(std::memory_order_relaxed);
+        if (status >= Status::Finished) {
+            (*sq)[i].status.store(status, std::memory_order_relaxed);
+            (*sq)[i].message = (*queue)[i].message;
+            (*sq)[i].results = std::move((*queue)[i].results);
+            (*sq)[i].errcode = (*queue)[i].errcode;
+            (*sq)[i].error   = (*queue)[i].error;
+        }
+        else (*sq)[i].status.store(Status::Canceled, std::memory_order_relaxed);
+        (*sq)[i].size            = (*queue)[i].size;
+        (*sq)[i].filePath        = (*queue)[i].filePath;
+        (*sq)[i].matches_found   = (*queue)[i].matches_found;
+        (*sq)[i].bytes_processed = (*queue)[i].bytes_processed;
+    }
+    queue = sq;
+}
+
 
 void SearchableFile::release() {
     if (mapping) {
@@ -37,182 +102,149 @@ void SearchableFile::release() {
     buffer.reset();
     data = 0;
     text = std::string_view{};
+    if (!results.index.empty() && (results.index.back().length == 0 || (results.text.back() != '\r' && results.text.back() != '\n'))) {
+        results.index.back().length += 2;
+        results.text += "\r\n"; 
+    }
 }
+
 
 bool SearchableFile::is_canceled() {
     if (!cancel_token.is_canceled()) return false;
     release();
-    status = Status::Canceled;
+    status.store(Status::Canceled, std::memory_order_relaxed);
     return true;
 }
 
 
-bool SearchableFile::read(char* smallBuffer, size_t smallBufferSize) {
+bool SearchableFile::open() {
 
-    if (cancel_token.is_canceled()) return false;
-    status = Status::Reading;
+    if (is_canceled()) return false;
 
     // If the file size is zero, there is nothing to read
 
     if (!size) {
-        encoding = Encoding::ASCII;
-        codepage = CP_UTF8;
-        return true;
+        status.store(Status::Ready, std::memory_order_relaxed);
+        return false;
     }
-
-    // Attempt to open the file with basic read privileges
 
     // Notepad++ can't open absolute file paths longer than MAX_PATH, but there's no reason
     // not to handle them here. If they aren't handled, the resulting error message is confusing,
     // indicating that the file can't be found rather than that the path is too long.
 
-    std::wstring longFilePath = filePath.length() < MAX_PATH || filePath.substr(0, 4) == L"\\\\?\\" ? filePath
-        : filePath.substr(0, 2) == L"\\\\" ? L"\\\\?\\UNC\\" + filePath.substr(2)
+    const std::wstring longFilePath =
+        filePath.length() < MAX_PATH || filePath.starts_with(L"\\\\?\\") ? filePath
+        : filePath.starts_with(L"\\\\") ? L"\\\\?\\UNC\\" + filePath.substr(2)
         : L"\\\\?\\" + filePath;
+
+    status.store(Status::Reading, std::memory_order_relaxed);
+
+    if (is_canceled()) return false;
 
     file = CreateFile(longFilePath.data(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, 0);
 
     if (file == INVALID_HANDLE_VALUE) {
         errcode = GetLastError();
-        error   = ErrorType::Creating;
-        status  = Status::Error;
+        error = ErrorType::Creating;
+        status.store(Status::Error, std::memory_order_relaxed);
         release();
         return false;
     }
 
-    if (is_canceled()) return false;
+    return !is_canceled();
 
-    // Be sure it is a disk file, as anything else will not work.
-
-    DWORD fileType = GetFileType(file);
-    if (fileType != FILE_TYPE_DISK) {
-        if (fileType == FILE_TYPE_UNKNOWN) errcode = GetLastError();
-        error  = ErrorType::NotDisk;
-        status = Status::Error;
-        release();
-        return false;
-    }
-
-    if (is_canceled()) return false;
+}
 
 
-    // Files no larger than the buffer supplied to this routine are read directly into that buffer.
+bool SearchableFile::readBuffer(char* smallBuffer) {
 
-    if (size <= smallBufferSize) {
-        DWORD bytesRead = 0;
-        if (ReadFile(file, smallBuffer, static_cast<DWORD>(size), &bytesRead, 0)) data = smallBuffer;
-        else {
-            errcode = GetLastError();
-            error   = ErrorType::Reading;
-            status  = Status::Error;
+    char* readInto = smallBuffer;
+
+    if (!smallBuffer || size > SmallBufferSize) {
+        try {
+            buffer = std::make_unique<char[]>(static_cast<size_t>(size));
+            readInto = buffer.get();
+        }
+        catch (const std::exception& err) {
+            error = ErrorType::Buffering;
+            message = err.what();
+            status.store(Status::Error, std::memory_order_relaxed);
             release();
             return false;
         }
-        CloseHandle(file);
-        file = INVALID_HANDLE_VALUE;
+        catch (...) {
+            error = ErrorType::Buffering;
+            status.store(Status::Error, std::memory_order_relaxed);
+            release();
+            return false;
+        }
     }
 
-    // Attempt to map larger files if they are local files; otherwise, skip mapping and just read the file.
-
-    else {
-        constexpr ULONG REMOTE_PROTOCOL_FLAG_LOOPBACK = 1;
-        FILE_REMOTE_PROTOCOL_INFO frpi = { 0 };
-        frpi.StructureVersion = 2;
-        frpi.StructureSize = sizeof frpi;
-        if (!GetFileInformationByHandleEx(file, FileRemoteProtocolInfo, &frpi, sizeof frpi)
-         || !frpi.Protocol || (frpi.Flags & REMOTE_PROTOCOL_FLAG_LOOPBACK) != 0) {
-            mapping = CreateFileMapping(file, 0, PAGE_READONLY, 0, 0, 0);
-            if (mapping) {
-                data = reinterpret_cast<char*>(MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, 0));
-                if (data) {
-                    CloseHandle(file);
-                    file = INVALID_HANDLE_VALUE;
-                }
-                else {
-                    CloseHandle(mapping);
-                    mapping = 0;
-                }
-            }
-        }
-        if (!data) {
-            // If the file was not successfully mapped, attempt to allocate a buffer and read the entire file into it.
-            try {
-                buffer = std::make_unique<char[]>(size);
-            }
-            catch (...) {
-                error  = ErrorType::Buffering;
-                status = Status::Error;
-                release();
-                return false;
-            }
-            DWORD bytesRead = 0;
-            if (ReadFile(file, buffer.get(), static_cast<DWORD>(size), &bytesRead, 0)) data = buffer.get();
+    try {
+        Cancellation_Token_Registration ctr(cancel_token, [this]() {
+            Status expected = Status::Reading;
+            if (CancelIoEx(file, 0)) status.compare_exchange_strong(expected, Status::Canceling, std::memory_order_relaxed);
+            });
+        if (is_canceled()) return false;
+        DWORD bytesRead = 0;
+        if (ReadFile(file, readInto, static_cast<DWORD>(size), &bytesRead, 0)) data = readInto;
+        else {
+            errcode = GetLastError();
+            if (errcode == ERROR_OPERATION_ABORTED) status.store(Status::Canceled, std::memory_order_relaxed);
             else {
-                errcode = GetLastError();
-                error   = ErrorType::Reading;
-                status  = Status::Error;
-                release();
-                return false;
+                error = ErrorType::Reading;
+                status.store(Status::Error, std::memory_order_relaxed);
             }
+            release();
+            return false;
+        }
+    }
+
+    catch (const std::exception& err) {
+        error = ErrorType::Reading;
+        message = err.what();
+        status.store(Status::Error, std::memory_order_relaxed);
+        release();
+        return false;
+    }
+
+    catch (...) {
+        error = ErrorType::Reading;
+        status.store(Status::Error, std::memory_order_relaxed);
+        release();
+        return false;
+    }
+
+    CloseHandle(file);
+    file = INVALID_HANDLE_VALUE;
+    if (is_canceled()) return false;
+    status.store(Status::Ready, std::memory_order_relaxed);
+    return true;
+
+}
+
+
+bool SearchableFile::readMap() {
+    mapping = CreateFileMapping(file, 0, PAGE_READONLY, 0, 0, 0);
+    if (mapping) {
+        data = reinterpret_cast<char*>(MapViewOfFile(mapping, FILE_MAP_READ, 0, 0, 0));
+        if (data) {
             CloseHandle(file);
             file = INVALID_HANDLE_VALUE;
         }
     }
-
+    if (!data) {
+        errcode = GetLastError();
+        error = ErrorType::Mapping;
+        status.store(Status::Error, std::memory_order_relaxed);
+        release();
+        return false;
+    }
     if (is_canceled()) return false;
-
-    status = Status::Examining;
-
-    // Determine encoding and codepage
-
-    if (size >= 3 && data[0] == '\xEF' && data[1] == '\xBB' && data[2] == '\xBF') {
-        text = std::string_view(data + 3, size - 3);
-        encoding = Encoding::UTF8BOM;
-        codepage = CP_UTF8;
-    }
-    else if (size >= 2 && data[0] == '\xFF' && data[1] == '\xFE') {
-        text = std::string_view(data + 2, (size - 2) & ~static_cast<size_t>(1));
-        encoding = Encoding::UTF16LE;
-        codepage = 1200;
-    }
-    else if (size >= 2 && data[0] == '\xFE' && data[1] == '\xFF') {
-        text = std::string_view(data + 2, (size - 2) & ~static_cast<size_t>(1));
-        encoding = Encoding::UTF16BE;
-        codepage = 1201;
-    }
-    else {
-        bool allASCII = true;
-        const char* const stop = data + size;
-        for (const char* p = data;;) {
-            if (p >= stop) {
-                encoding = allASCII ? Encoding::ASCII : Encoding::UTF8;
-                codepage = CP_UTF8;
-                break;
-            }
-            size_t n = utf8byte::implicit_length(*p);
-            p += n;
-            if (n == 1) continue;
-            allASCII = false;
-            if (p <= stop) switch (n) {
-            case 1: continue;
-            case 2: if (utf8byte::isTrail(*(p - 1))) continue; break;
-            case 3: if (utf8byte::valid_trail(*(p - 3), *(p - 2), *(p - 1))) continue; break;
-            case 4: if (utf8byte::valid_trail(*(p - 4), *(p - 3), *(p - 2), *(p - 1))) continue; break;
-            }
-            CPINFO cpi;
-            codepage = GetACP();
-            if (codepage == CP_UTF8) GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_IDEFAULTANSICODEPAGE | LOCALE_RETURN_NUMBER,
-                reinterpret_cast<LPTSTR>(&codepage), 2);
-            GetCPInfo(codepage, &cpi);
-            encoding = cpi.MaxCharSize == 1 ? Encoding::SingleByte : Encoding::DoubleByte;
-            break;
-        }
-        text = std::string_view(data, size);
-    }
-
+    status.store(Status::Ready, std::memory_order_relaxed);
     return true;
-
 }
+
 
 namespace {
 
@@ -306,7 +338,7 @@ bool SearchableFile::searchByLines(RegularExpression& rx) {
         bool valid = false;
         CurrentMatch(SearchableFile& sf, RegularExpression& rx) : sf(sf), rx(rx), pos(0), len(0) {}
         bool begin(size_t start = 0) {
-            if (!rx.search(sf.text, start, sf.message)) {
+            if (!rx.searchThrowing(sf.text, start)) {
                 valid = false;
                 return false;
             }
@@ -351,22 +383,106 @@ bool SearchableFile::searchByLines(RegularExpression& rx) {
 }
 
 
+void SearchableFile::stackBufferedReadAndSearch() {
+    if (!open()) return;
+    char smallBuffer[SmallBufferSize];
+    if (!readBuffer(smallBuffer)) return;
+    trueSearch();
+}
+
+
 void SearchableFile::search() {
-
-    char smallBuffer[4096];
-
-    cancel_token = cancel_source.get_token();
-
-    if (!read(smallBuffer, sizeof smallBuffer)) {
-        if (status != Status::Canceled && status != Status::Error && status != Status::Finished)
-            status = cancel_token.is_canceled() ? Status::Canceled : Status::Error;
-        release();
-        return;
+    if (is_canceled()) return;
+    _set_se_translator(structured_exception::translate);
+    try {
+        if (size && !data) {
+            if (size <= SmallBufferSize) return stackBufferedReadAndSearch();
+            if (!open()) return;
+            if (!readMap()) return;
+        }
+        return trueSearch();
     }
+    catch (const std::exception& err) { message = err.what(); }
+    catch (...) { message = "An unknown error occurred while processing this file. No further information is available."; }
+    switch (status.load(std::memory_order_relaxed)) {
+    case Status::Reading:
+    case Status::Ready:
+    case Status::Examining:
+        error = ErrorType::Reading;
+        break;
+    case Status::Searching:
+        error = ErrorType::Searching;
+        break;
+    default:
+        error = ErrorType::Unknown;
+    }
+    status.store(Status::Error, std::memory_order_relaxed);
+    release();
+    return;
+}
+
+
+void SearchableFile::trueSearch() {
+
     if (is_canceled()) return;
 
+    // Determine encoding and codepage
+
+    status.store(Status::Examining, std::memory_order_relaxed);
+
+    if (!size) {
+        encoding = Encoding::ASCII;
+        codepage = CP_UTF8;
+    }
+    else if (size >= 3 && data[0] == '\xEF' && data[1] == '\xBB' && data[2] == '\xBF') {
+        text = std::string_view(data + 3, static_cast<size_t>(size - 3));
+        encoding = Encoding::UTF8BOM;
+        codepage = CP_UTF8;
+    }
+    else if (size >= 2 && data[0] == '\xFF' && data[1] == '\xFE') {
+        text = std::string_view(data + 2, static_cast<size_t>(size - 2) & ~static_cast<size_t>(1));
+        encoding = Encoding::UTF16LE;
+        codepage = 1200;
+    }
+    else if (size >= 2 && data[0] == '\xFE' && data[1] == '\xFF') {
+        text = std::string_view(data + 2, static_cast<size_t>(size - 2) & ~static_cast<size_t>(1));
+        encoding = Encoding::UTF16BE;
+        codepage = 1201;
+    }
+    else {
+        bool allASCII = true;
+        const char* const stop = data + size;
+        for (const char* p = data;;) {
+            if (p >= stop) {
+                encoding = allASCII ? Encoding::ASCII : Encoding::UTF8;
+                codepage = CP_UTF8;
+                break;
+            }
+            size_t n = utf8byte::implicit_length(*p);
+            p += n;
+            if (n == 1) continue;
+            allASCII = false;
+            if (p <= stop) switch (n) {
+            case 1: continue;
+            case 2: if (utf8byte::isTrail(*(p - 1))) continue; break;
+            case 3: if (utf8byte::valid_trail(*(p - 3), *(p - 2), *(p - 1))) continue; break;
+            case 4: if (utf8byte::valid_trail(*(p - 4), *(p - 3), *(p - 2), *(p - 1))) continue; break;
+            }
+            CPINFO cpi;
+            codepage = GetACP();
+            if (codepage == CP_UTF8) GetLocaleInfoEx(LOCALE_NAME_SYSTEM_DEFAULT, LOCALE_IDEFAULTANSICODEPAGE | LOCALE_RETURN_NUMBER,
+                reinterpret_cast<LPTSTR>(&codepage), 2);
+            GetCPInfo(codepage, &cpi);
+            encoding = cpi.MaxCharSize == 1 ? Encoding::SingleByte : Encoding::DoubleByte;
+            break;
+        }
+        text = std::string_view(data, static_cast<size_t>(size));
+    }
+
+    // Search
+
     RegularExpression rx(sif.rx);
-    status = Status::Searching;
+    status.store(Status::Searching, std::memory_order_relaxed);
 
     if (encoding == Encoding::UTF16LE) {
 
@@ -537,19 +653,9 @@ void SearchableFile::search() {
 
     }
 
-    if (matches_found && (results.index.back().length == 0 || (results.text.back() != '\r' && results.text.back() != '\n'))) {
-        results.index.back().length += 2;
-        results.text += "\r\n";
-    }
     release();
-    if (message.empty()) {
-        status = Status::Finished;
-        bytes_processed = size;
-    }
-    else {
-        status = Status::Error;
-        error = ErrorType::Searching;
-    }
+    status.store(Status::Finished, std::memory_order_relaxed);
+    bytes_processed = size;
     return;
 
 }

@@ -1,4 +1,4 @@
-// This file is part of Search++.
+// This file is part of Search++ (a plugin for Notepad++),
 // Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // This program is free software: you can redistribute it and/or modify
@@ -16,10 +16,8 @@
 
 #pragma once
 
-#include "Framework/PluginFramework.h"
-#include "Framework/UnicodeFormatTranslation.h"
-#include "SearchRequest.h"
 #include "MatchResults.h"
+#include "SearchRequest.h"
 
 class ProgressiveDocumentsList;
 

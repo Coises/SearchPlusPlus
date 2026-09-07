@@ -1,5 +1,5 @@
-// This file is part of Search++.
-// Copyright 2026 by by Randy Fellmy <https://www.coises.com/>.
+// This file is part of Search++ (a plugin for Notepad++),
+// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // The source code contained in this file is independent of Notepad++ code.
 // It is released under the MIT (Expat) license:
@@ -24,30 +24,18 @@
 
 #define NOMINMAX
 #include <windows.h>
-#include <commctrl.h>
-#include <Shlobj.h>
-
-#include <strsafe.h>
-#include <ppl.h>
-#include <ppltasks.h>
-
-#include <vector>
-#include <string>
-#include <regex>
-#include <locale>
-#include <atomic>
-#include <algorithm>
-#include <sstream>
 
 #include "RegularExpression.h"
-#include "Framework/UnicodeFormatTranslation.h"
 #include "SearchableFile.h"
-#include "resource.h"
+
+#include <locale>
+#include <ppl.h>
+#include <string>
 
 
-constexpr unsigned int WM_APP_UPDATE_COUNT    = WM_APP + 1;
-constexpr unsigned int WM_APP_SEARCH_COMPLETE = WM_APP + 2;
-constexpr unsigned int WM_APP_SEARCH_CANCELED = WM_APP + 3;
+constexpr unsigned int WM_APP_SEARCH_STARTED  = WM_APP + 1;
+constexpr unsigned int WM_APP_SEARCH_COMPLETE = WM_APP + 2;  // wParam = 0 (normal completion), 1 (canceled) or 2 (failed)
+                                                             //    for wParam = 2 (failed), lParam = error code from GetLastError()
 
 inline const std::locale UserLocale("");
 

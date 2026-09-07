@@ -1,5 +1,5 @@
-// This file is part of Search++.
-// Copyright 2026 by by Randy Fellmy <https://www.coises.com/>.
+// This file is part of Search++ (a plugin for Notepad++),
+// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // The source code contained in this file is independent of Notepad++ code.
 // It is released under the MIT (Expat) license:
@@ -44,10 +44,8 @@ public:
     size_t             mark_count() const;
     intptr_t           position(int n = 0) const;
     bool               search(std::string_view s, size_t from = 0);
-    bool               search(std::string_view s, std::string& errmsg);
-    bool               search(std::string_view s, size_t from, std::string& errmsg);
     bool               search(intptr_t from, intptr_t to, intptr_t start);
-    bool               search(intptr_t from, intptr_t to, intptr_t start, std::string& errmsg);
+    bool               searchThrowing(std::string_view s, size_t from = 0);
     RegularExpression& setup(unsigned int codepage);
     RegularExpression& setup(Scintilla::ScintillaCall& sciCall);
     size_t             size() const;

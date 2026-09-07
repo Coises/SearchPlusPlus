@@ -1,5 +1,5 @@
-// This file is part of Search++.
-// Copyright 2026 by by Randy Fellmy <https://www.coises.com/>.
+// This file is part of Search++ (a plugin for Notepad++),
+// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // The source code contained in this file is independent of Notepad++ code.
 // It is released under the MIT (Expat) license:
@@ -141,30 +141,16 @@ public:
         return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) ? -1 : uMatch[n].first.position();
     }
 
-    bool search(std::string_view s, size_t from, std::string* errmsg) override {
+    bool search(std::string_view s, size_t from) override {
         if (!mono.regexValid) return false;
         mono.end = mono.gap = s.length();
         mono.pt1 = s.data();
         mono.pt2 = 0;
-        try {
-            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, s.length()), uMatch, mono.uFind,
-                boost::match_not_dot_newline, DocumentIterator(mono, 0));
-        }
-        catch (const boost::regex_error& e) {
-            mono.regexValid = false;
-            if (errmsg) *errmsg = e.what();
-            else MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
-        }
-        catch (...) {
-            mono.regexValid = false;
-            if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
-            else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                L"Search++: Error in regular expression search", MB_ICONERROR);
-        }
-        return false;
+        return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, s.length()), uMatch, mono.uFind,
+            boost::match_not_dot_newline, DocumentIterator(mono, 0));
     }
 
-    bool search(intptr_t, intptr_t, intptr_t, std::string*) override { return false; }  // not implemented
+    bool search(intptr_t, intptr_t, intptr_t) override { return false; }  // not implemented
 
     size_t size() const override { return uMatch.size(); }
 
@@ -307,30 +293,16 @@ public:
         return uMatch.empty() || n < 0 || n >= static_cast<int>(uMatch.size()) ? -1 : uMatch[n].first.position();
     }
 
-    bool search(std::string_view s, size_t from, std::string* errmsg) override {
+    bool search(std::string_view s, size_t from) override {
         if (!mono.regexValid) return false;
         mono.end = mono.gap = s.length();
         mono.pt1 = s.data();
         mono.pt2 = 0;
-        try {
-            return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, s.length()), uMatch, mono.uFind,
-                boost::match_not_dot_newline, DocumentIterator(mono, 0));
-        }
-        catch (const boost::regex_error& e) {
-            mono.regexValid = false;
-            if (errmsg) *errmsg = e.what();
-            else MessageBox(0, toWide(e.what(), 0).data(), L"Search++: Error in regular expression search", MB_ICONERROR);
-        }
-        catch (...) {
-            mono.regexValid = false;
-            if (errmsg) *errmsg = "An undetermined error occurred while performing a regular expression search.";
-            else MessageBox(0, L"An undetermined error occurred while performing a regular expression search.",
-                L"Search++: Error in regular expression search", MB_ICONERROR);
-        }
-        return false;
+        return boost::regex_search(DocumentIterator(mono, from), DocumentIterator(mono, s.length()), uMatch, mono.uFind,
+            boost::match_not_dot_newline, DocumentIterator(mono, 0));
     }
 
-    bool search(intptr_t, intptr_t, intptr_t, std::string*) override { return false; }  // not implemented
+    bool search(intptr_t, intptr_t, intptr_t) override { return false; }  // not implemented
 
     size_t size() const override { return uMatch.size(); }
 

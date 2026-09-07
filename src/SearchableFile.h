@@ -1,5 +1,5 @@
-// This file is part of Search++.
-// Copyright 2026 by by Randy Fellmy <https://www.coises.com/>.
+// This file is part of Search++ (a plugin for Notepad++),
+// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // The source code contained in this file is independent of Notepad++ code.
 // It is released under the MIT (Expat) license:
@@ -23,30 +23,32 @@
 
 #define NOMINMAX
 #include <windows.h>
+
+#include "MatchResults.h"
+
+#include <atomic>
 #include <ppl.h>
-#include <vector>
 #include <string>
 #include <utility>
-#include "MatchResults.h"
-#include "RegexUTF16.h"
+#include <vector>
 
 #pragma warning(push)
-#pragma warning(disable : 4324)           // Suppress padding warning -- padding allows cache alignment, desired for multiple tasks
+#pragma warning(disable : 4324) // Suppress padding warning -- padding allows cache alignment, desired for multiple tasks
 
-class alignas(64) SearchableFile {
+class alignas(std::hardware_destructive_interference_size) SearchableFile {
 
 public:
 
-    static std::vector<SearchableFile> queue;
+    static std::shared_ptr<std::vector<SearchableFile>> queue;
 
-    static void Search(SearchableFile& sf) { sf.search(); }
+    static void shadowQueue();
 
-    enum class Status : uint64_t { None, Error, Canceled, Waiting, Reading, Examining, Searching, Finished };
+    enum class Status : uint64_t { Waiting, Reading, Ready, Examining, Searching, Canceling, Finished, Error, Canceled };
 
-    Status status          = Status::None;
-    size_t matches_found   = 0;
-    size_t bytes_processed = 0;
-    size_t size            = 0;
+    std::atomic<Status> status = Status::Waiting;
+    uint64_t matches_found   = 0;
+    uint64_t bytes_processed = 0;
+    uint64_t size            = 0;
 
     concurrency::cancellation_token_source cancel_source;
     std::wstring filePath;
@@ -56,8 +58,8 @@ public:
 
     DWORD errcode  = 0;
     UINT  codepage = 0;
-    enum class ErrorType { None, NotDisk, Creating, Buffering, Reading, Searching               } error    = ErrorType::None;
-    enum class Encoding  { None, ASCII, UTF8, UTF8BOM, UTF16LE, UTF16BE, SingleByte, DoubleByte } encoding = Encoding::None;
+    enum class ErrorType { None, Size, Creating, Mapping, Buffering, Reading, Searching, Unknown } error    = ErrorType::None;
+    enum class Encoding  { None, ASCII, UTF8, UTF8BOM, UTF16LE, UTF16BE, SingleByte, DoubleByte  } encoding = Encoding::None;
 
     ~SearchableFile() { release(); }
 
@@ -65,11 +67,13 @@ public:
 
 private:
 
+    constexpr static int SmallBufferSize = 32 * 1024;
+
     std::unique_ptr<char[]> buffer;
 
-    char*  data           = 0;
-    HANDLE file           = INVALID_HANDLE_VALUE;
-    HANDLE mapping        = 0;
+    char*  data    = 0;
+    HANDLE file    = INVALID_HANDLE_VALUE;
+    HANDLE mapping = 0;
 
     std::string_view text;
 
@@ -78,20 +82,28 @@ private:
     // Note that is_canceled() has side effects: if it returns true, it first does a release() and sets status = Status::Canceled.
 
     bool is_canceled();
-    bool read(char* smallBuffer, size_t smallBufferSize);
+    bool open();
+    bool readBuffer(char* smallBuffer);
+    bool readMap();
     void release();
+    void stackBufferedReadAndSearch();
+    void trueSearch();
 
     template<typename CurrentLine>bool searchByLines(RegularExpression& rx);  // returns true if canceled
 
 public:
 
+    SearchableFile(std::wstring_view filePath, uint64_t size, concurrency::cancellation_token token)
+        : filePath(filePath), size(size), cancel_source(Concurrency::cancellation_token_source::create_linked_source(token)),
+          cancel_token(cancel_source.get_token()) {}
+
     // these are needed to support std::vector<SearchableFile>
 
     SearchableFile() = default;
 
-    SearchableFile(SearchableFile&& other) noexcept         
+    SearchableFile(SearchableFile&& other) noexcept
         : cancel_source(std::move(other.cancel_source))
-        , status(other.status)
+        , status(other.status.load(std::memory_order_relaxed))
         , matches_found(other.matches_found)
         , bytes_processed(other.bytes_processed)
         , size(other.size)
@@ -107,13 +119,12 @@ public:
         , file(std::exchange(other.file, INVALID_HANDLE_VALUE))
         , mapping(std::exchange(other.mapping, nullptr))
         , results(std::move(other.results))
-    {
-    }
+    {}
 
     SearchableFile& operator=(SearchableFile&& other) noexcept {
         if (this != &other) {
             cancel_source = std::move(other.cancel_source);
-            status = other.status;
+            status = other.status.load(std::memory_order_relaxed);
             matches_found = other.matches_found;
             bytes_processed = other.bytes_processed;
             size = other.size;

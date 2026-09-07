@@ -1,4 +1,4 @@
-// This file is part of Search++.
+// This file is part of Search++ (a plugin for Notepad++),
 // Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // This program is free software: you can redistribute it and/or modify
@@ -15,17 +15,22 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
-#include "SearchInFiles.h"
-#include "Framework/UtilityFramework.h"
 #include "Framework/FileDialogBase.h"
+#include "Framework/ScintillaCallEx.h"
+#include "Framework/UtilityFramework.h"
+#include "Host/Scintilla.h"
+
+#include "CommonData.h"
+#include "resource.h"
+#include "SearchInFiles.h"
+#include "SearchInFilesConfiguration.h"
+
 #include <algorithm>
 #include <format>
-#include "shlwapi.h"
-#include "windowsx.h"
-#include "Host/Scintilla.h"
-#include "Framework/ScintillaCallEx.h"
-#include "SearchInFilesConfiguration.h"
-#include "CommonData.h"
+#include <regex>
+#include <ShlObj_core.h>
+#include <shlwapi.h>
+#include <windowsx.h>
 
 
 using namespace std::string_literals;
@@ -34,6 +39,7 @@ void closeSearchInFilesDialog();
 void dispatchSearchTasks(HWND inform);
 void hideHitlist();
 void loadConfiguration();
+void processFileSearchResults(HWND inform, bool shadow);
 void saveConfiguration();
 void showHitlist();
 void showHitlist(MatchResults& matchResults);
@@ -45,7 +51,7 @@ namespace {
 
 DialogStretch mainWindowStretch;
 
-enum class ProcessingStatus { None, Scanning, Searching, Finished, Canceled };
+enum class ProcessingStatus { None, Scanning, Searching, Finished };
 
 ProcessingStatus processingStatus = ProcessingStatus::None;
 
@@ -80,7 +86,9 @@ bool isDarkMode = false;
 
 void ApplyQueueSorting(HWND lv) {
 
-    size_t n = SearchableFile::queue.size();
+    auto& queue = *SearchableFile::queue;
+
+    size_t n = queue.size();
     if (queueSortedIndices.size() != n) {
         queueSortedIndices.resize(n);
         for (size_t i = 0; i < n; ++i) queueSortedIndices[i] = i;
@@ -88,7 +96,7 @@ void ApplyQueueSorting(HWND lv) {
 
     std::vector<size_t> selections;
     for (int i = -1; (i = ListView_GetNextItem(lv, i, LVNI_SELECTED)) != -1;) {
-        if (i >= static_cast<int>(queueSortedIndices.size()) || queueSortedIndices[i] >= SearchableFile::queue.size()) continue;
+        if (i >= static_cast<int>(queueSortedIndices.size()) || queueSortedIndices[i] >= queue.size()) continue;
         selections.push_back(queueSortedIndices[i]);
     }
     int focusedIndex = ListView_GetNextItem(lv, -1, LVNI_FOCUSED);
@@ -99,10 +107,10 @@ void ApplyQueueSorting(HWND lv) {
 
     case QueueColumn::Path:
     {
-        std::vector<std::vector<std::wstring>> path(SearchableFile::queue.size());
+        std::vector<std::vector<std::wstring>> path(queue.size());
         const size_t prefixLength = sif.fileSpecification.path.length() + 1;
         for (size_t i = 0; i < path.size(); ++i) {
-            std::wstring_view fp = SearchableFile::queue[i].filePath;
+            std::wstring_view fp = queue[i].filePath;
             if (fp.length() <= prefixLength) /* should never happen; if it does, insert a null string so the next step won't crash */ {
                 path[i].push_back(L"");
                 continue;
@@ -129,8 +137,8 @@ void ApplyQueueSorting(HWND lv) {
     }
     case QueueColumn::Matches:
     {
-        std::vector<size_t> freeze(SearchableFile::queue.size());
-        for (size_t i = 0; i < freeze.size(); ++i) freeze[i] = SearchableFile::queue[i].matches_found;
+        std::vector<uint64_t> freeze(queue.size());
+        for (size_t i = 0; i < freeze.size(); ++i) freeze[i] = queue[i].matches_found;
         std::stable_sort(queueSortedIndices.begin(), queueSortedIndices.end(), [freeze](size_t a, size_t b) {
             return queueSortAscending ? freeze[a] < freeze[b] : freeze[b] < freeze[a];
             });
@@ -138,24 +146,26 @@ void ApplyQueueSorting(HWND lv) {
     }
 
     case QueueColumn::Size:
-        std::stable_sort(queueSortedIndices.begin(), queueSortedIndices.end(), [](size_t a, size_t b) {
-            const auto& itemA = SearchableFile::queue[queueSortAscending ? a : b];
-            const auto& itemB = SearchableFile::queue[queueSortAscending ? b : a];
+        std::stable_sort(queueSortedIndices.begin(), queueSortedIndices.end(), [&queue](size_t a, size_t b) {
+            const auto& itemA = queue[queueSortAscending ? a : b];
+            const auto& itemB = queue[queueSortAscending ? b : a];
             return itemA.size < itemB.size;
         });
         break;
 
     case QueueColumn::Status: 
     {
-        std::vector<intptr_t> freeze(SearchableFile::queue.size());
+        std::vector<int64_t> freeze(queue.size());
         for (size_t i = 0; i < freeze.size(); ++i) {
-            switch (SearchableFile::queue[i].status) {
+            switch (queue[i].status.load(std::memory_order_relaxed)) {
             case SearchableFile::Status::Reading:
+            case SearchableFile::Status::Ready:
             case SearchableFile::Status::Examining:
             case SearchableFile::Status::Searching: freeze[i] = std::numeric_limits<intptr_t>::max()    ; break;
-            case SearchableFile::Status::Error:     freeze[i] = std::numeric_limits<intptr_t>::max() - 1; break;
-            case SearchableFile::Status::Waiting:   freeze[i] = std::numeric_limits<intptr_t>::max() - 2; break;
-            case SearchableFile::Status::Finished:  freeze[i] = SearchableFile::queue[i].matches_found; break;
+            case SearchableFile::Status::Canceling: freeze[i] = std::numeric_limits<intptr_t>::max() - 1; break;
+            case SearchableFile::Status::Error:     freeze[i] = std::numeric_limits<intptr_t>::max() - 2; break;
+            case SearchableFile::Status::Waiting:   freeze[i] = std::numeric_limits<intptr_t>::max() - 3; break;
+            case SearchableFile::Status::Finished:  freeze[i] = queue[i].matches_found; break;
             case SearchableFile::Status::Canceled:  freeze[i] = -1; break;
             default:                                freeze[i] = -2;
             }
@@ -169,11 +179,11 @@ void ApplyQueueSorting(HWND lv) {
 
     case QueueColumn::Progress:
     {
-        std::vector<double> freeze(SearchableFile::queue.size());
+        std::vector<double> freeze(queue.size());
         for (size_t i = 0; i < freeze.size(); ++i) {
-            freeze[i] = SearchableFile::queue[i].size
-                ? static_cast<double>(SearchableFile::queue[i].bytes_processed) / SearchableFile::queue[i].size
-                : SearchableFile::queue[i].status == SearchableFile::Status::Finished ? 1.0 : 0.0;
+            freeze[i] = queue[i].size
+                ? static_cast<double>(queue[i].bytes_processed) / queue[i].size
+                : queue[i].status.load(std::memory_order_relaxed) == SearchableFile::Status::Finished ? 1.0 : 0.0;
         }
         std::stable_sort(queueSortedIndices.begin(), queueSortedIndices.end(), [freeze](size_t a, size_t b) {
             return queueSortAscending ? freeze[a] < freeze[b] : freeze[b] < freeze[a];
@@ -499,16 +509,14 @@ void showErrorDetails(HWND owner, const SearchableFile& sf) {
     std::wstring msg;
     switch (sf.error) {
     case SearchableFile::ErrorType::Creating : msg = L"An error occurred while opening "    + sf.filePath + L':'; break;
+    case SearchableFile::ErrorType::Mapping  : msg = L"An error occurred while mapping "    + sf.filePath + L':'; break;
     case SearchableFile::ErrorType::Buffering: msg = L"An error occurred while buffering "  + sf.filePath + L':'; break;
     case SearchableFile::ErrorType::Reading  : msg = L"An error occurred while reading "    + sf.filePath + L':'; break;
     case SearchableFile::ErrorType::Searching: msg = L"An error occurred while searching "  + sf.filePath + L':'; break;
-    case SearchableFile::ErrorType::NotDisk  : msg = L"An error occurred while opening "    + sf.filePath + L':'; break;
     default                                  : msg = L"An error occurred while processing " + sf.filePath + L':';
     }
     std::wstring msg2;
     if (!sf.message.empty()) msg2 = utf8to16(sf.message);
-    else if (sf.error == SearchableFile::ErrorType::NotDisk)
-        msg2 = L"The file does not appear to be a disk file. The storage media is not supported.";
     else if (sf.errcode) {
         wchar_t* sysmsg = 0;
         if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -705,6 +713,10 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
     case WM_TIMER:
         switch (processingStatus) {
+        case ProcessingStatus::Scanning:
+            SetDlgItemText(hwndDlg, IDC_SIF_MESSAGE, std::format(L"Scanning directory; found {:L} files.",
+                                                                 SearchableFile::queue->size()).data());
+            break;
         case ProcessingStatus::Searching:
         {
             size_t active   = 0;
@@ -712,75 +724,103 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             size_t finished = 0;
             size_t canceled = 0;
             size_t errors   = 0;
-            for (const auto& sf : SearchableFile::queue) {
-                switch (sf.status) {
-                case SearchableFile::Status::Waiting : ++waiting ; break;
-                case SearchableFile::Status::Finished: ++finished; break;
-                case SearchableFile::Status::Canceled: ++canceled; break;
-                case SearchableFile::Status::Error   : ++errors  ; break;
+            for (const auto& sf : *SearchableFile::queue) {
+                switch (sf.status.load(std::memory_order_relaxed)) {
+                case SearchableFile::Status::Waiting  : ++waiting ; break;
+                case SearchableFile::Status::Finished : ++finished; break;
+                case SearchableFile::Status::Canceling: ++canceled; break;
+                case SearchableFile::Status::Canceled : ++canceled; break;
+                case SearchableFile::Status::Error    : ++errors  ; break;
                 default: ++active;
                 }
             }
-            SetWindowText(GetDlgItem(hwndDlg, IDC_SIF_MESSAGE),
-                std::format(UserLocale, statusFormatSearching,
-                    SearchableFile::queue.size(), active, waiting, finished, canceled, errors).data());
+            SetDlgItemText(hwndDlg, IDC_SIF_MESSAGE, std::format(UserLocale, statusFormatSearching,
+                SearchableFile::queue->size(), active, waiting, finished, canceled, errors).data());
         }
         [[fallthrough]];
-        case ProcessingStatus::Canceled:
         case ProcessingStatus::Finished:
             ApplyQueueSorting(GetDlgItem(hwndDlg, IDC_SIF_LIST));
             InvalidateRect(GetDlgItem(hwndDlg, IDC_SIF_LIST), NULL, FALSE);
         }
         return TRUE;
 
-    case WM_APP_UPDATE_COUNT: {
-        if (lParam == 0) {
-            SetWindowTextW(GetDlgItem(hwndDlg, IDC_SIF_MESSAGE), std::format(L"Scanning directory; found {:L} files.", wParam).data());
-        }
-        else {
-            ListView_SetItemCountEx(GetDlgItem(hwndDlg, IDC_SIF_LIST), SearchableFile::queue.size(), 0);
-            processingStatus = ProcessingStatus::Searching;
-            HWND qlv = GetDlgItem(hwndDlg, IDC_SIF_LIST);
-            int normalOrder[5] = { 0, 1, 2, 3, 4 };
-            const int sizingOrder[5] = { 1, 2, 3, 4, 0 };
-            if (ListView_GetColumnOrderArray(qlv, 5, normalOrder)) {
-                ListView_SetColumnOrderArray(qlv, 5, sizingOrder);
-                ListView_SetColumnWidth(qlv, 0, LVSCW_AUTOSIZE_USEHEADER);
-                ListView_SetColumnOrderArray(qlv, 5, normalOrder);
-            }
+    case WM_APP_SEARCH_STARTED:
+    {
+        ListView_SetItemCountEx(GetDlgItem(hwndDlg, IDC_SIF_LIST), SearchableFile::queue->size(), 0);
+        processingStatus = ProcessingStatus::Searching;
+        HWND qlv = GetDlgItem(hwndDlg, IDC_SIF_LIST);
+        int normalOrder[5] = { 0, 1, 2, 3, 4 };
+        const int sizingOrder[5] = { 1, 2, 3, 4, 0 };
+        if (ListView_GetColumnOrderArray(qlv, 5, normalOrder)) {
+            ListView_SetColumnOrderArray(qlv, 5, sizingOrder);
+            ListView_SetColumnWidth(qlv, 0, LVSCW_AUTOSIZE_USEHEADER);
+            ListView_SetColumnOrderArray(qlv, 5, normalOrder);
         }
         return TRUE;
     }
 
-    case WM_APP_SEARCH_CANCELED:
     case WM_APP_SEARCH_COMPLETE:
     {
-        processingStatus = uMsg == WM_APP_SEARCH_CANCELED ? ProcessingStatus::Canceled : ProcessingStatus::Finished;
-        size_t matches  = 0;
-        size_t files    = 0;
-        size_t canceled = 0;
-        size_t errors   = 0;
-        for (const auto& sf : SearchableFile::queue) {
-            switch (sf.status) {
-            case SearchableFile::Status::Canceled: ++canceled; break;
-            case SearchableFile::Status::Error: ++errors; break;
-            }
-            if (sf.matches_found) {
-                matches += sf.matches_found;
-                ++files;
+        if (processingStatus != ProcessingStatus::Scanning && processingStatus != ProcessingStatus::Searching) return TRUE;
+        std::wstring msg = L"Could not open requested folder.";
+        if (processingStatus == ProcessingStatus::Scanning) {
+            processingStatus = ProcessingStatus::None;
+            switch (wParam) {
+            case 0:
+                if      (lParam == 0) msg = L"No files found.";
+                else if (lParam == 1) msg = L"Found 1 file, but it does not match specified filter criteria.";
+                else msg = std::format(UserLocale, L"Found {:Ld} files, but none match specified filter criteria.", lParam);
+                break;
+            case 1:
+                msg = L"Search canceled.";
+                break;
+            case 2:
+                if (lParam) {
+                    wchar_t* sysmsg = 0;
+                    if (FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                        0, static_cast<DWORD>(lParam), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                        reinterpret_cast<wchar_t*>(&sysmsg), 0, 0)) {
+                        if (sysmsg) {
+                            msg = std::wstring(L"Could not open requested folder: ") + sysmsg;
+                            LocalFree(sysmsg);
+                        }
+                    }
+                }
             }
         }
-        SetWindowText(GetDlgItem(hwndDlg, IDC_SIF_MESSAGE),
-            canceled || errors
-            ? std::format(UserLocale, L"Finished; found {:Ld} match{:s} in {:Ld} of {:Ld} files; canceled: {:Ld}; errors: {:Ld}.",
-                matches, matches == 1 ? L"" : L"es", files, SearchableFile::queue.size(), canceled, errors).data()
-            : std::format(UserLocale, L"Finished; found {:Ld} match{:s} in {:Ld} of {:Ld} files.",
-                matches, matches == 1 ? L"" : L"es", files, SearchableFile::queue.size()).data()
-        );
+        else {
+            processingStatus = ProcessingStatus::Finished;
+            uint64_t matches  = 0;
+            size_t   files    = 0;
+            size_t   canceled = 0;
+            size_t   errors   = 0;
+            for (const auto& sf : *SearchableFile::queue) {
+                switch (sf.status.load(std::memory_order_relaxed)) {
+                case SearchableFile::Status::Canceling:
+                case SearchableFile::Status::Canceled:
+                    ++canceled;
+                    break;
+                case SearchableFile::Status::Error:
+                    ++errors;
+                    break;
+                }
+                if (sf.matches_found) {
+                    matches += sf.matches_found;
+                    ++files;
+                }
+            }
+            msg = canceled || errors
+                ? std::format(UserLocale, L"Finished; found {:Ld} match{:s} in {:Ld} of {:Ld} files; canceled: {:Ld}; errors: {:Ld}.",
+                    matches, matches == 1 ? L"" : L"es", files, SearchableFile::queue->size(), canceled, errors)
+                : std::format(UserLocale, L"Finished; found {:Ld} match{:s} in {:Ld} of {:Ld} files.",
+                    matches, matches == 1 ? L"" : L"es", files, SearchableFile::queue->size());
+        }
+        SetDlgItemText(hwndDlg, IDC_SIF_MESSAGE, msg.data());
+        EnableWindow(GetDlgItem(hwndDlg, IDC_SIF_CLOSECANCEL), TRUE);
         EnableWindow(GetDlgItem(hwndDlg, IDC_SIF_FIND), TRUE);
         // EnableWindow(GetDlgItem(hwndDlg, IDC_SIF_REPLACE), TRUE);
         SetDlgItemText(hwndDlg, IDC_SIF_CLOSECANCEL, L"&Close");
-        if (uMsg == WM_APP_SEARCH_COMPLETE && !sif.matchResults.text.empty()) showHitlist(sif.matchResults);
+        if (processingStatus == ProcessingStatus::Finished && !wParam && !sif.matchResults.text.empty()) showHitlist(sif.matchResults);
         return TRUE;
     }
 
@@ -808,12 +848,12 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
         case IDC_SIF_FIND:
         {
 
-            static const std::string badPathChars      = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"s
-                                                         "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"s
-                                                         "<>\"/|?*\x7F"s;
+            static const std::string badPathChars = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"s
+                "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"s
+                "<>\"/|?*\x7F"s;
             static const std::string badExtensionChars = "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0A\x0B\x0C\x0D\x0E\x0F"s
-                                                         "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"s
-                                                         "<>:\"/|?*\\\x7F"s;
+                "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1A\x1B\x1C\x1D\x1E\x1F"s
+                "<>:\"/|?*\\\x7F"s;
 
             updateConfigFromControls(hwndDlg);
 
@@ -877,17 +917,17 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
             if (ucd.sizeFilter) {
                 switch (ucd.sizeMinUnit) {
-                case FileSizeUnit::KiB: sif.fileSpecification.minSize = ucd.sizeMin * 0x400ULL     ; break;
-                case FileSizeUnit::MiB: sif.fileSpecification.minSize = ucd.sizeMin * 0x100000ULL  ; break;
+                case FileSizeUnit::KiB: sif.fileSpecification.minSize = ucd.sizeMin * 0x400ULL; break;
+                case FileSizeUnit::MiB: sif.fileSpecification.minSize = ucd.sizeMin * 0x100000ULL; break;
                 case FileSizeUnit::GiB: sif.fileSpecification.minSize = ucd.sizeMin * 0x40000000ULL; break;
-                default               : sif.fileSpecification.minSize = ucd.sizeMin;
+                default: sif.fileSpecification.minSize = ucd.sizeMin;
                 }
                 if (ucd.sizeMax == 0) sif.fileSpecification.maxSize = std::numeric_limits<uint64_t>::max();
                 else switch (ucd.sizeMaxUnit) {
-                case FileSizeUnit::KiB: sif.fileSpecification.maxSize = ucd.sizeMax * 0x400ULL     ; break;
-                case FileSizeUnit::MiB: sif.fileSpecification.maxSize = ucd.sizeMax * 0x100000ULL  ; break;
+                case FileSizeUnit::KiB: sif.fileSpecification.maxSize = ucd.sizeMax * 0x400ULL; break;
+                case FileSizeUnit::MiB: sif.fileSpecification.maxSize = ucd.sizeMax * 0x100000ULL; break;
                 case FileSizeUnit::GiB: sif.fileSpecification.maxSize = ucd.sizeMax * 0x40000000ULL; break;
-                default               : sif.fileSpecification.maxSize = ucd.sizeMax;
+                default: sif.fileSpecification.maxSize = ucd.sizeMax;
                 }
             }
             else {
@@ -898,15 +938,15 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             if (ucd.dateFilter) {
                 sif.fileSpecification.timePoint =
                     ucd.dateType == FileDateType::Accessed ? FileSpecification::TimeAccess
-                  : ucd.dateType == FileDateType::Created  ? FileSpecification::TimeCreation
-                                                           : FileSpecification::TimeModification;
+                    : ucd.dateType == FileDateType::Created ? FileSpecification::TimeCreation
+                    : FileSpecification::TimeModification;
                 sif.fileSpecification.minTime = ucd.dateMin;
                 sif.fileSpecification.maxTime = ucd.dateMax;
             }
             else sif.fileSpecification.timePoint = FileSpecification::TimeNone;
 
             sif.fileSpecification.skipHidden = !ucd.hidden;
-            sif.fileSpecification.recursive  = ucd.subfolders;
+            sif.fileSpecification.recursive = ucd.subfolders;
 
             if (ucd.findCntl.text().empty()) {
                 showScintillaTip(GetDlgItem(hwndDlg, IDC_SIF_FINDBOX), "Enter a search string.");
@@ -937,7 +977,7 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             }
 
             processingStatus = ProcessingStatus::Scanning;
-            EnableWindow(GetDlgItem(hwndDlg, IDC_SIF_FIND   ), FALSE);
+            EnableWindow(GetDlgItem(hwndDlg, IDC_SIF_FIND), FALSE);
             EnableWindow(GetDlgItem(hwndDlg, IDC_SIF_REPLACE), FALSE);
             SetDlgItemText(hwndDlg, IDC_SIF_CLOSECANCEL, L"&Cancel All");
             ListView_SetItemCountEx(GetDlgItem(hwndDlg, IDC_SIF_LIST), 0, 0);
@@ -949,7 +989,15 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
         }
 
         case IDC_SIF_CLOSECANCEL:
-            if (GetDlgItemString(hwndDlg, IDC_SIF_CLOSECANCEL) == L"&Cancel All") sif.cancel_all_source.cancel();
+            if (processingStatus == ProcessingStatus::Scanning) {
+                sif.cancel_all_source.cancel();
+                SendMessage(hwndDlg, WM_APP_SEARCH_COMPLETE, 1, 0);
+            }
+            else if (processingStatus == ProcessingStatus::Searching) {
+                sif.cancel_all_source.cancel();
+                processFileSearchResults(hwndDlg, true);
+                EnableWindow(GetDlgItem(hwndDlg, IDC_SIF_CLOSECANCEL), FALSE);
+            }
             else {
                 updateConfigFromControls(hwndDlg);
                 ucd.mainWindowPosition.get(hwndDlg);
@@ -1055,11 +1103,12 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
                 lvhti.pt = ia.ptAction;
                 if (ListView_SubItemHitTest(nmhdr.hwndFrom, &lvhti) < 0) return FALSE;
                 if (ia.iItem < 0 || ia.iItem >= static_cast<int>(queueSortedIndices.size())) return FALSE;
-                SearchableFile& sf = SearchableFile::queue[queueSortedIndices[ia.iItem]];
+                SearchableFile& sf = (*SearchableFile::queue)[queueSortedIndices[ia.iItem]];
                 if (ia.iSubItem == 0) npp(NPPM_DOOPEN, 0, sf.filePath.data());
-                else if (ia.iSubItem == 3 && sf.status == SearchableFile::Status::Error) showErrorDetails(hwndDlg, sf);
+                else if (ia.iSubItem == 3 && sf.status.load(std::memory_order_relaxed) == SearchableFile::Status::Error)
+                    showErrorDetails(hwndDlg, sf);
                 else {
-                    if (processingStatus != ProcessingStatus::Canceled && processingStatus != ProcessingStatus::Finished) return FALSE;
+                    if (processingStatus != ProcessingStatus::Finished) return FALSE;
                     if (sf.matches_found == 0) return FALSE;
                     if (!sif.matchResults.text.empty()) showHitlist(sif.matchResults);
                     showHitlist(utf16to8(sf.filePath));
@@ -1072,8 +1121,8 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
                 NMLVDISPINFO& lvdi = *reinterpret_cast<NMLVDISPINFO*>(lParam);
                 if (!(lvdi.item.mask & LVIF_TEXT)) return FALSE;
                 size_t idx = lvdi.item.iItem;
-                if (idx >= queueSortedIndices.size() || queueSortedIndices[idx] >= SearchableFile::queue.size()) return FALSE;
-                const SearchableFile& sf = SearchableFile::queue[queueSortedIndices[idx]];
+                if (idx >= queueSortedIndices.size() || queueSortedIndices[idx] >= SearchableFile::queue->size()) return FALSE;
+                const SearchableFile& sf = (*SearchableFile::queue)[queueSortedIndices[idx]];
                 switch (static_cast<QueueColumn>(lvdi.item.iSubItem)) {
                 case QueueColumn::Path:
                     lvdi.item.pszText = const_cast<wchar_t*>(sf.filePath.data()) + sif.fileSpecification.path.length() + 1;
@@ -1094,18 +1143,21 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
                 case QueueColumn::Status:
                 {
                     const wchar_t* p;
-                    switch (sf.status) {
+                    switch (sf.status.load(std::memory_order_relaxed)) {
                     case SearchableFile::Status::Canceled : p = L"Canceled" ; break;
+                    case SearchableFile::Status::Canceling: p = L"Canceling"; break;
                     case SearchableFile::Status::Examining: p = L"Examining"; break;
                     case SearchableFile::Status::Finished : p = L"Finished" ; break;
                     case SearchableFile::Status::Reading  : p = L"Reading"  ; break;
+                    case SearchableFile::Status::Ready    : p = L"Ready"    ; break;
                     case SearchableFile::Status::Searching: p = L"Searching"; break;
                     case SearchableFile::Status::Waiting  : p = L"Waiting"  ; break;
                     case SearchableFile::Status::Error:
                     {
                         switch (sf.error) {
-                        case SearchableFile::ErrorType::NotDisk  : p = L"Error: Not Disk" ; break;
+                        case SearchableFile::ErrorType::Size     : p = L"Error: Size"     ; break;
                         case SearchableFile::ErrorType::Creating : p = L"Error: Opening"  ; break;
+                        case SearchableFile::ErrorType::Mapping  : p = L"Error: Mapping"  ; break;
                         case SearchableFile::ErrorType::Buffering: p = L"Error: Buffering"; break;
                         case SearchableFile::ErrorType::Reading  : p = L"Error: Reading"  ; break;
                         case SearchableFile::ErrorType::Searching: p = L"Error: Searching"; break;
@@ -1124,8 +1176,9 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
                             std::format(UserLocale, L"{:Ld}%", (sf.bytes_processed * 100LL + (sf.size / 2)) / sf.size).data(),
                             lvdi.item.cchTextMax - 1);
                     }
-                    else if (sf.status == SearchableFile::Status::Finished) lvdi.item.pszText = const_cast<wchar_t*>(L"100%");
-                    else                                                    lvdi.item.pszText = const_cast<wchar_t*>(L"0%");
+                    else if (sf.status.load(std::memory_order_relaxed) == SearchableFile::Status::Finished)
+                        lvdi.item.pszText = const_cast<wchar_t*>(L"100%");
+                    else lvdi.item.pszText = const_cast<wchar_t*>(L"0%");
                     break;
                 }
                 return TRUE;
@@ -1150,7 +1203,7 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
         {
             std::vector<size_t> selections;
             for (int i = -1; (i = ListView_GetNextItem(contextControl, i, LVNI_SELECTED)) != -1;) {
-                if (i >= static_cast<int>(queueSortedIndices.size()) || queueSortedIndices[i] >= SearchableFile::queue.size()) continue;
+                if (i >= static_cast<int>(queueSortedIndices.size()) || queueSortedIndices[i] >= SearchableFile::queue->size()) continue;
                 selections.push_back(queueSortedIndices[i]);
             }
             if (selections.empty()) /* unexpected; ignore it */ return FALSE;
@@ -1174,20 +1227,17 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             AppendMenu(menu, MF_STRING, 2, L"&Open file");
             AppendMenu(menu, MF_STRING, 3, L"&Show file in explorer");
             AppendMenu(menu, MF_STRING, 4, L"&Go to match results");
-            if (selections.size() == 1 && SearchableFile::queue[selections[0]].status == SearchableFile::Status::Error)
+            if (selections.size() == 1
+                && (*SearchableFile::queue)[selections[0]].status.load(std::memory_order_relaxed) == SearchableFile::Status::Error)
                 AppendMenu(menu, MF_STRING, 5, L"&Error details...");
             bool can_cancel = false;
             bool can_view   = false;
             for (size_t i : selections) {
-                const SearchableFile& sf = SearchableFile::queue[i];
-                if (sf.status != SearchableFile::Status::Canceled
-                 && sf.status != SearchableFile::Status::Error
-                 && sf.status != SearchableFile::Status::Finished
-                 && sf.status != SearchableFile::Status::None    ) can_cancel = true;
+                const SearchableFile& sf = (*SearchableFile::queue)[i];
+                if (sf.status.load(std::memory_order_relaxed) < SearchableFile::Status::Canceling) can_cancel = true;
                 if (sf.matches_found > 0) can_view = true;
             }
-            if (processingStatus != ProcessingStatus::Canceled && processingStatus != ProcessingStatus::Finished
-                || selections.size() != 1) can_view = false;
+            if (processingStatus != ProcessingStatus::Finished || selections.size() != 1) can_view = false;
             EnableMenuItem(menu, 1, can_cancel             ? MF_ENABLED : MF_GRAYED);
             EnableMenuItem(menu, 3, selections.size() == 1 ? MF_ENABLED : MF_GRAYED);
             EnableMenuItem(menu, 4, can_view               ? MF_ENABLED : MF_GRAYED);
@@ -1196,35 +1246,32 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             switch (result) {
             case 1:
                 for (size_t i : selections) {
-                    const SearchableFile& sf = SearchableFile::queue[i];
-                    if (sf.status != SearchableFile::Status::Canceled
-                     && sf.status != SearchableFile::Status::Error
-                     && sf.status != SearchableFile::Status::Finished
-                     && sf.status != SearchableFile::Status::None   ) sf.cancel_source.cancel();
+                    const SearchableFile& sf = (*SearchableFile::queue)[i];
+                    if (sf.status.load(std::memory_order_relaxed) < SearchableFile::Status::Canceling) sf.cancel_source.cancel();
                 }
                 break;
             case 2:
                 for (size_t i : selections) {
-                    const SearchableFile& sf = SearchableFile::queue[i];
+                    const SearchableFile& sf = (*SearchableFile::queue)[i];
                     if (!npp(NPPM_DOOPEN, 0, sf.filePath.data())) {
                         TaskDialog(hwndDlg, 0, L"Search++", L"Notepad++ could not open this file:",
-                            SearchableFile::queue[i].filePath.data(), TDCBF_OK_BUTTON, TD_ERROR_ICON, 0);
+                            (*SearchableFile::queue)[i].filePath.data(), TDCBF_OK_BUTTON, TD_ERROR_ICON, 0);
                     }
                 }
                 break;
             case 3:
             {
-                std::wstring path = SearchableFile::queue[selections[0]].filePath;
+                std::wstring path = (*SearchableFile::queue)[selections[0]].filePath;
                 std::thread explorerThread([path]() {showPathInWindowsExplorer(path);});
                 explorerThread.detach();
                 break;
             }
             case 4:
                 if (!sif.matchResults.text.empty()) showHitlist(sif.matchResults);
-                showHitlist(utf16to8(SearchableFile::queue[selections[0]].filePath));
+                showHitlist(utf16to8((*SearchableFile::queue)[selections[0]].filePath));
                 break;
             case 5:
-                showErrorDetails(hwndDlg, SearchableFile::queue[selections[0]]);
+                showErrorDetails(hwndDlg, (*SearchableFile::queue)[selections[0]]);
                 break;
             }
             DestroyMenu(menu);

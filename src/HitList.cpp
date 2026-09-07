@@ -1,4 +1,4 @@
-﻿// This file is part of Search++.
+﻿// This file is part of Search++ (a plugin for Notepad++),
 // Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // This program is free software: you can redistribute it and/or modify
@@ -16,11 +16,9 @@
 
 #include "CommonData.h"
 #include "MatchResults.h"
-#include "ScintillaControl.h"
-#include "ProgressInfo.h"
-
 #include "resource.h"
-#include "Shlwapi.h"
+#include "ScintillaControl.h"
+
 #include <windowsx.h>
 
 void closeSearchInFilesDialog();

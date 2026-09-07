@@ -1,5 +1,5 @@
-// This file is part of Search++.
-// Copyright 2026 by by Randy Fellmy <https://www.coises.com/>.
+// This file is part of Search++ (a plugin for Notepad++),
+// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // The source code contained in this file is independent of Notepad++ code.
 // It is released under the MIT (Expat) license:
@@ -22,14 +22,19 @@
 
 #pragma once
 
+#include "Framework/UnicodeFormatTranslation.h"
 #include "SearchInFiles.h"
 
-void scanDirectory(const std::wstring& targetDir, concurrency::cancellation_token token, HWND inform) {
+int scanDirectory(const std::wstring& targetDir, concurrency::cancellation_token token, DWORD* error) {
 
     std::wstring pattern = targetDir + L"\\*";
     WIN32_FIND_DATAW fd;
     HANDLE hFind = FindFirstFileEx(pattern.c_str(), FindExInfoBasic, &fd, FindExSearchNameMatch, 0, FIND_FIRST_EX_LARGE_FETCH);
-    if (hFind == INVALID_HANDLE_VALUE) return;
+    if (hFind == INVALID_HANDLE_VALUE) {
+        if (error) *error = GetLastError();
+        return 0;
+    }
+    int countAllFiles = 0;
 
     do {
 
@@ -41,10 +46,11 @@ void scanDirectory(const std::wstring& targetDir, concurrency::cancellation_toke
 
         std::wstring fullPath = targetDir + L"\\" + name;
         if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            if (sif.fileSpecification.recursive) scanDirectory(fullPath, token, inform);
+            if (sif.fileSpecification.recursive) countAllFiles += scanDirectory(fullPath, token, 0);
             continue;
         }
 
+        ++countAllFiles;
         ULARGE_INTEGER uli;
         uli.LowPart  = fd.nFileSizeLow;
         uli.HighPart = fd.nFileSizeHigh;
@@ -72,17 +78,11 @@ void scanDirectory(const std::wstring& targetDir, concurrency::cancellation_toke
             std::string relativeName = utf16to8(fullPath.substr(sif.fileSpecification.path.length() + 1));
             if (!sif.fileSpecification.filter.search(relativeName)) continue;
         }
-        SearchableFile& sf = SearchableFile::queue.emplace_back();
-        sf.cancel_source = Concurrency::cancellation_token_source::create_linked_source(token);
-        sf.status        = SearchableFile::Status::Waiting;
-        sf.size          = static_cast<size_t>(size);
-        sf.filePath      = fullPath;
-        if (SearchableFile::queue.size() % 200 == 0) {
-            PostMessage(inform, WM_APP_UPDATE_COUNT, SearchableFile::queue.size(), 0);
-        }
+        SearchableFile::queue->emplace_back(fullPath, size, token);
 
-    } while (FindNextFileW(hFind, &fd));
+    } while (FindNextFile(hFind, &fd));
 
     FindClose(hFind);
+    return countAllFiles;
 
 }

@@ -1,5 +1,5 @@
-// This file is part of Search++.
-// Copyright 2026 by by Randy Fellmy <https://www.coises.com/>.
+// This file is part of Search++ (a plugin for Notepad++),
+// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // The source code contained in this file is independent of Notepad++ code.
 // It is released under the MIT (Expat) license:
@@ -63,14 +63,14 @@ protected:
 public:
     Poly(Mono& mono) : mono(mono) {}
     virtual ~Poly() {}
-    virtual std::string  format(const std::string& replacement)                                  const = 0;
-    virtual intptr_t     length(int n = 0)                                                       const = 0;
-    virtual intptr_t     position(int n = 0)                                                     const = 0;
-    virtual bool         search(std::string_view s, size_t from, std::string* errmsg) = 0;
-    virtual bool         search(intptr_t from, intptr_t to, intptr_t start, std::string* errmsg) = 0;
-    virtual size_t       size()                                                                  const = 0;
-    virtual std::string  str(int n = 0)                                                          const = 0;
-    virtual std::string  str(std::string_view n)                                                 const = 0;
-    virtual std::wstring wstr(int n = 0)                                                         const = 0;
-    virtual std::wstring wstr(std::string_view n)                                                const = 0;
+    virtual std::string  format(const std::string& replacement)             const = 0;
+    virtual intptr_t     length(int n = 0)                                  const = 0;
+    virtual intptr_t     position(int n = 0)                                const = 0;
+    virtual bool         search(std::string_view s, size_t from)                  = 0;
+    virtual bool         search(intptr_t from, intptr_t to, intptr_t start)       = 0;
+    virtual size_t       size()                                             const = 0;
+    virtual std::string  str(int n = 0)                                     const = 0;
+    virtual std::string  str(std::string_view n)                            const = 0;
+    virtual std::wstring wstr(int n = 0)                                    const = 0;
+    virtual std::wstring wstr(std::string_view n)                           const = 0;
 };

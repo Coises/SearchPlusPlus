@@ -1,5 +1,5 @@
-// This file is part of Search++.
-// Copyright 2026 by by Randy Fellmy <https://www.coises.com/>.
+// This file is part of Search++ (a plugin for Notepad++),
+// Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // The source code contained in this file is independent of Notepad++ code.
 // It is released under the MIT (Expat) license:
@@ -22,10 +22,10 @@
 // Note: These routines were copied with minimal changes from Columns++.
 // That plugin supports some formats not used in Search++, so not all settings and code paths are relevant here.
 
+#include "Framework\UtilityFrameworkMIT.h"
+#include "Numeric.h"
 #include <charconv>
 #include <cmath>
-#include "Numeric.h"
-#include "Framework\UtilityFrameworkMIT.h"
 
 
 static constexpr double scientificNotationThreshold = static_cast<long long>(1) << std::numeric_limits<double>::digits;

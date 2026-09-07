@@ -1,4 +1,4 @@
-// This file is part of Search++.
+// This file is part of Search++ (a plugin for Notepad++),
 // Copyright 2026 by Randy Fellmy <https://www.coises.com/>.
 
 // This program is free software: you can redistribute it and/or modify
@@ -17,8 +17,8 @@
 #pragma once
 
 #include "Framework/UtilityFramework.h"
-#include "RegularExpression.h"
 #include "Calculation.h"
+#include "RegularExpression.h"
 
 extern int zlmIndicator;   // Scintilla indicator used to show zero length matches
 
