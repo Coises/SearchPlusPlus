@@ -1,5 +1,13 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.6.6 -- September 8th, 2026
+
+* Add tab icons to the docking search dialog and the results list. (When you have more than one dialog docked to the same edge in Notepad++, the icon shows on the tabs that are not active.)
+
+* Fix an error (present since version 0.6) that caused the count of files containing a match in the status message when counting or searching in Files in View or in Open Documents to be one too large.
+
+* Various internal updates to Find in Files to make it more robust against I/O errors, with better error reporting.
+
 ## Version 0.6.5 -- August 16th, 2026
 
 * Update to ICU 78.3 and use static linking for ICU. This is expected to fix problems some testers have had running Search++ on older systems or on minimal Windows installs (like Windows Sandbox). For most users there will be no functional difference.
