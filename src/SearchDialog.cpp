@@ -323,12 +323,20 @@ bool processToolsCommand(unsigned char command) {
         break;
 
     case ToolsCommand::ShowAll:
+    {
         plugin.getScintillaPointers();
+        Scintilla::Line startDoc = sci.LineFromPosition(sci.SelectionStart());
+        Scintilla::Line startVis = sci.VisibleFromDocLine(startDoc);
+        Scintilla::Line firstVis = sci.FirstVisibleLine();
+        Scintilla::Line firstDoc = sci.DocLineFromVisible(firstVis);
+        Scintilla::Line firstSub = firstVis - sci.VisibleFromDocLine(firstDoc);
+        Scintilla::Line los = sci.LinesOnScreen();
         sci.ShowLines(0, sci.LineCount() - 1);
-        sci.SetXCaretPolicy(Scintilla::CaretPolicy::Even, 0);
-        sci.SetYCaretPolicy(Scintilla::CaretPolicy::Slop | Scintilla::CaretPolicy::Strict, static_cast<int>(sci.LinesOnScreen() / 3));
-        sci.ScrollRange(sci.Anchor(), sci.CurrentPos());
+        if (startVis >= firstVis && startVis < firstVis + los) /* beginning of selection is on screen: keep it in the same place */
+            sci.SetFirstVisibleLine(sci.VisibleFromDocLine(startDoc) - (startVis - firstVis));
+        else sci.ScrollVertical(firstDoc, firstSub);
         break;
+    }
 
     case ToolsCommand::SelToMark:
     {
