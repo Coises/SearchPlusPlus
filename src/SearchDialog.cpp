@@ -280,10 +280,13 @@ namespace ToolsCommand {
     constexpr unsigned char HideAll            = 'Q';
     constexpr unsigned char ShowAll            = 'q';
     constexpr unsigned char SelToMark          = 'm';
-    constexpr unsigned char MarkToSel          = 'S';
+    constexpr unsigned char MarkToSel          = 'M';
+    constexpr unsigned char AddMarksToSel      = 'V';
+    constexpr unsigned char RemoveMarksFromSel = 'X';
+    constexpr unsigned char InvertMarked       = 'I';
     constexpr unsigned char CopyMarked         = 'C';
     constexpr unsigned char CopyMarkedDialog   = 'Y';
-    constexpr unsigned char CopyMarkedMultiple = 'M';
+    constexpr unsigned char CopyMarkedMultiple = 'T';
     constexpr unsigned char ClearMarks         = 'R';
     constexpr unsigned char ClearMarksMultiple =   1;
     constexpr unsigned char ClearHitlist       =   2;
@@ -342,6 +345,7 @@ bool processToolsCommand(unsigned char command) {
     {
         plugin.getScintillaPointers();
         sci.SetIndicatorCurrent(data.indicator);
+        sci.IndicatorClearRange(0, sci.Length());
         sci.SetIndicatorValue(1);
         int n = sci.Selections();
         for (int i = 0; i < n; ++i) {
@@ -374,6 +378,50 @@ bool processToolsCommand(unsigned char command) {
         break;
     }
  
+    case ToolsCommand::AddMarksToSel:
+    {
+        plugin.getScintillaPointers();
+        sci.SetIndicatorCurrent(data.indicator);
+        sci.SetIndicatorValue(1);
+        int n = sci.Selections();
+        for (int i = 0; i < n; ++i) {
+            Scintilla::Position a = sci.SelectionNStart(i);
+            Scintilla::Position b = sci.SelectionNEnd(i);
+            if (b > a) sci.IndicatorFillRange(a, b - a);
+        }
+        break;
+    }
+ 
+    case ToolsCommand::RemoveMarksFromSel:
+    {
+        plugin.getScintillaPointers();
+        sci.SetIndicatorCurrent(data.indicator);
+        int n = sci.Selections();
+        for (int i = 0; i < n; ++i) {
+            Scintilla::Position a = sci.SelectionNStart(i);
+            Scintilla::Position b = sci.SelectionNEnd(i);
+            if (b > a) sci.IndicatorClearRange(a, b - a);
+        }
+        break;
+    }
+
+    case ToolsCommand::InvertMarked:
+    {
+        plugin.getScintillaPointers();
+        sci.SetIndicatorCurrent(data.indicator);
+        sci.SetIndicatorValue(1);
+        Scintilla::Position documentLength = sci.Length();
+        for (Scintilla::Position cpMin = 0;;) {
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+            if (cpMax <= cpMin) cpMax = documentLength;
+            if (sci.IndicatorValueAt(data.indicator, cpMin)) sci.IndicatorClearRange(cpMin, cpMax - cpMin);
+                                                        else sci.IndicatorFillRange(cpMin, cpMax - cpMin);
+            if (cpMax == documentLength) break;
+            cpMin = cpMax;
+        }
+        break;
+    }
+
     case ToolsCommand::CopyMarkedDialog:
     {
         HWND focus = GetFocus();
@@ -1192,8 +1240,11 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             AppendMenu(pum, MF_STRING, ToolsCommand::HideAll, L"&Hide All Lines\tCtrl+Shift+Q");
             AppendMenu(pum, MF_STRING, ToolsCommand::ShowAll, L"Show &All Lines\tCtrl+Q");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, ToolsCommand::SelToMark, L"Add Selection to &Marked Text\tCtrl+M");
-            AppendMenu(pum, MF_STRING, ToolsCommand::MarkToSel, L"&Select Marked Text\tCtrl+Shift+S");
+            AppendMenu(pum, MF_STRING, ToolsCommand::SelToMark, L"&Mark Selected Text\tCtrl+M");
+            AppendMenu(pum, MF_STRING, ToolsCommand::MarkToSel, L"&Select Marked Text\tCtrl+Shift+M");
+            AppendMenu(pum, MF_STRING, ToolsCommand::AddMarksToSel, L"Add Mar&king to Selected Text\tCtrl+Shift+V");
+            AppendMenu(pum, MF_STRING, ToolsCommand::RemoveMarksFromSel, L"Remove Marking from Selected Te&xt\tCtrl+Shift+X");
+            AppendMenu(pum, MF_STRING, ToolsCommand::InvertMarked, L"&Invert Marked Text\tCtrl+Shift+I");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, ToolsCommand::CopyMarked,
                   data.copyMarkedSeparator == CopyMarkedSeparator::None   ? L"&Copy Marked Text with no separators\tCtrl+Shift+C"
@@ -1203,7 +1254,7 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                                                                           : L"&Copy Marked Text separated by custom string\tCtrl+Shift+C"
                 );
             AppendMenu(pum, MF_STRING, ToolsCommand::CopyMarkedDialog, L"Cop&y Marked Text...\tCtrl+Shift+Y");
-            AppendMenu(pum, MF_STRING, ToolsCommand::CopyMarkedMultiple, L"Copy Marked &Text as multiple selections\tCtrl+Shift+M");
+            AppendMenu(pum, MF_STRING, ToolsCommand::CopyMarkedMultiple, L"Copy Marked &Text as multiple selections\tCtrl+Shift+T");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, ToolsCommand::ClearMarks, data.markAlsoBookmarks
                 ? L"&Remove marks and bookmarks from active document\tCtrl+Shift+R"
@@ -1220,13 +1271,15 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 Scintilla::Position p = sci.IndicatorEnd(data.indicator, 0);
                 if (p != 0 && p != sci.Length()) hasMarks = true;
             }
-            EnableMenuItem(pum, ToolsCommand::ShowAll           , sci.AllLinesVisible() ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::SelToMark         , sci.SelectionEmpty()  ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::MarkToSel         , !hasMarks             ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::CopyMarked        , !hasMarks             ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , !hasMarks             ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, !hasMarks             ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::ClearHitlist      , hitlistEmpty()        ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::ShowAll           , sci.AllLinesVisible()             ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::SelToMark         , sci.SelectionEmpty()              ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::AddMarksToSel     , sci.SelectionEmpty()              ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, sci.SelectionEmpty() || !hasMarks ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::MarkToSel         , !hasMarks                         ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::CopyMarked        , !hasMarks                         ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , !hasMarks                         ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, !hasMarks                         ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::ClearHitlist      , hitlistEmpty()                    ? MF_GRAYED : MF_ENABLED);
             EnableMenuItem(pum, ToolsCommand::HideAll,
                 sci.VisibleFromDocLine(sci.LineCount() - 1) == 0 && !sci.LineVisible(0) ? MF_GRAYED : MF_ENABLED);
             EnableMenuItem(pum, ToolsCommand::ClearMarks,

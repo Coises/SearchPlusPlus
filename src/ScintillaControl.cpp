@@ -196,6 +196,7 @@ void ScintillaControl::Configuration::common(Scintilla::ScintillaCall& sciCall) 
     sciCall.ClearCmdKey('Q' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sciCall.ClearCmdKey('R' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sciCall.ClearCmdKey('S' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
+    sciCall.ClearCmdKey('T' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sciCall.ClearCmdKey('V' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sciCall.ClearCmdKey('W' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
     sciCall.ClearCmdKey('X' + ((SCMOD_CTRL + SCMOD_SHIFT) << 16));
