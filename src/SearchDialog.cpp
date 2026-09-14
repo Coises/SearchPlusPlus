@@ -344,7 +344,7 @@ bool processToolsCommand(unsigned char command) {
     case ToolsCommand::SelToMark:
     {
         plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.indicator);
+        sci.SetIndicatorCurrent(data.markIndicator);
         sci.IndicatorClearRange(0, sci.Length());
         sci.SetIndicatorValue(1);
         int n = sci.Selections();
@@ -362,9 +362,9 @@ bool processToolsCommand(unsigned char command) {
         bool first = true;
         Scintilla::Position documentLength = sci.Length();
         for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
             if (cpMax == cpMin) break;
-            if (sci.IndicatorValueAt(data.indicator, cpMin)) {
+            if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
                 if (first) {
                     sci.ClearSelections();
                     sci.SetSelection(cpMax, cpMin);
@@ -381,7 +381,7 @@ bool processToolsCommand(unsigned char command) {
     case ToolsCommand::AddMarksToSel:
     {
         plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.indicator);
+        sci.SetIndicatorCurrent(data.markIndicator);
         sci.SetIndicatorValue(1);
         int n = sci.Selections();
         for (int i = 0; i < n; ++i) {
@@ -395,7 +395,7 @@ bool processToolsCommand(unsigned char command) {
     case ToolsCommand::RemoveMarksFromSel:
     {
         plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.indicator);
+        sci.SetIndicatorCurrent(data.markIndicator);
         int n = sci.Selections();
         for (int i = 0; i < n; ++i) {
             Scintilla::Position a = sci.SelectionNStart(i);
@@ -408,13 +408,13 @@ bool processToolsCommand(unsigned char command) {
     case ToolsCommand::InvertMarked:
     {
         plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.indicator);
+        sci.SetIndicatorCurrent(data.markIndicator);
         sci.SetIndicatorValue(1);
         Scintilla::Position documentLength = sci.Length();
         for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
             if (cpMax <= cpMin) cpMax = documentLength;
-            if (sci.IndicatorValueAt(data.indicator, cpMin)) sci.IndicatorClearRange(cpMin, cpMax - cpMin);
+            if (sci.IndicatorValueAt(data.markIndicator, cpMin)) sci.IndicatorClearRange(cpMin, cpMax - cpMin);
                                                         else sci.IndicatorFillRange(cpMin, cpMax - cpMin);
             if (cpMax == documentLength) break;
             cpMin = cpMax;
@@ -450,9 +450,9 @@ bool processToolsCommand(unsigned char command) {
         }
         }
         for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
             if (cpMax == cpMin) break;
-            if (sci.IndicatorValueAt(data.indicator, cpMin)) {
+            if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
                 if (first) first = false;
                 else text += sep;
                 text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
@@ -473,9 +473,9 @@ bool processToolsCommand(unsigned char command) {
         std::string sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
         int count = 0;
         for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
             if (cpMax == cpMin) break;
-            if (sci.IndicatorValueAt(data.indicator, cpMin)) {
+            if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
                 if (++count > 1) text += sep;
                 text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
             }
@@ -512,7 +512,7 @@ bool processToolsCommand(unsigned char command) {
 
     case ToolsCommand::ClearMarks:
         plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.indicator);
+        sci.SetIndicatorCurrent(data.markIndicator);
         sci.IndicatorClearRange(0, sci.Length());
         if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
         break;
@@ -530,7 +530,7 @@ bool processToolsCommand(unsigned char command) {
                     for (int pos = 0; pos < documentCount; ++pos) {
                         npp(NPPM_ACTIVATEDOC, view, pos);
                         plugin.getScintillaPointers();
-                        sci.SetIndicatorCurrent(data.indicator);
+                        sci.SetIndicatorCurrent(data.markIndicator);
                         sci.IndicatorClearRange(0, sci.Length());
                         if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
                     }
@@ -1266,9 +1266,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             AppendMenu(pum, MF_STRING, ToolsCommand::Settings, L"S&ettings...\tCtrl+Shift+E");
             plugin.getScintillaPointers();
             bool hasMarks = false;
-            if (sci.IndicatorValueAt(data.indicator, 0)) hasMarks = true;
+            if (sci.IndicatorValueAt(data.markIndicator, 0)) hasMarks = true;
             else {
-                Scintilla::Position p = sci.IndicatorEnd(data.indicator, 0);
+                Scintilla::Position p = sci.IndicatorEnd(data.markIndicator, 0);
                 if (p != 0 && p != sci.Length()) hasMarks = true;
             }
             EnableMenuItem(pum, ToolsCommand::ShowAll           , sci.AllLinesVisible()             ? MF_GRAYED : MF_ENABLED);
@@ -1307,7 +1307,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
     case WM_SHOWWINDOW:
         if (!wParam && !lParam && data.dialogLayout != DialogLayout::Docking && data.autoClearMarks) {
             plugin.getScintillaPointers();
-            sci.SetIndicatorCurrent(data.indicator);
+            sci.SetIndicatorCurrent(data.markIndicator);
+            sci.IndicatorClearRange(0, sci.Length());
+            sci.SetIndicatorCurrent(data.showIndicator);
             sci.IndicatorClearRange(0, sci.Length());
             if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
         }

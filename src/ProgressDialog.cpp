@@ -147,16 +147,19 @@ void ProgressInfo::preClear() {
         break;
     case SearchCommand::Mark:
         if (data.clearMarked || req.command.scope == SearchCommand::Region) {
-            sci.SetIndicatorCurrent(data.indicator);
+            sci.SetIndicatorCurrent(data.markIndicator);
             sci.IndicatorClearRange(0, sci.Length());
             if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
         }
         break;
     case SearchCommand::Show:
         if (data.hideBeforeShow) {
-            sci.SetIndicatorCurrent(data.indicator);
+            sci.SetIndicatorCurrent(data.showIndicator);
             sci.IndicatorClearRange(0, sci.Length());
-            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+            if (zlmIndicator) {
+                sci.SetIndicatorCurrent(zlmIndicator + 1);
+                sci.IndicatorClearRange(0, sci.Length());
+            }
             sci.HideLines(0, sci.LineCount() - 1);
         }
         else if (sci.AllLinesVisible()) sci.HideLines(0, sci.LineCount() - 1);
@@ -269,9 +272,9 @@ void ProgressInfo::nextDocument() {
     req.ranges.clear();
     if (req.command.scope == SearchCommand::Region) {
         for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
             if (cpMax == cpMin) break;
-            if (sci.IndicatorValueAt(data.indicator, cpMin)) req.ranges.push_back(Scintilla::CharacterRangeFull{ cpMin, cpMax });
+            if (sci.IndicatorValueAt(data.markIndicator, cpMin)) req.ranges.push_back(Scintilla::CharacterRangeFull{ cpMin, cpMax });
             if (cpMax == length) break;
             cpMin = cpMax;
         }

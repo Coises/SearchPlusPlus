@@ -105,7 +105,7 @@ SearchResult singleReplace(SearchRequest& req) {
     Scintilla::Position start = sci.TargetStart();
     Scintilla::Position end   = sci.TargetEnd();
     if (req.command.scope == SearchCommand::Scope::Region && start != end) {
-        sci.SetIndicatorCurrent(data.indicator);
+        sci.SetIndicatorCurrent(data.markIndicator);
         sci.SetIndicatorValue(1);
         sci.IndicatorFillRange(start, end - start);
     }
@@ -150,9 +150,21 @@ bool progressiveSearch(ProgressInfo& pi) {
             break;
         case SearchCommand::Show:
             sci.ShowLines(sci.LineFromPosition(found), sci.LineFromPosition(position));
-            [[fallthrough]];
+            if (length) {
+                sci.SetIndicatorCurrent(data.showIndicator);
+                sci.SetIndicatorValue(1);
+                sci.IndicatorFillRange(found, length);
+            }
+            else if (zlmIndicator) {
+                sci.IndicSetStyle(zlmIndicator + 1, Scintilla::IndicatorStyle::Point);
+                sci.IndicSetFore(zlmIndicator + 1, sci.IndicGetFore(data.showIndicator));
+                sci.SetIndicatorCurrent(zlmIndicator + 1);
+                sci.SetIndicatorValue(1);
+                sci.IndicatorFillRange(found, 1);
+            }
+            break;
         case SearchCommand::Mark:
-            sci.SetIndicatorCurrent(data.indicator);
+            sci.SetIndicatorCurrent(data.markIndicator);
             sci.SetIndicatorValue(1);
             sci.IndicatorFillRange(found, length);
             if (data.markAlsoBookmarks) {
@@ -163,7 +175,7 @@ bool progressiveSearch(ProgressInfo& pi) {
         case SearchCommand::ReplaceAll:
             sci.ReplaceTarget(pip.repl);
             if (req.command.scope == SearchCommand::Scope::Region && !pip.repl.empty()) {
-                sci.SetIndicatorCurrent(data.indicator);
+                sci.SetIndicatorCurrent(data.markIndicator);
                 sci.SetIndicatorValue(1);
                 sci.IndicatorFillRange(found, pip.repl.length());
             }
@@ -195,7 +207,7 @@ SearchResult multipleSearch(SearchRequest& req) {
     if (data.wholeWord) searchFlags |= Scintilla::FindOption::WholeWord;
     if (data.matchCase) searchFlags |= Scintilla::FindOption::MatchCase;
     sci.SetSearchFlags(searchFlags);
-    sci.SetIndicatorCurrent(data.indicator);
+    sci.SetIndicatorCurrent(data.markIndicator);
     sci.SetIndicatorValue(1);
     if (auto cp = sci.CodePage(); cp != CP_UTF8) {
         pip.find = fromWide(utf8to16(req.find), cp);

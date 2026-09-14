@@ -73,7 +73,6 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         data.selectionToMarks     .put(hwndDlg, IDC_SETTINGS_TOMARKS                   );
         data.selectInSelection    .put(hwndDlg, IDC_SETTINGS_SELECTINSELECTION         );
         data.selectPriority       .put(hwndDlg, IDC_SETTINGS_SELECTPRIORITY            );
-        data.indicator            .put(hwndDlg, IDC_SETTINGS_MARKSTYLE                 );
         data.autoSearchMarked     .put(hwndDlg, IDC_SETTINGS_AUTOSEARCH_MARKS          );
         data.markInMarked         .put(hwndDlg, IDC_SETTINGS_MARKINMARKED              );
         data.focusStepwise        .put(hwndDlg, IDC_SETTINGS_FOCUS_STEPWISE            );
@@ -111,7 +110,7 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 4"));
         SendMessage(hMarkStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 5"));
 
-        switch (data.indicator) {
+        switch (data.markIndicator) {
         case 25: SendMessage(hMarkStyle, CB_SETCURSEL, 1, 0); break;
         case 24: SendMessage(hMarkStyle, CB_SETCURSEL, 2, 0); break;
         case 23: SendMessage(hMarkStyle, CB_SETCURSEL, 3, 0); break;
@@ -120,9 +119,27 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         default: SendMessage(hMarkStyle, CB_SETCURSEL, 0, 0); break;
         }
 
+        HWND hShowStyle = GetDlgItem(hwndDlg, IDC_SETTINGS_SHOWSTYLE);
+
+        SendMessage(hShowStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Find Mark Style"));
+        SendMessage(hShowStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 1"));
+        SendMessage(hShowStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 2"));
+        SendMessage(hShowStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 3"));
+        SendMessage(hShowStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 4"));
+        SendMessage(hShowStyle, CB_ADDSTRING, 0, reinterpret_cast<LPARAM>(L"Mark Style 5"));
+
+        switch (data.showIndicator) {
+        case 25: SendMessage(hShowStyle, CB_SETCURSEL, 1, 0); break;
+        case 24: SendMessage(hShowStyle, CB_SETCURSEL, 2, 0); break;
+        case 23: SendMessage(hShowStyle, CB_SETCURSEL, 3, 0); break;
+        case 22: SendMessage(hShowStyle, CB_SETCURSEL, 4, 0); break;
+        case 21: SendMessage(hShowStyle, CB_SETCURSEL, 5, 0); break;
+        default: SendMessage(hShowStyle, CB_SETCURSEL, 0, 0); break;
+        }
+
         // There is no need to worry about dark mode changing during the life of the dialog, since this is a modal dialog.
-        // The owner-draw drop-down list gets messed up by dark mode sub-classing;
-        // so we temporarily remove it, sub-class, and then put it back.
+        // The owner-draw drop-down lists get messed up by dark mode sub-classing;
+        // so we temporarily remove them, sub-class, and then put them back.
         // Calling again with dmfSetThemeChildren fixes the border and the drop-down arrow.
         // WM_DRAWITEM uses darkModeColors when isDarkMode is true.
 
@@ -130,11 +147,15 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         if (isDarkMode) {
             npp(NPPM_GETDARKMODECOLORS, sizeof darkModeColors, &darkModeColors);
             constexpr ULONG dmfSetThemeChildren = 0x00000004UL;
-            HWND hPrev = GetWindow(hMarkStyle, GW_HWNDPREV);
-            HWND hParent = SetParent(hMarkStyle, 0);
+            HWND hPrevMark = GetWindow(hMarkStyle, GW_HWNDPREV);
+            HWND hPrevShow = GetWindow(hShowStyle, GW_HWNDPREV);
+            HWND hParentMark = SetParent(hMarkStyle, 0);
+            HWND hParentShow = SetParent(hShowStyle, 0);
             npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);
-            SetParent(hMarkStyle, hParent);
-            SetWindowPos(hMarkStyle, hPrev, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            SetParent(hMarkStyle, hParentMark);
+            SetParent(hShowStyle, hParentShow);
+            SetWindowPos(hMarkStyle, hPrevMark, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+            SetWindowPos(hShowStyle, hPrevShow, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
             npp(NPPM_DARKMODESUBCLASSANDTHEME, dmfSetThemeChildren, hwndDlg);
         }
 
@@ -183,7 +204,6 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             data.selectionToMarks     .get(hwndDlg, IDC_SETTINGS_TOMARKS                   );
             data.selectInSelection    .get(hwndDlg, IDC_SETTINGS_SELECTINSELECTION         );
             data.selectPriority       .get(hwndDlg, IDC_SETTINGS_SELECTPRIORITY            );
-            data.indicator            .get(hwndDlg, IDC_SETTINGS_MARKSTYLE                 );
             data.autoSearchMarked     .get(hwndDlg, IDC_SETTINGS_AUTOSEARCH_MARKS          );
             data.markInMarked         .get(hwndDlg, IDC_SETTINGS_MARKINMARKED              );
             data.focusStepwise        .get(hwndDlg, IDC_SETTINGS_FOCUS_STEPWISE            );
@@ -196,12 +216,21 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
             data.autoClearMarks       .get(hwndDlg, IDC_SETTINGS_AUTOCLEAR_MARKS           );
 
             switch (SendDlgItemMessage(hwndDlg, IDC_SETTINGS_MARKSTYLE, CB_GETCURSEL, 0, 0)) {
-            case 1 : data.indicator = 25; break;
-            case 2 : data.indicator = 24; break;
-            case 3 : data.indicator = 23; break;
-            case 4 : data.indicator = 22; break;
-            case 5 : data.indicator = 21; break;
-            default: data.indicator = 31; break;
+            case 1 : data.markIndicator = 25; break;
+            case 2 : data.markIndicator = 24; break;
+            case 3 : data.markIndicator = 23; break;
+            case 4 : data.markIndicator = 22; break;
+            case 5 : data.markIndicator = 21; break;
+            default: data.markIndicator = 31; break;
+            }
+
+            switch (SendDlgItemMessage(hwndDlg, IDC_SETTINGS_SHOWSTYLE, CB_GETCURSEL, 0, 0)) {
+            case 1 : data.showIndicator = 25; break;
+            case 2 : data.showIndicator = 24; break;
+            case 3 : data.showIndicator = 23; break;
+            case 4 : data.showIndicator = 22; break;
+            case 5 : data.showIndicator = 21; break;
+            default: data.showIndicator = 31; break;
             }
 
             DialogLayout dl = IsDlgButtonChecked(hwndDlg, IDC_SETTINGS_HORIZONTAL) == BST_CHECKED ? DialogLayout::Horizontal
@@ -256,7 +285,7 @@ INT_PTR CALLBACK settingsDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPAR
         return FALSE;
 
     case WM_DRAWITEM:
-        if (wParam == IDC_SETTINGS_MARKSTYLE) {
+        if (wParam == IDC_SETTINGS_MARKSTYLE || wParam == IDC_SETTINGS_SHOWSTYLE) {
             const DRAWITEMSTRUCT& dis = *reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
             int indicator;
             switch (dis.itemID) {

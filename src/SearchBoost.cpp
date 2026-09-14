@@ -141,10 +141,22 @@ bool progressiveSearch(ProgressInfo& pi) {
             break;
         case SearchCommand::Show:
             sci.ShowLines(sci.LineFromPosition(found), sci.LineFromPosition(position));
-            [[fallthrough]];
+            if (length) {
+                sci.SetIndicatorCurrent(data.showIndicator);
+                sci.SetIndicatorValue(1);
+                sci.IndicatorFillRange(found, length);
+            }
+            else if (zlmIndicator) {
+                sci.IndicSetStyle(zlmIndicator + 1, Scintilla::IndicatorStyle::Point);
+                sci.IndicSetFore(zlmIndicator + 1, sci.IndicGetFore(data.showIndicator));
+                sci.SetIndicatorCurrent(zlmIndicator + 1);
+                sci.SetIndicatorValue(1);
+                sci.IndicatorFillRange(found, 1);
+            }
+            break;
         case SearchCommand::Mark:
             if (length) {
-                sci.SetIndicatorCurrent(data.indicator);
+                sci.SetIndicatorCurrent(data.markIndicator);
                 sci.SetIndicatorValue(1);
                 sci.IndicatorFillRange(found, length);
             }
@@ -160,7 +172,7 @@ bool progressiveSearch(ProgressInfo& pi) {
             sci.SetTarget(Scintilla::Span(found, found + length));
             sci.ReplaceTarget(repl);
             if (req.command.scope == SearchCommand::Scope::Region && !repl.empty()) {
-                sci.SetIndicatorCurrent(data.indicator);
+                sci.SetIndicatorCurrent(data.markIndicator);
                 sci.SetIndicatorValue(1);
                 sci.IndicatorFillRange(found, repl.length());
             }
@@ -195,7 +207,7 @@ SearchResult multipleSearch(SearchRequest& req) {
     pib.rx.setup(sci);
     std::string rxMessage = pib.rx.find(req.find, data.matchCase, data.dotAll, data.freeSpacing);
     if (!rxMessage.empty()) return SearchResult(L"Invalid regular expression.", rxMessage);
-    sci.SetIndicatorCurrent(data.indicator);
+    sci.SetIndicatorCurrent(data.markIndicator);
     sci.SetIndicatorValue(1);
     pib.exec(progressiveSearch);
     if (pib.result.success() && req.command.verb == SearchCommand::ReplaceAll) req.context->calcIsValid = false;

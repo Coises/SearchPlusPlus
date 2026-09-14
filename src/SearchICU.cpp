@@ -169,10 +169,22 @@ bool progressiveSearch(ProgressInfo& pi) {
             break;
         case SearchCommand::Show:
             sci.ShowLines(sci.LineFromPosition(matchStart), sci.LineFromPosition(matchEnd));
-            [[fallthrough]];
+            if (matchStart != matchEnd) {
+                sci.SetIndicatorCurrent(data.showIndicator);
+                sci.SetIndicatorValue(1);
+                sci.IndicatorFillRange(matchStart, matchEnd - matchStart);
+            }
+            else if (zlmIndicator) {
+                sci.IndicSetStyle(zlmIndicator + 1, Scintilla::IndicatorStyle::Point);
+                sci.IndicSetFore(zlmIndicator + 1, sci.IndicGetFore(data.showIndicator));
+                sci.SetIndicatorCurrent(zlmIndicator + 1);
+                sci.SetIndicatorValue(1);
+                sci.IndicatorFillRange(matchStart, 1);
+            }
+            break;
         case SearchCommand::Mark:
             if (matchStart != matchEnd) {
-                sci.SetIndicatorCurrent(data.indicator);
+                sci.SetIndicatorCurrent(data.markIndicator);
                 sci.SetIndicatorValue(1);
                 sci.IndicatorFillRange(matchStart, matchEnd - matchStart);
             }
@@ -209,7 +221,7 @@ SearchResult multipleSearch(SearchRequest& req) {
     pii.icuMatcher = std::make_unique<icu::RegexMatcher>(req.find.data(), flags, status);
     if (status.isFailure()) return req.error(L"Invalid regular expression.", utf16to8(rxError(status.get(), L"")));
     plugin.getScintillaPointers(req.sciText);
-    sci.SetIndicatorCurrent(data.indicator);
+    sci.SetIndicatorCurrent(data.markIndicator);
     sci.SetIndicatorValue(1);
     pii.exec(progressiveSearch);
     return pii.result;

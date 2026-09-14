@@ -56,9 +56,9 @@ SearchResult SearchRequest::exec
 
         if (command.scope == SearchCommand::Smart) {
             if (data.autoSearchMarked && (data.markInMarked || command.verb != SearchCommand::Mark)) {
-                if (sci.IndicatorValueAt(data.indicator, 0)) command.scope = SearchCommand::Region;
+                if (sci.IndicatorValueAt(data.markIndicator, 0)) command.scope = SearchCommand::Region;
                 else {
-                    Scintilla::Position p = sci.IndicatorEnd(data.indicator, 0);
+                    Scintilla::Position p = sci.IndicatorEnd(data.markIndicator, 0);
                     if (p != 0 && p != documentLength) command.scope = SearchCommand::Region;
                 }
             }
@@ -85,9 +85,9 @@ SearchResult SearchRequest::exec
 
         if (command.scope == SearchCommand::Region) {
             for (Scintilla::Position cpMin = 0;;) {
-                Scintilla::Position cpMax = sci.IndicatorEnd(data.indicator, cpMin);
+                Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
                 if (cpMax == cpMin) break;
-                if (sci.IndicatorValueAt(data.indicator, cpMin)) ranges.push_back(Scintilla::CharacterRangeFull{ cpMin, cpMax });
+                if (sci.IndicatorValueAt(data.markIndicator, cpMin)) ranges.push_back(Scintilla::CharacterRangeFull{ cpMin, cpMax });
                 if (cpMax == documentLength) break;
                 cpMin = cpMax;
             }
@@ -138,7 +138,7 @@ SearchResult SearchRequest::exec
         if (result.success()) {
             if (convertSelectionToMarks) {
                 plugin.getScintillaPointers(sciText);
-                sci.SetIndicatorCurrent(data.indicator);
+                sci.SetIndicatorCurrent(data.markIndicator);
                 sci.SetIndicatorValue(1);
                 sci.IndicatorClearRange(0, documentLength);
                 if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
