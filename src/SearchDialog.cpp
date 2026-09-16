@@ -277,8 +277,14 @@ namespace ToolsCommand {
     constexpr unsigned char SearchInFiles      = 'g';
     constexpr unsigned char BookmarkWhenMark   = 'b';
     constexpr unsigned char JumpReplace        = 'j';
-    constexpr unsigned char HideAll            = 'Q';
     constexpr unsigned char ShowAll            = 'q';
+    constexpr unsigned char ShowAllClear       = 'Q';
+    constexpr unsigned char ShowSelected       = 'W';
+    constexpr unsigned char ShowHighlighted    = 'P';
+    constexpr unsigned char ShowSurrounding    = 'p';
+    constexpr unsigned char ClearHighlights    = 'k';
+    constexpr unsigned char HideAll            = 'K';
+    constexpr unsigned char MarkHighlighted    = 'J';
     constexpr unsigned char SelToMark          = 'm';
     constexpr unsigned char MarkToSel          = 'M';
     constexpr unsigned char AddMarksToSel      = 'V';
@@ -295,6 +301,32 @@ namespace ToolsCommand {
     // Following are not on the Tools menu, but use this mechanism to implement dialog-wide shortcuts
 
     constexpr unsigned char SearchInFiles_Close = 'G';
+
+};
+
+struct ShowPosition {
+
+    Scintilla::ScintillaCall& sci;
+    Scintilla::Line startDoc;
+    Scintilla::Line startVis;
+    Scintilla::Line firstVis;
+    Scintilla::Line firstDoc;
+    Scintilla::Line firstSub;
+
+    ShowPosition(Scintilla::ScintillaCall& sci)
+        : sci(sci)
+        , startDoc(sci.LineFromPosition(sci.SelectionStart()))
+        , startVis(sci.VisibleFromDocLine(startDoc))
+        , firstVis(sci.FirstVisibleLine())
+        , firstDoc(sci.DocLineFromVisible(firstVis))
+        , firstSub(firstVis - sci.VisibleFromDocLine(firstDoc))
+        {}
+
+    void scroll() /* If beginning of selection was on screen, keep it in place; otherwise keep first visible line in place */ {
+        if (startVis >= firstVis && startVis < firstVis + sci.LinesOnScreen())
+            sci.SetFirstVisibleLine(sci.VisibleFromDocLine(startDoc) - (startVis - firstVis));
+        else sci.ScrollVertical(firstDoc, firstSub);
+    }
 
 };
 
@@ -320,24 +352,111 @@ bool processToolsCommand(unsigned char command) {
         break;
     }
 
+    case ToolsCommand::ShowAll:
+    case ToolsCommand::ShowAllClear:
+    {
+        plugin.getScintillaPointers();
+        if (command == ToolsCommand::ShowAllClear) {
+            sci.SetIndicatorCurrent(data.showIndicator);
+            sci.IndicatorClearRange(0, sci.Length());
+            if (zlmIndicator) {
+                sci.SetIndicatorCurrent(zlmIndicator + 1);
+                sci.IndicatorClearRange(0, sci.Length());
+            }
+        }
+        ShowPosition sp(sci);
+        sci.ShowLines(0, sci.LineCount() - 1);
+        sp.scroll();
+        break;
+    }
+
+    case ToolsCommand::ShowSelected:
+    {
+        plugin.getScintillaPointers();
+        int n = sci.Selections();
+        for (int i = 0; i < n; ++i) {
+            Scintilla::Position a = sci.SelectionNStart(i);
+            Scintilla::Position b = sci.SelectionNEnd(i);
+            if (b > a) --b;
+            sci.ShowLines(sci.LineFromPosition(a), sci.LineFromPosition(b));
+        }
+        break;
+    }
+
+    case ToolsCommand::ShowHighlighted:
+    {
+        plugin.getScintillaPointers();
+        ShowPosition sp(sci);
+        sci.HideLines(0, sci.LineCount() - 1);
+        Scintilla::Position documentLength = sci.Length();
+        for (Scintilla::Position cpMin = 0;;) {
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
+            if (cpMax <= cpMin) cpMax = documentLength;
+            if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
+                Scintilla::Position b = std::max(cpMin, cpMax - 1);
+                sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
+            }
+            if (cpMax == documentLength) break;
+            cpMin = cpMax;
+        }
+        sp.scroll();
+        break;
+    }
+
+    case ToolsCommand::ShowSurrounding:
+    {
+        plugin.getScintillaPointers();
+        Scintilla::Line lineCount = sci.LineCount();
+        if (sci.AllLinesVisible() || (sci.VisibleFromDocLine(sci.LineCount() - 1) == 0 && !sci.LineVisible(0))) break;
+        ShowPosition sp(sci);
+        for (Scintilla::Line line = 0; line < lineCount; ++line) {
+            if (!sci.LineVisible(line)) {
+                if (line == 0) line = sci.DocLineFromVisible(0);
+                else {
+                    sci.ShowLines(line, line);
+                    line = sci.DocLineFromVisible(sci.VisibleFromDocLine(line) + sci.WrapCount(line));
+                }
+                if (line > 0 && line < lineCount) sci.ShowLines(line - 1, line - 1);
+            }
+        }
+        sp.scroll();
+        break;
+    }
+
+    case ToolsCommand::ClearHighlights:
+        plugin.getScintillaPointers();
+        sci.SetIndicatorCurrent(data.showIndicator);
+        sci.IndicatorClearRange(0, sci.Length());
+        if (zlmIndicator) {
+            sci.SetIndicatorCurrent(zlmIndicator + 1);
+            sci.IndicatorClearRange(0, sci.Length());
+        }
+        break;
+
     case ToolsCommand::HideAll:
         plugin.getScintillaPointers();
         sci.HideLines(0, sci.LineCount() - 1);
         break;
 
-    case ToolsCommand::ShowAll:
+    case ToolsCommand::MarkHighlighted:
     {
         plugin.getScintillaPointers();
-        Scintilla::Line startDoc = sci.LineFromPosition(sci.SelectionStart());
-        Scintilla::Line startVis = sci.VisibleFromDocLine(startDoc);
-        Scintilla::Line firstVis = sci.FirstVisibleLine();
-        Scintilla::Line firstDoc = sci.DocLineFromVisible(firstVis);
-        Scintilla::Line firstSub = firstVis - sci.VisibleFromDocLine(firstDoc);
-        Scintilla::Line los = sci.LinesOnScreen();
-        sci.ShowLines(0, sci.LineCount() - 1);
-        if (startVis >= firstVis && startVis < firstVis + los) /* beginning of selection is on screen: keep it in the same place */
-            sci.SetFirstVisibleLine(sci.VisibleFromDocLine(startDoc) - (startVis - firstVis));
-        else sci.ScrollVertical(firstDoc, firstSub);
+        sci.SetIndicatorCurrent(data.markIndicator);
+        sci.SetIndicatorValue(1);
+        Scintilla::Position documentLength = sci.Length();
+        for (Scintilla::Position cpMin = 0;;) {
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
+            if (cpMax <= cpMin) cpMax = documentLength;
+            if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
+                sci.IndicatorFillRange(cpMin, cpMax - cpMin);
+                if (data.markAlsoBookmarks) {
+                    Scintilla::Line line = sci.LineFromPosition(cpMin);
+                    if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                }
+            }
+            if (cpMax == documentLength) break;
+            cpMin = cpMax;
+        }
         break;
     }
 
@@ -347,11 +466,18 @@ bool processToolsCommand(unsigned char command) {
         sci.SetIndicatorCurrent(data.markIndicator);
         sci.IndicatorClearRange(0, sci.Length());
         sci.SetIndicatorValue(1);
+        if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
         int n = sci.Selections();
         for (int i = 0; i < n; ++i) {
             Scintilla::Position a = sci.SelectionNStart(i);
             Scintilla::Position b = sci.SelectionNEnd(i);
-            if (b > a) sci.IndicatorFillRange(a, b - a);
+            if (b > a) {
+                sci.IndicatorFillRange(a, b - a);
+                if (data.markAlsoBookmarks) {
+                    Scintilla::Line line = sci.LineFromPosition(a);
+                    if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                }
+            }
         }
         break;
     }
@@ -387,7 +513,13 @@ bool processToolsCommand(unsigned char command) {
         for (int i = 0; i < n; ++i) {
             Scintilla::Position a = sci.SelectionNStart(i);
             Scintilla::Position b = sci.SelectionNEnd(i);
-            if (b > a) sci.IndicatorFillRange(a, b - a);
+            if (b > a) {
+                sci.IndicatorFillRange(a, b - a);
+                if (data.markAlsoBookmarks) {
+                    Scintilla::Line line = sci.LineFromPosition(a);
+                    if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                }
+            }
         }
         break;
     }
@@ -411,11 +543,18 @@ bool processToolsCommand(unsigned char command) {
         sci.SetIndicatorCurrent(data.markIndicator);
         sci.SetIndicatorValue(1);
         Scintilla::Position documentLength = sci.Length();
+        if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
         for (Scintilla::Position cpMin = 0;;) {
             Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
             if (cpMax <= cpMin) cpMax = documentLength;
             if (sci.IndicatorValueAt(data.markIndicator, cpMin)) sci.IndicatorClearRange(cpMin, cpMax - cpMin);
-                                                        else sci.IndicatorFillRange(cpMin, cpMax - cpMin);
+            else {
+                sci.IndicatorFillRange(cpMin, cpMax - cpMin);
+                if (data.markAlsoBookmarks) {
+                    Scintilla::Line line = sci.LineFromPosition(cpMin);
+                    if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                }
+            }
             if (cpMax == documentLength) break;
             cpMin = cpMax;
         }
@@ -1237,13 +1376,20 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             AppendMenu(pum, MF_STRING, ToolsCommand::BookmarkWhenMark, L"&Bookmark lines when marking text\tCtrl+B");
             AppendMenu(pum, MF_STRING, ToolsCommand::JumpReplace     , L"&Jump to next match after Replace\tCtrl+J");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
-            AppendMenu(pum, MF_STRING, ToolsCommand::HideAll, L"&Hide All Lines\tCtrl+Shift+Q");
             AppendMenu(pum, MF_STRING, ToolsCommand::ShowAll, L"Show &All Lines\tCtrl+Q");
+            AppendMenu(pum, MF_STRING, ToolsCommand::ShowAllClear, L"Sh&ow All Lines and Clear Highlights\tCtrl+Shift+Q");
+            AppendMenu(pum, MF_STRING, ToolsCommand::ShowSelected, L"Sho&w Selected Lines\tCtrl+Shift+W");
+            AppendMenu(pum, MF_STRING, ToolsCommand::ShowHighlighted, L"Show Highlighted Li&nes\tCtrl+Shift+P");
+            AppendMenu(pum, MF_STRING, ToolsCommand::ShowSurrounding, L"Show S&urrounding\tCtrl+P");
+            AppendMenu(pum, MF_SEPARATOR, 0, 0);
+            AppendMenu(pum, MF_STRING, ToolsCommand::ClearHighlights, L"Clear Hi&ghlights\tCtrl+K");
+            AppendMenu(pum, MF_STRING, ToolsCommand::HideAll, L"&Hide All Lines\tCtrl+Shift+K");
+            AppendMenu(pum, MF_STRING, ToolsCommand::MarkHighlighted, L"Add Mar&ks to Highlighted Text\tCtrl+Shift+J");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, ToolsCommand::SelToMark, L"&Mark Selected Text\tCtrl+M");
             AppendMenu(pum, MF_STRING, ToolsCommand::MarkToSel, L"&Select Marked Text\tCtrl+Shift+M");
-            AppendMenu(pum, MF_STRING, ToolsCommand::AddMarksToSel, L"Add Mar&king to Selected Text\tCtrl+Shift+V");
-            AppendMenu(pum, MF_STRING, ToolsCommand::RemoveMarksFromSel, L"Remove Marking from Selected Te&xt\tCtrl+Shift+X");
+            AppendMenu(pum, MF_STRING, ToolsCommand::AddMarksToSel, L"A&dd Marks to Selected Text\tCtrl+Shift+V");
+            AppendMenu(pum, MF_STRING, ToolsCommand::RemoveMarksFromSel, L"Remove Marks from Selected Te&xt\tCtrl+Shift+X");
             AppendMenu(pum, MF_STRING, ToolsCommand::InvertMarked, L"&Invert Marked Text\tCtrl+Shift+I");
             AppendMenu(pum, MF_SEPARATOR, 0, 0);
             AppendMenu(pum, MF_STRING, ToolsCommand::CopyMarked,
@@ -1271,17 +1417,29 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 Scintilla::Position p = sci.IndicatorEnd(data.markIndicator, 0);
                 if (p != 0 && p != sci.Length()) hasMarks = true;
             }
-            EnableMenuItem(pum, ToolsCommand::ShowAll           , sci.AllLinesVisible()             ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::SelToMark         , sci.SelectionEmpty()              ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::AddMarksToSel     , sci.SelectionEmpty()              ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, sci.SelectionEmpty() || !hasMarks ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::MarkToSel         , !hasMarks                         ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::CopyMarked        , !hasMarks                         ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , !hasMarks                         ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, !hasMarks                         ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::ClearHitlist      , hitlistEmpty()                    ? MF_GRAYED : MF_ENABLED);
-            EnableMenuItem(pum, ToolsCommand::HideAll,
-                sci.VisibleFromDocLine(sci.LineCount() - 1) == 0 && !sci.LineVisible(0) ? MF_GRAYED : MF_ENABLED);
+            bool hasHighs = false;
+            if (sci.IndicatorValueAt(data.showIndicator, 0)) hasHighs = true;
+            else {
+                Scintilla::Position p = sci.IndicatorEnd(data.showIndicator, 0);
+                if (p != 0 && p != sci.Length()) hasHighs = true;
+            }
+            bool allHidden = sci.VisibleFromDocLine(sci.LineCount() - 1) == 0 && !sci.LineVisible(0);
+            EnableMenuItem(pum, ToolsCommand::ShowAll           , sci.AllLinesVisible()                         ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::ShowAllClear      , sci.AllLinesVisible() && !hasHighs            ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::ShowSelected      , sci.AllLinesVisible() || sci.SelectionEmpty() ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::ShowHighlighted   , sci.AllLinesVisible() || !hasHighs            ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::ShowSurrounding   , sci.AllLinesVisible() || allHidden            ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::ClearHighlights   , !hasHighs                                     ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::HideAll           , allHidden                                     ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::MarkHighlighted   , !hasHighs           	                        ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::SelToMark         , sci.SelectionEmpty()                          ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::MarkToSel         , !hasMarks                                     ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::AddMarksToSel     , sci.SelectionEmpty()                          ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, sci.SelectionEmpty() || !hasMarks             ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::CopyMarked        , !hasMarks                                     ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , !hasMarks                                     ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, !hasMarks                                     ? MF_GRAYED : MF_ENABLED);
+            EnableMenuItem(pum, ToolsCommand::ClearHitlist      , hitlistEmpty()                                ? MF_GRAYED : MF_ENABLED);
             EnableMenuItem(pum, ToolsCommand::ClearMarks,
                 hasMarks || (data.markAlsoBookmarks && sci.MarkerNext(0, 1 << data.bookMarker) >= 0) ? MF_ENABLED : MF_GRAYED);
             MENUITEMINFO mii;
