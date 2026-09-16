@@ -183,35 +183,11 @@ bool processScintillaShortcut(ScintillaControl& sc, char key) {
         data.repl.ReplaceTarget(data.find.text());
         if (sc == data.repl) sc.SetSel(-1, sc.TargetEnd());
         return true;
-    case 'h':
-        showHitlist();
-        return true;
-    case 'H':
-        hideHitlist();
-        return true;
     case 'i':
         plugin.getScintillaPointers();
         sc.TargetFromSelection();
         sc.ReplaceTarget(sci.GetSelText());
         sc.SetSel(-1, sc.TargetEnd());
-        return true;
-    case 'n':
-        SetFocus(plugin.currentScintilla());
-        return true;
-    case 'N':
-        SetFocus(plugin.currentScintilla());
-        if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                                                else ShowWindow(data.searchDialog, SW_HIDE);
-        hideHitlist();
-        closeSearchInFilesDialog();
-        return true;
-    case 'o':
-        SetFocus(sc == data.find ? data.repl.handle : data.find.handle);
-        return true;
-    case 'O':
-        SetFocus(plugin.currentScintilla());
-        if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                                                else ShowWindow(data.searchDialog, SW_HIDE);
         return true;
     case 'r':
         if (sc == data.find) data.find.TargetFromSelection();
@@ -233,32 +209,9 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
         break;
     case WM_KEYDOWN:
         if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') break;
-        if (!processToolsCommand(static_cast<unsigned char>(
+        processToolsCommand(static_cast<unsigned char>(
             GetKeyState(VK_SHIFT) & 0x8000 ? std::toupper(static_cast<unsigned char>(wParam))
-            : std::tolower(static_cast<unsigned char>(wParam)))
-        )) switch (wParam) {
-        case 'H':
-            if (GetKeyState(VK_SHIFT) & 0x8000) hideHitlist();
-            else                                showHitlist();
-            break;
-        case 'N':
-            SetFocus(plugin.currentScintilla());
-            if (GetKeyState(VK_SHIFT) & 0x8000) {
-                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                                                        else ShowWindow(data.searchDialog, SW_HIDE);
-                hideHitlist();
-                closeSearchInFilesDialog();
-            }
-            break;
-        case 'O':
-            if (GetKeyState(VK_SHIFT) & 0x8000) {
-                SetFocus(plugin.currentScintilla());
-                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                else ShowWindow(data.searchDialog, SW_HIDE);
-            }
-            else SetFocus(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
-            break;
-        }
+                                           : std::tolower(static_cast<unsigned char>(wParam))));
     }
     return DefSubclassProc(hWnd, uMsg, wParam, lParam);
 }

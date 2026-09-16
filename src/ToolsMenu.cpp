@@ -21,8 +21,9 @@ void showSettingsDialog();
 void clearHitlist();
 void closeSearchInFilesDialog();
 bool hitlistEmpty();
-// void hideHitlist();
-// void showHitlist();
+void hideHitlist();
+void showHitlist();
+void showSearchDialog();
 void showSearchInFilesDialog();
 void syncReplaceButton();
 
@@ -56,6 +57,12 @@ namespace ToolsCommand {
     // Following are not on the Tools menu, but use this mechanism to implement dialog-wide shortcuts
 
     constexpr unsigned char SearchInFiles_Close = 'G';
+    constexpr unsigned char Hitlist_Show        = 'h';
+    constexpr unsigned char Hitlist_Hide        = 'H';
+    constexpr unsigned char Document_Focus      = 'n';
+    constexpr unsigned char All_Windows_Close   = 'N';
+    constexpr unsigned char Focus_Find_Or_Repl  = 'o';
+    constexpr unsigned char SearchDialog_Close  = 'O';
 
 };
 
@@ -600,6 +607,46 @@ bool processToolsCommand(unsigned char command) {
 
     case ToolsCommand::SearchInFiles_Close:
         closeSearchInFilesDialog();
+        break;
+
+    case ToolsCommand::Hitlist_Show:
+        showHitlist();
+        break;
+
+    case ToolsCommand::Hitlist_Hide:
+        hideHitlist();
+        break;
+
+    case ToolsCommand::Document_Focus:
+        SetFocus(plugin.currentScintilla());
+        break;
+
+    case ToolsCommand::All_Windows_Close:
+        SetFocus(plugin.currentScintilla());
+        if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+        else if (data.searchDialog) ShowWindow(data.searchDialog, SW_HIDE);
+        hideHitlist();
+        closeSearchInFilesDialog();
+        break;
+
+    case ToolsCommand::Focus_Find_Or_Repl:
+    {
+        HWND fw = GetFocus();
+        if (data.searchDialog && (fw == data.searchDialog || IsChild(data.searchDialog, fw)))
+            SetFocus(fw == data.find.handle ? data.repl.handle : data.find.handle);
+        else {
+            showSearchDialog();
+            SetFocus(data.find.handle);
+        }
+        break;
+    }
+
+    case ToolsCommand::SearchDialog_Close:
+        if (data.searchDialog) {
+            if (GetActiveWindow() == data.searchDialog) SetFocus(plugin.currentScintilla());
+            if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+            else ShowWindow(data.searchDialog, SW_HIDE);
+        }
         break;
 
     default:
