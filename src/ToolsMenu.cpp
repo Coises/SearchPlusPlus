@@ -30,77 +30,138 @@ void syncReplaceButton();
 
 namespace ToolsCommand {
 
+    constexpr unsigned char Focus_Find_Or_Repl = 'o';
     constexpr unsigned char SearchInFiles      = 'g';
+    constexpr unsigned char Hitlist_Show       = 'h';
     constexpr unsigned char BookmarkWhenMark   = 'b';
     constexpr unsigned char JumpReplace        = 'j';
-    constexpr unsigned char ShowAll            = 'q';
-    constexpr unsigned char ShowAllClear       = 'Q';
-    constexpr unsigned char ShowSelected       = 'W';
-    constexpr unsigned char ShowHighlighted    = 'P';
-    constexpr unsigned char ShowSurrounding    = 'p';
-    constexpr unsigned char ClearHighlights    = 'k';
-    constexpr unsigned char HideAll            = 'K';
-    constexpr unsigned char MarkHighlighted    = 'J';
+    constexpr unsigned char SaveSearch         = 's';
+    constexpr unsigned char ShowLines          = 'q';
+    constexpr unsigned char ShowLinesShift     = 'Q';
+    constexpr unsigned char ShowShown          = 'W';
+    constexpr unsigned char ExpandVisible      = 'p';
+    constexpr unsigned char ExpandVisibleShift = 'P';
+    constexpr unsigned char HideAll            = 'D';
     constexpr unsigned char SelToMark          = 'm';
-    constexpr unsigned char MarkToSel          = 'M';
-    constexpr unsigned char AddMarksToSel      = 'V';
+    constexpr unsigned char SelToMarkShift     = 'M';
+    constexpr unsigned char MarkShown          = 'k';
+    constexpr unsigned char MarkShownShift     = 'K';
+    constexpr unsigned char MarkToSel          = 'S';
     constexpr unsigned char RemoveMarksFromSel = 'X';
     constexpr unsigned char InvertMarked       = 'I';
     constexpr unsigned char CopyMarked         = 'C';
     constexpr unsigned char CopyMarkedDialog   = 'Y';
     constexpr unsigned char CopyMarkedMultiple = 'T';
     constexpr unsigned char ClearMarks         = 'R';
-    constexpr unsigned char ClearMarksMultiple =   1;
-    constexpr unsigned char ClearHitlist       =   2;
+    constexpr unsigned char ClearMarksMultiple = 'V';
+    constexpr unsigned char ShowAllClear       = 'A';
+    constexpr unsigned char ClearHitlist       = 1  ;
     constexpr unsigned char Settings           = 'E';
+    constexpr unsigned char SearchDialog_Close = 'O';
 
     // Following are not on the Tools menu, but use this mechanism to implement dialog-wide shortcuts
 
     constexpr unsigned char SearchInFiles_Close = 'G';
-    constexpr unsigned char Hitlist_Show        = 'h';
     constexpr unsigned char Hitlist_Hide        = 'H';
     constexpr unsigned char Document_Focus      = 'n';
     constexpr unsigned char All_Windows_Close   = 'N';
-    constexpr unsigned char Focus_Find_Or_Repl  = 'o';
-    constexpr unsigned char SearchDialog_Close  = 'O';
 
 };
 
 
 namespace {
 
-    const std::map<const unsigned char, std::pair<const wchar_t*, const wchar_t*>> Tools_Text {
-        { ToolsCommand::SearchInFiles     , { L"Search in &Files..."                     , L"Ctrl+G"       } },
-        { ToolsCommand::BookmarkWhenMark  , { L"&Bookmark lines when marking text"       , L"Ctrl+B"       } },
-        { ToolsCommand::JumpReplace       , { L"&Jump to next match after Replace"       , L"Ctrl+J"       } },
-        { ToolsCommand::ShowAll           , { L"Show &All Lines"                         , L"Ctrl+Q"       } },
-        { ToolsCommand::ShowAllClear      , { L"Sh&ow All Lines and Clear Highlights"    , L"Ctrl+Shift+Q" } },
-        { ToolsCommand::ShowSelected      , { L"Sho&w Selected Lines"                    , L"Ctrl+Shift+W" } },
-        { ToolsCommand::ShowHighlighted   , { L"Show Highlighted Li&nes"                 , L"Ctrl+Shift+P" } },
-        { ToolsCommand::ShowSurrounding   , { L"Show S&urrounding"                       , L"Ctrl+P"       } },
-        { ToolsCommand::ClearHighlights   , { L"Clear Hi&ghlights"                       , L"Ctrl+K"       } },
-        { ToolsCommand::HideAll           , { L"&Hide All Lines"                         , L"Ctrl+Shift+K" } },
-        { ToolsCommand::MarkHighlighted   , { L"Add Mar&ks to Highlighted Text"          , L"Ctrl+Shift+J" } },
-        { ToolsCommand::SelToMark         , { L"&Mark Selected Text"                     , L"Ctrl+M"       } },
-        { ToolsCommand::MarkToSel         , { L"&Select Marked Text"                     , L"Ctrl+Shift+M" } },
-        { ToolsCommand::AddMarksToSel     , { L"A&dd Marks to Selected Text"             , L"Ctrl+Shift+V" } },
-        { ToolsCommand::RemoveMarksFromSel, { L"Remove Marks from Selected Te&xt"        , L"Ctrl+Shift+X" } },
-        { ToolsCommand::InvertMarked      , { L"&Invert Marked Text"                     , L"Ctrl+Shift+I" } },
-        { ToolsCommand::CopyMarked        , { L"&Copy Marked Text "                      , L"Ctrl+Shift+C" } },
-        { ToolsCommand::CopyMarkedDialog  , { L"Cop&y Marked Text..."                    , L"Ctrl+Shift+Y" } },
-        { ToolsCommand::CopyMarkedMultiple, { L"Copy Marked &Text as multiple selections", L"Ctrl+Shift+T" } },
-        { ToolsCommand::ClearMarks        , { L"&Remove marks "                          , L"Ctrl+Shift+R" } },
-        { ToolsCommand::ClearMarksMultiple, { L"Remove marks from multi&ple documents...", L""             } },
-        { ToolsCommand::ClearHitlist      , { L"C&lear search results list"              , L""             } },
-        { ToolsCommand::Settings          , { L"S&ettings..."                            , L"Ctrl+Shift+E" } }
+    const std::map<const unsigned char, const wchar_t*> Tools_Text {
+        { ToolsCommand::Focus_Find_Or_Repl, L"Search &Open Documents..."                },
+        { ToolsCommand::SearchInFiles     , L"Search in &Files..."                      },
+        { ToolsCommand::Hitlist_Show      , L"Searc&h Results..."                       },
+        { ToolsCommand::BookmarkWhenMark  , L"&Bookmark lines when marking text"        },
+        { ToolsCommand::JumpReplace       , L"&Jump to next match after replace"        },
+        { ToolsCommand::SaveSearch        , L"&Save search..."                          },
+        { ToolsCommand::ShowLines         , L"Show "                                    },
+        { ToolsCommand::ShowShown         , L"Sho&w only lines with shown text"         },
+        { ToolsCommand::ExpandVisible     , L"Ex&pand visible"                          },
+        { ToolsCommand::HideAll           , L"Hi&de all lines"                          },
+        { ToolsCommand::SelToMark         , L"&Mark selected text"                      },
+        { ToolsCommand::MarkShown         , L"Mar&k shown text"                         },
+        { ToolsCommand::MarkToSel         , L"Se&lect marked text"                      },
+        { ToolsCommand::RemoveMarksFromSel, L"Remove marks from selected te&xt"         },
+        { ToolsCommand::InvertMarked      , L"&Invert marked text"                      },
+        { ToolsCommand::CopyMarked        , L"&Copy marked text "                       },
+        { ToolsCommand::CopyMarkedDialog  , L"Cop&y marked text..."                     },
+        { ToolsCommand::CopyMarkedMultiple, L"Copy marked &text as multiple selections" },
+        { ToolsCommand::ClearMarks        , L"&Remove marks "                           },
+        { ToolsCommand::ClearMarksMultiple, L"Remo&ve marks from multiple documents..." },
+        { ToolsCommand::ShowAllClear      , L"Clear shown (show &all and clear style)"  },
+        { ToolsCommand::ClearHitlist      , L"Clear search res&ults list"               },
+        { ToolsCommand::Settings          , L"S&ettings..."                             },
+        { ToolsCommand::SearchDialog_Close, L"Cl&ose"                                   }
     };
     
     void AddToolItem(HMENU menu, unsigned char command, bool accelerator, const std::wstring& tag = L"") {
         if (!Tools_Text.contains(command)) return;
-        std::wstring item = Tools_Text.at(command).first + tag;
-        if (accelerator) item += L'\t' + std::wstring(Tools_Text.at(command).second);
+        std::wstring item = Tools_Text.at(command) + tag;
+        if (accelerator && isalpha(command)) {
+            item += (isupper(command) ? L"\tCtrl+Shift+" : L"\tCtrl+");
+            item += static_cast<wchar_t>(toupper(command));
+        }
         AppendMenu(menu, MF_STRING, command, item.data());
     }
+
+    struct ToolsState {
+        bool anyHidden   = false;
+        bool anyHits     = false;
+        bool anyMarked   = false;
+        bool anySelected = false;
+        bool anyShown    = false;
+        bool anyVisible  = false;
+        bool selVisible  = false;
+        bool shift       = false;
+        void get() {
+            anyHidden = !sci.AllLinesVisible();
+            anyHits = !hitlistEmpty();
+            if (sci.IndicatorValueAt(data.markIndicator, 0)) anyMarked = true;
+            else {
+                Scintilla::Position p = sci.IndicatorEnd(data.markIndicator, 0);
+                anyMarked = p != 0 && p != sci.Length();
+            }
+            anySelected = !sci.SelectionEmpty();
+            if (sci.IndicatorValueAt(data.showIndicator, 0)) anyShown = true;
+            else {
+                Scintilla::Position p = sci.IndicatorEnd(data.showIndicator, 0);
+                anyShown = p != 0 && p != sci.Length();
+            }
+            anyVisible = sci.LineVisible(0) || sci.VisibleFromDocLine(sci.LineCount() - 1);
+            if (!anyHidden) selVisible = true;
+            else if (!anyVisible) selVisible = false;
+            else {
+                selVisible = true;
+                int selections = sci.Selections();
+                for (int n = 0; n < selections; ++n) {
+                    Scintilla::Position cpMin = sci.SelectionNStart(n);
+                    Scintilla::Position cpMax = sci.SelectionNEnd(n);
+                    Scintilla::Line lnMin = sci.LineFromPosition(cpMin);
+                    if (!sci.LineVisible(lnMin)) {
+                        selVisible = false;
+                        break;
+                    }
+                    if (cpMax == cpMin) continue;
+                    Scintilla::Line lnMax = sci.LineFromPosition(cpMax);
+                    if (lnMax == lnMin) continue;
+                    if (!sci.LineVisible(lnMax)) {
+                        selVisible = false;
+                        break;
+                    }
+                    Scintilla::Line lnGap = lnMax - lnMin;
+                    if (lnGap == 1) continue;
+                    if (sci.VisibleFromDocLine(lnMax) - sci.VisibleFromDocLine(lnMin) < lnGap) {
+                        selVisible = false;
+                        break;
+                    }
+                }
+            }
+        }
+    };
 
 
     // Dialog procedure for Tools | Copy Marked Text...
@@ -239,446 +300,420 @@ namespace {
     
     };
 
-}
 
-
-bool processToolsCommand(unsigned char command) {
-
-    switch (command) {
-
-    case ToolsCommand::SearchInFiles:
-        showSearchInFilesDialog();
-        break;
-
-    case ToolsCommand::BookmarkWhenMark:
-        data.markAlsoBookmarks = !data.markAlsoBookmarks;
-        break;
-
-    case ToolsCommand::JumpReplace:
-    {
-        SearchCommand repl = SearchCommand(data.buttonReplace);
-        repl.verb = repl.verb == SearchCommand::Replace ? SearchCommand::ReplStop : SearchCommand::Replace;
-        data.buttonReplace = repl;
-        syncReplaceButton();
-        break;
-    }
-
-    case ToolsCommand::ShowAll:
-    case ToolsCommand::ShowAllClear:
-    {
-        plugin.getScintillaPointers();
-        if (command == ToolsCommand::ShowAllClear) {
+    bool processToolsCommandWithState(unsigned char command, ToolsState& ts) {
+    
+        switch (command) {
+    
+        case ToolsCommand::SearchInFiles:
+        case ToolsCommand::SearchInFiles_Close:
+            if (ts.shift) closeSearchInFilesDialog();
+                     else showSearchInFilesDialog();
+            break;
+    
+        case ToolsCommand::BookmarkWhenMark:
+            data.markAlsoBookmarks = !data.markAlsoBookmarks;
+            break;
+    
+        case ToolsCommand::JumpReplace:
+        {
+            SearchCommand repl = SearchCommand(data.buttonReplace);
+            repl.verb = repl.verb == SearchCommand::Replace ? SearchCommand::ReplStop : SearchCommand::Replace;
+            data.buttonReplace = repl;
+            syncReplaceButton();
+            break;
+        }
+    
+        case ToolsCommand::ShowAllClear:
             sci.SetIndicatorCurrent(data.showIndicator);
             sci.IndicatorClearRange(0, sci.Length());
             if (zlmIndicator) {
                 sci.SetIndicatorCurrent(zlmIndicator + 1);
                 sci.IndicatorClearRange(0, sci.Length());
             }
-        }
-        ShowPosition sp(sci);
-        sci.ShowLines(0, sci.LineCount() - 1);
-        sp.scroll();
-        break;
-    }
-
-    case ToolsCommand::ShowSelected:
-    {
-        plugin.getScintillaPointers();
-        int n = sci.Selections();
-        for (int i = 0; i < n; ++i) {
-            Scintilla::Position a = sci.SelectionNStart(i);
-            Scintilla::Position b = sci.SelectionNEnd(i);
-            if (b > a) --b;
-            sci.ShowLines(sci.LineFromPosition(a), sci.LineFromPosition(b));
-        }
-        break;
-    }
-
-    case ToolsCommand::ShowHighlighted:
-    {
-        plugin.getScintillaPointers();
-        ShowPosition sp(sci);
-        sci.HideLines(0, sci.LineCount() - 1);
-        Scintilla::Position documentLength = sci.Length();
-        for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
-            if (cpMax <= cpMin) cpMax = documentLength;
-            if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
-                Scintilla::Position b = std::max(cpMin, cpMax - 1);
-                sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
+        [[fallthrough]];
+    
+        case ToolsCommand::ShowLines:
+        case ToolsCommand::ShowLinesShift:
+            if (command == ToolsCommand::ShowAllClear || ts.shift || ts.selVisible) {
+                ShowPosition sp(sci);
+                sci.ShowLines(0, sci.LineCount() - 1);
+                sp.scroll();
             }
-            if (cpMax == documentLength) break;
-            cpMin = cpMax;
-        }
-        sp.scroll();
-        break;
-    }
-
-    case ToolsCommand::ShowSurrounding:
-    {
-        plugin.getScintillaPointers();
-        Scintilla::Line lineCount = sci.LineCount();
-        if (sci.AllLinesVisible() || (sci.VisibleFromDocLine(sci.LineCount() - 1) == 0 && !sci.LineVisible(0))) break;
-        ShowPosition sp(sci);
-        for (Scintilla::Line line = 0; line < lineCount; ++line) {
-            if (!sci.LineVisible(line)) {
-                if (line == 0) line = sci.DocLineFromVisible(0);
-                else {
-                    sci.ShowLines(line, line);
-                    line = sci.DocLineFromVisible(sci.VisibleFromDocLine(line) + sci.WrapCount(line));
-                }
-                if (line > 0 && line < lineCount) sci.ShowLines(line - 1, line - 1);
-            }
-        }
-        sp.scroll();
-        break;
-    }
-
-    case ToolsCommand::ClearHighlights:
-        plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.showIndicator);
-        sci.IndicatorClearRange(0, sci.Length());
-        if (zlmIndicator) {
-            sci.SetIndicatorCurrent(zlmIndicator + 1);
-            sci.IndicatorClearRange(0, sci.Length());
-        }
-        break;
-
-    case ToolsCommand::HideAll:
-        plugin.getScintillaPointers();
-        sci.HideLines(0, sci.LineCount() - 1);
-        break;
-
-    case ToolsCommand::MarkHighlighted:
-    {
-        plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.markIndicator);
-        sci.SetIndicatorValue(1);
-        Scintilla::Position documentLength = sci.Length();
-        for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
-            if (cpMax <= cpMin) cpMax = documentLength;
-            if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
-                sci.IndicatorFillRange(cpMin, cpMax - cpMin);
-                if (data.markAlsoBookmarks) {
-                    Scintilla::Line line = sci.LineFromPosition(cpMin);
-                    if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
-                }
-            }
-            if (cpMax == documentLength) break;
-            cpMin = cpMax;
-        }
-        break;
-    }
-
-    case ToolsCommand::SelToMark:
-    {
-        plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.markIndicator);
-        sci.IndicatorClearRange(0, sci.Length());
-        sci.SetIndicatorValue(1);
-        if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
-        int n = sci.Selections();
-        for (int i = 0; i < n; ++i) {
-            Scintilla::Position a = sci.SelectionNStart(i);
-            Scintilla::Position b = sci.SelectionNEnd(i);
-            if (b > a) {
-                sci.IndicatorFillRange(a, b - a);
-                if (data.markAlsoBookmarks) {
-                    Scintilla::Line line = sci.LineFromPosition(a);
-                    if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
-                }
-            }
-        }
-        break;
-    }
-
-    case ToolsCommand::MarkToSel:
-    {
-        plugin.getScintillaPointers();
-        bool first = true;
-        Scintilla::Position documentLength = sci.Length();
-        for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
-            if (cpMax == cpMin) break;
-            if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
-                if (first) {
-                    sci.ClearSelections();
-                    sci.SetSelection(cpMax, cpMin);
-                    first = false;
-                }
-                else sci.AddSelection(cpMax, cpMin);
-            }
-            if (cpMax == documentLength) break;
-            cpMin = cpMax;
-        }
-        break;
-    }
-
-    case ToolsCommand::AddMarksToSel:
-    {
-        plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.markIndicator);
-        sci.SetIndicatorValue(1);
-        int n = sci.Selections();
-        for (int i = 0; i < n; ++i) {
-            Scintilla::Position a = sci.SelectionNStart(i);
-            Scintilla::Position b = sci.SelectionNEnd(i);
-            if (b > a) {
-                sci.IndicatorFillRange(a, b - a);
-                if (data.markAlsoBookmarks) {
-                    Scintilla::Line line = sci.LineFromPosition(a);
-                    if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
-                }
-            }
-        }
-        break;
-    }
-
-    case ToolsCommand::RemoveMarksFromSel:
-    {
-        plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.markIndicator);
-        int n = sci.Selections();
-        for (int i = 0; i < n; ++i) {
-            Scintilla::Position a = sci.SelectionNStart(i);
-            Scintilla::Position b = sci.SelectionNEnd(i);
-            if (b > a) sci.IndicatorClearRange(a, b - a);
-        }
-        break;
-    }
-
-    case ToolsCommand::InvertMarked:
-    {
-        plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.markIndicator);
-        sci.SetIndicatorValue(1);
-        Scintilla::Position documentLength = sci.Length();
-        if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
-        for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
-            if (cpMax <= cpMin) cpMax = documentLength;
-            if (sci.IndicatorValueAt(data.markIndicator, cpMin)) sci.IndicatorClearRange(cpMin, cpMax - cpMin);
             else {
-                sci.IndicatorFillRange(cpMin, cpMax - cpMin);
-                if (data.markAlsoBookmarks) {
-                    Scintilla::Line line = sci.LineFromPosition(cpMin);
-                    if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                int n = sci.Selections();
+                for (int i = 0; i < n; ++i) {
+                    Scintilla::Position a = sci.SelectionNStart(i);
+                    Scintilla::Position b = sci.SelectionNEnd(i);
+                    if (b > a) --b;
+                    sci.ShowLines(sci.LineFromPosition(a), sci.LineFromPosition(b));
                 }
             }
-            if (cpMax == documentLength) break;
-            cpMin = cpMax;
-        }
-        break;
-    }
-
-    case ToolsCommand::CopyMarkedDialog:
-    {
-        HWND focus = GetFocus();
-        INT_PTR cancel = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_TOOLS_COPYMARKED), data.searchDialog, copyMarkedDialogProc);
-        SetFocus(focus);
-        if (cancel) break;
-    }
-    [[fallthrough]];
-
-    case ToolsCommand::CopyMarked:
-    {
-        plugin.getScintillaPointers();
-        std::string text;
-        bool first = true;
-        Scintilla::Position documentLength = sci.Length();
-        std::string sep;
-        switch (data.copyMarkedSeparator.get()) {
-        case CopyMarkedSeparator::None: sep = ""; break;
-        case CopyMarkedSeparator::Blank: sep = " "; break;
-        case CopyMarkedSeparator::Tab: sep = "\t"; break;
-        case CopyMarkedSeparator::Custom: sep = data.copyMarkedSeparatorText; break;
-        default:
+            break;
+    
+        case ToolsCommand::ShowShown:
         {
-            Scintilla::EndOfLine eolm = sci.EOLMode();
-            sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
-        }
-        }
-        for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
-            if (cpMax == cpMin) break;
-            if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
-                if (first) first = false;
-                else text += sep;
-                text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
-            }
-            if (cpMax == documentLength) break;
-            cpMin = cpMax;
-        }
-        sci.CopyText(text.length(), text.data());
-        break;
-    }
-
-    case ToolsCommand::CopyMarkedMultiple:
-    {
-        plugin.getScintillaPointers();
-        std::string text;
-        Scintilla::Position documentLength = sci.Length();
-        Scintilla::EndOfLine eolm = sci.EOLMode();
-        std::string sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
-        int count = 0;
-        for (Scintilla::Position cpMin = 0;;) {
-            Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
-            if (cpMax == cpMin) break;
-            if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
-                if (++count > 1) text += sep;
-                text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
-            }
-            if (cpMax == documentLength) break;
-            cpMin = cpMax;
-        }
-        if (count < 1) break;
-        if (count == 1) sci.CopyText(text.length(), text.data());
-        else {
-            static CLIPFORMAT ClipFormatColumn = static_cast<CLIPFORMAT>(RegisterClipboardFormat(L"MSDEVColumnSelect"));
-            UINT codepage = sci.CodePage();
-            std::wstring cliptext = codepage == CP_UTF8 ? utf8to16(text) : toWide(text, codepage);
-            if (!OpenClipboard(data.searchDialog)) break;
-            EmptyClipboard();
-            HGLOBAL hg = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, (1 + cliptext.length()) * 2);
-            if (!hg) {
-                CloseClipboard();
-                break;
-            }
-            void* pg = ::GlobalLock(hg);
-            if (!pg) {
-                GlobalFree(hg);
-                CloseClipboard();
-                break;
-            }
-            memcpy(pg, cliptext.data(), (1 + cliptext.length()) * 2);
-            GlobalUnlock(hg);
-            SetClipboardData(CF_UNICODETEXT, hg);
-            SetClipboardData(ClipFormatColumn, {});
-            CloseClipboard();
-        }
-        break;
-    }
-
-    case ToolsCommand::ClearMarks:
-        plugin.getScintillaPointers();
-        sci.SetIndicatorCurrent(data.markIndicator);
-        sci.IndicatorClearRange(0, sci.Length());
-        if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
-        break;
-
-    case ToolsCommand::ClearMarksMultiple:
-    {
-        HWND focus = GetFocus();
-        INT_PTR action = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_REMOVEMARKS), data.searchDialog, removeMarksDialogProc);
-        if (action == IDC_REMOVEMARKS_OPEN || action == IDC_REMOVEMARKS_VIEW) {
-            int originalView = static_cast<int>(npp(NPPM_GETCURRENTVIEW, 0, 0));
-            for (int view = action == IDC_REMOVEMARKS_VIEW ? originalView : 1 - originalView; ; view = originalView) {
-                int originalDocIndex = static_cast<int>(npp(NPPM_GETCURRENTDOCINDEX, 0, view));
-                if (originalDocIndex >= 0) {
-                    int documentCount = static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, view + 1));
-                    for (int pos = 0; pos < documentCount; ++pos) {
-                        npp(NPPM_ACTIVATEDOC, view, pos);
-                        plugin.getScintillaPointers();
-                        sci.SetIndicatorCurrent(data.markIndicator);
-                        sci.IndicatorClearRange(0, sci.Length());
-                        if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
-                    }
-                    npp(NPPM_ACTIVATEDOC, view, originalDocIndex);
+            ShowPosition sp(sci);
+            sci.HideLines(0, sci.LineCount() - 1);
+            Scintilla::Position documentLength = sci.Length();
+            for (Scintilla::Position cpMin = 0;;) {
+                Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
+                if (cpMax <= cpMin) cpMax = documentLength;
+                if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
+                    Scintilla::Position b = std::max(cpMin, cpMax - 1);
+                    sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
                 }
-                if (view == originalView) break;
+                if (cpMax == documentLength) break;
+                cpMin = cpMax;
             }
+            sp.scroll();
+            break;
         }
-        SetFocus(focus);
-        break;
-    }
-
-    case ToolsCommand::ClearHitlist:
-        clearHitlist();
-        break;
-
-    case ToolsCommand::Settings:
-    {
-        HWND focus = GetFocus();
-        showSettingsDialog();
-        SetFocus(focus);
-        break;
-    }
-
-    case ToolsCommand::SearchInFiles_Close:
-        closeSearchInFilesDialog();
-        break;
-
-    case ToolsCommand::Hitlist_Show:
-        showHitlist();
-        break;
-
-    case ToolsCommand::Hitlist_Hide:
-        hideHitlist();
-        break;
-
-    case ToolsCommand::Document_Focus:
-        SetFocus(plugin.currentScintilla());
-        break;
-
-    case ToolsCommand::All_Windows_Close:
-        SetFocus(plugin.currentScintilla());
-        if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-        else if (data.searchDialog) ShowWindow(data.searchDialog, SW_HIDE);
-        hideHitlist();
-        closeSearchInFilesDialog();
-        break;
-
-    case ToolsCommand::Focus_Find_Or_Repl:
-    {
-        HWND fw = GetFocus();
-        if (data.searchDialog && (fw == data.searchDialog || IsChild(data.searchDialog, fw)))
-            SetFocus(fw == data.find.handle ? data.repl.handle : data.find.handle);
-        else {
-            showSearchDialog();
-            SetFocus(data.find.handle);
+    
+        case ToolsCommand::ExpandVisible:
+        {
+            Scintilla::Line lineCount = sci.LineCount();
+            if (sci.AllLinesVisible() || (sci.VisibleFromDocLine(sci.LineCount() - 1) == 0 && !sci.LineVisible(0))) break;
+            ShowPosition sp(sci);
+            for (Scintilla::Line line = 0; line < lineCount; ++line) {
+                if (!sci.LineVisible(line)) {
+                    if (line == 0) line = sci.DocLineFromVisible(0);
+                    else {
+                        sci.ShowLines(line, line);
+                        line = sci.DocLineFromVisible(sci.VisibleFromDocLine(line) + sci.WrapCount(line));
+                    }
+                    if (line > 0 && line < lineCount) sci.ShowLines(line - 1, line - 1);
+                }
+            }
+            sp.scroll();
+            break;
         }
-        break;
-    }
-
-    case ToolsCommand::SearchDialog_Close:
-        if (data.searchDialog) {
-            if (GetActiveWindow() == data.searchDialog) SetFocus(plugin.currentScintilla());
+    
+        case ToolsCommand::HideAll:
+            sci.HideLines(0, sci.LineCount() - 1);
+            break;
+    
+        case ToolsCommand::SelToMark:
+        case ToolsCommand::SelToMarkShift:
+        {
+            sci.SetIndicatorCurrent(data.markIndicator);
+            if (ts.shift) {
+                sci.IndicatorClearRange(0, sci.Length());
+                if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+            }
+            sci.SetIndicatorValue(1);
+            int n = sci.Selections();
+            for (int i = 0; i < n; ++i) {
+                Scintilla::Position a = sci.SelectionNStart(i);
+                Scintilla::Position b = sci.SelectionNEnd(i);
+                if (b > a) {
+                    sci.IndicatorFillRange(a, b - a);
+                    if (data.markAlsoBookmarks) {
+                        Scintilla::Line line = sci.LineFromPosition(a);
+                        if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                    }
+                }
+            }
+            break;
+        }
+    
+        case ToolsCommand::MarkShown:
+        case ToolsCommand::MarkShownShift:
+        {
+            sci.SetIndicatorCurrent(data.markIndicator);
+            if (ts.shift) {
+                sci.IndicatorClearRange(0, sci.Length());
+                if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+            }
+            sci.SetIndicatorValue(1);
+            Scintilla::Position documentLength = sci.Length();
+            for (Scintilla::Position cpMin = 0;;) {
+                Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
+                if (cpMax <= cpMin) cpMax = documentLength;
+                if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
+                    sci.IndicatorFillRange(cpMin, cpMax - cpMin);
+                    if (data.markAlsoBookmarks) {
+                        Scintilla::Line line = sci.LineFromPosition(cpMin);
+                        if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                    }
+                }
+                if (cpMax == documentLength) break;
+                cpMin = cpMax;
+            }
+            break;
+        }
+    
+        case ToolsCommand::MarkToSel:
+        {
+            bool first = true;
+            Scintilla::Position documentLength = sci.Length();
+            for (Scintilla::Position cpMin = 0;;) {
+                Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
+                if (cpMax == cpMin) break;
+                if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
+                    if (first) {
+                        sci.ClearSelections();
+                        sci.SetSelection(cpMax, cpMin);
+                        first = false;
+                    }
+                    else sci.AddSelection(cpMax, cpMin);
+                }
+                if (cpMax == documentLength) break;
+                cpMin = cpMax;
+            }
+            break;
+        }
+    
+        case ToolsCommand::RemoveMarksFromSel:
+        {
+            sci.SetIndicatorCurrent(data.markIndicator);
+            int n = sci.Selections();
+            for (int i = 0; i < n; ++i) {
+                Scintilla::Position a = sci.SelectionNStart(i);
+                Scintilla::Position b = sci.SelectionNEnd(i);
+                if (b > a) sci.IndicatorClearRange(a, b - a);
+            }
+            break;
+        }
+    
+        case ToolsCommand::InvertMarked:
+        {
+            sci.SetIndicatorCurrent(data.markIndicator);
+            sci.SetIndicatorValue(1);
+            Scintilla::Position documentLength = sci.Length();
+            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+            for (Scintilla::Position cpMin = 0;;) {
+                Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
+                if (cpMax <= cpMin) cpMax = documentLength;
+                if (sci.IndicatorValueAt(data.markIndicator, cpMin)) sci.IndicatorClearRange(cpMin, cpMax - cpMin);
+                else {
+                    sci.IndicatorFillRange(cpMin, cpMax - cpMin);
+                    if (data.markAlsoBookmarks) {
+                        Scintilla::Line line = sci.LineFromPosition(cpMin);
+                        if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                    }
+                }
+                if (cpMax == documentLength) break;
+                cpMin = cpMax;
+            }
+            break;
+        }
+    
+        case ToolsCommand::CopyMarkedDialog:
+        {
+            HWND focus = GetFocus();
+            INT_PTR cancel = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_TOOLS_COPYMARKED), data.searchDialog, copyMarkedDialogProc);
+            SetFocus(focus);
+            if (cancel) break;
+        }
+        [[fallthrough]];
+    
+        case ToolsCommand::CopyMarked:
+        {
+            plugin.getScintillaPointers();
+            std::string text;
+            bool first = true;
+            Scintilla::Position documentLength = sci.Length();
+            std::string sep;
+            switch (data.copyMarkedSeparator.get()) {
+            case CopyMarkedSeparator::None: sep = ""; break;
+            case CopyMarkedSeparator::Blank: sep = " "; break;
+            case CopyMarkedSeparator::Tab: sep = "\t"; break;
+            case CopyMarkedSeparator::Custom: sep = data.copyMarkedSeparatorText; break;
+            default:
+            {
+                Scintilla::EndOfLine eolm = sci.EOLMode();
+                sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
+            }
+            }
+            for (Scintilla::Position cpMin = 0;;) {
+                Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
+                if (cpMax == cpMin) break;
+                if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
+                    if (first) first = false;
+                    else text += sep;
+                    text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
+                }
+                if (cpMax == documentLength) break;
+                cpMin = cpMax;
+            }
+            sci.CopyText(text.length(), text.data());
+            break;
+        }
+    
+        case ToolsCommand::CopyMarkedMultiple:
+        {
+            std::string text;
+            Scintilla::Position documentLength = sci.Length();
+            Scintilla::EndOfLine eolm = sci.EOLMode();
+            std::string sep = eolm == Scintilla::EndOfLine::CrLf ? "\r\n" : eolm == Scintilla::EndOfLine::Cr ? "\r" : "\n";
+            int count = 0;
+            for (Scintilla::Position cpMin = 0;;) {
+                Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
+                if (cpMax == cpMin) break;
+                if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
+                    if (++count > 1) text += sep;
+                    text += sci.StringOfRange(Scintilla::Span(cpMin, cpMax));
+                }
+                if (cpMax == documentLength) break;
+                cpMin = cpMax;
+            }
+            if (count < 1) break;
+            if (count == 1) sci.CopyText(text.length(), text.data());
+            else {
+                static CLIPFORMAT ClipFormatColumn = static_cast<CLIPFORMAT>(RegisterClipboardFormat(L"MSDEVColumnSelect"));
+                UINT codepage = sci.CodePage();
+                std::wstring cliptext = codepage == CP_UTF8 ? utf8to16(text) : toWide(text, codepage);
+                if (!OpenClipboard(data.searchDialog)) break;
+                EmptyClipboard();
+                HGLOBAL hg = GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, (1 + cliptext.length()) * 2);
+                if (!hg) {
+                    CloseClipboard();
+                    break;
+                }
+                void* pg = ::GlobalLock(hg);
+                if (!pg) {
+                    GlobalFree(hg);
+                    CloseClipboard();
+                    break;
+                }
+                memcpy(pg, cliptext.data(), (1 + cliptext.length()) * 2);
+                GlobalUnlock(hg);
+                SetClipboardData(CF_UNICODETEXT, hg);
+                SetClipboardData(ClipFormatColumn, {});
+                CloseClipboard();
+            }
+            break;
+        }
+    
+        case ToolsCommand::ClearMarks:
+            sci.SetIndicatorCurrent(data.markIndicator);
+            sci.IndicatorClearRange(0, sci.Length());
+            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+            break;
+    
+        case ToolsCommand::ClearMarksMultiple:
+        {
+            HWND focus = GetFocus();
+            INT_PTR action = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_REMOVEMARKS), data.searchDialog, removeMarksDialogProc);
+            if (action == IDC_REMOVEMARKS_OPEN || action == IDC_REMOVEMARKS_VIEW) {
+                int originalView = static_cast<int>(npp(NPPM_GETCURRENTVIEW, 0, 0));
+                for (int view = action == IDC_REMOVEMARKS_VIEW ? originalView : 1 - originalView; ; view = originalView) {
+                    int originalDocIndex = static_cast<int>(npp(NPPM_GETCURRENTDOCINDEX, 0, view));
+                    if (originalDocIndex >= 0) {
+                        int documentCount = static_cast<int>(npp(NPPM_GETNBOPENFILES, 0, view + 1));
+                        for (int pos = 0; pos < documentCount; ++pos) {
+                            npp(NPPM_ACTIVATEDOC, view, pos);
+                            plugin.getScintillaPointers();
+                            sci.SetIndicatorCurrent(data.markIndicator);
+                            sci.IndicatorClearRange(0, sci.Length());
+                            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+                        }
+                        npp(NPPM_ACTIVATEDOC, view, originalDocIndex);
+                    }
+                    if (view == originalView) break;
+                }
+            }
+            SetFocus(focus);
+            break;
+        }
+    
+        case ToolsCommand::ClearHitlist:
+            clearHitlist();
+            break;
+    
+        case ToolsCommand::Settings:
+        {
+            HWND focus = GetFocus();
+            showSettingsDialog();
+            SetFocus(IsWindowVisible(focus) ? focus : plugin.currentScintilla());
+            break;
+        }
+    
+        case ToolsCommand::Hitlist_Show:
+        case ToolsCommand::Hitlist_Hide:
+            if (ts.shift) hideHitlist();
+                     else showHitlist();
+            break;
+    
+        case ToolsCommand::Document_Focus:
+            SetFocus(plugin.currentScintilla());
+            break;
+    
+        case ToolsCommand::All_Windows_Close:
+            SetFocus(plugin.currentScintilla());
             if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-            else ShowWindow(data.searchDialog, SW_HIDE);
-        }
-        break;
+            else if (data.searchDialog) ShowWindow(data.searchDialog, SW_HIDE);
+            hideHitlist();
+            closeSearchInFilesDialog();
+            break;
+    
+        case ToolsCommand::Focus_Find_Or_Repl:
+            if (!ts.shift) {
+                HWND fw = GetFocus();
+                if (data.searchDialog && (fw == data.searchDialog || IsChild(data.searchDialog, fw)))
+                    SetFocus(fw == data.find.handle ? data.repl.handle : data.find.handle);
+                else {
+                    showSearchDialog();
+                    SetFocus(data.find.handle);
+                }
+                break;
+            }
+        [[fallthrough]];
 
-    default:
-        return false;
+        case ToolsCommand::SearchDialog_Close:
+            if (data.searchDialog) {
+                if (GetActiveWindow() == data.searchDialog) SetFocus(plugin.currentScintilla());
+                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                else ShowWindow(data.searchDialog, SW_HIDE);
+            }
+            break;
+    
+        default:
+            return false;
+        }
+    
+        return true;
+    
     }
 
-    return true;
+}
 
+
+bool processToolsCommand(unsigned char command) {
+    ToolsState ts;
+    plugin.getScintillaPointers();
+    ts.get();
+    ts.shift = isupper(command);
+    return processToolsCommandWithState(command, ts);
 }
 
 
 void showToolsMenu(HWND button) {
 
+    ToolsState ts;
+    plugin.getScintillaPointers();
+    ts.get();
+
     HMENU pum = CreatePopupMenu();
+    if (!button) AddToolItem(pum, ToolsCommand::Focus_Find_Or_Repl, 0);
     AddToolItem(pum, ToolsCommand::SearchInFiles, button);
+    AddToolItem(pum, ToolsCommand::Hitlist_Show , button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     AddToolItem(pum, ToolsCommand::BookmarkWhenMark, button);
     AddToolItem(pum, ToolsCommand::JumpReplace     , button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
-    AddToolItem(pum, ToolsCommand::ShowAll        , button);
-    AddToolItem(pum, ToolsCommand::ShowAllClear   , button);
-    AddToolItem(pum, ToolsCommand::ShowSelected   , button);
-    AddToolItem(pum, ToolsCommand::ShowHighlighted, button);
-    AddToolItem(pum, ToolsCommand::ShowSurrounding, button);
+    if (ts.selVisible) AddToolItem(pum, ToolsCommand::ShowLines, button, L"all li&nes");
+                  else AddToolItem(pum, ToolsCommand::ShowLines, button, L"selected li&nes (Shift: all)");
+    AddToolItem(pum, ToolsCommand::ShowShown    , button);
+    AddToolItem(pum, ToolsCommand::ExpandVisible, button);
+    AddToolItem(pum, ToolsCommand::HideAll      , button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
-    AddToolItem(pum, ToolsCommand::ClearHighlights, button);
-    AddToolItem(pum, ToolsCommand::HideAll        , button);
-    AddToolItem(pum, ToolsCommand::MarkHighlighted, button);
-    AppendMenu(pum, MF_SEPARATOR, 0, 0);
-    AddToolItem(pum, ToolsCommand::SelToMark         , button);
+    if (ts.anySelected && ts.anyMarked) AddToolItem(pum, ToolsCommand::SelToMark, button, L" (Shift: clear first)");
+                                   else AddToolItem(pum, ToolsCommand::SelToMark, button);
+    if (ts.anyShown && ts.anyMarked   ) AddToolItem(pum, ToolsCommand::MarkShown, button, L" (Shift: clear first)");
+                                   else AddToolItem(pum, ToolsCommand::MarkShown, button);
     AddToolItem(pum, ToolsCommand::MarkToSel         , button);
-    AddToolItem(pum, ToolsCommand::AddMarksToSel     , button);
     AddToolItem(pum, ToolsCommand::RemoveMarksFromSel, button);
     AddToolItem(pum, ToolsCommand::InvertMarked      , button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
@@ -697,41 +732,28 @@ void showToolsMenu(HWND button) {
                                : L"from active document");
     AddToolItem(pum, ToolsCommand::ClearMarksMultiple, button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
+    AddToolItem(pum, ToolsCommand::ShowAllClear, button);
     AddToolItem(pum, ToolsCommand::ClearHitlist, button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     AddToolItem(pum, ToolsCommand::Settings, button);
-    plugin.getScintillaPointers();
-    bool hasMarks = false;
-    if (sci.IndicatorValueAt(data.markIndicator, 0)) hasMarks = true;
-    else {
-        Scintilla::Position p = sci.IndicatorEnd(data.markIndicator, 0);
-        if (p != 0 && p != sci.Length()) hasMarks = true;
-    }
-    bool hasHighs = false;
-    if (sci.IndicatorValueAt(data.showIndicator, 0)) hasHighs = true;
-    else {
-        Scintilla::Position p = sci.IndicatorEnd(data.showIndicator, 0);
-        if (p != 0 && p != sci.Length()) hasHighs = true;
-    }
-    bool allHidden = sci.VisibleFromDocLine(sci.LineCount() - 1) == 0 && !sci.LineVisible(0);
-    EnableMenuItem(pum, ToolsCommand::ShowAll           , sci.AllLinesVisible()                         ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::ShowAllClear      , sci.AllLinesVisible() && !hasHighs            ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::ShowSelected      , sci.AllLinesVisible() || sci.SelectionEmpty() ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::ShowHighlighted   , sci.AllLinesVisible() || !hasHighs            ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::ShowSurrounding   , sci.AllLinesVisible() || allHidden            ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::ClearHighlights   , !hasHighs                                     ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::HideAll           , allHidden                                     ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::MarkHighlighted   , !hasHighs           	                        ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::SelToMark         , sci.SelectionEmpty()                          ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::MarkToSel         , !hasMarks                                     ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::AddMarksToSel     , sci.SelectionEmpty()                          ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, sci.SelectionEmpty() || !hasMarks             ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::CopyMarked        , !hasMarks                                     ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , !hasMarks                                     ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, !hasMarks                                     ? MF_GRAYED : MF_ENABLED);
-    EnableMenuItem(pum, ToolsCommand::ClearHitlist      , hitlistEmpty()                                ? MF_GRAYED : MF_ENABLED);
+    if (button) AddToolItem(pum, ToolsCommand::SearchDialog_Close, button);
+
+    EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , ts.anyHits                     ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowLines         , ts.anyHidden                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowShown         , ts.anyShown                    ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ExpandVisible     , ts.anyHidden && ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::HideAll           , ts.anyVisible                  ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::SelToMark         , ts.anySelected                 ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::MarkShown         , ts.anyShown           	     ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::MarkToSel         , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, ts.anySelected && ts.anyMarked ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::CopyMarked        , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowAllClear      , ts.anyHidden || ts.anyShown    ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ClearHitlist      , ts.anyHits                     ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ClearMarks,
-        hasMarks || (data.markAlsoBookmarks && sci.MarkerNext(0, 1 << data.bookMarker) >= 0) ? MF_ENABLED : MF_GRAYED);
+        ts.anyMarked || (data.markAlsoBookmarks && sci.MarkerNext(0, 1 << data.bookMarker) >= 0) ? MF_ENABLED : MF_GRAYED);
     MENUITEMINFO mii;
     mii.cbSize = sizeof mii;
     mii.fMask = MIIM_STATE;
@@ -762,8 +784,9 @@ void showToolsMenu(HWND button) {
         choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL,
                                   pt.x, pt.y, plugin.nppData._nppHandle, 0);
     }
+    ts.shift = GetAsyncKeyState(VK_SHIFT) < 0;
     DestroyMenu(pum);
-    processToolsCommand(static_cast<unsigned char>(choice));
+    processToolsCommandWithState(static_cast<unsigned char>(choice), ts);
 
 }
 
