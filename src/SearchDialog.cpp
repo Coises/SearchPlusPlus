@@ -788,8 +788,6 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             plugin.getScintillaPointers();
             sci.SetIndicatorCurrent(data.markIndicator);
             sci.IndicatorClearRange(0, sci.Length());
-            sci.SetIndicatorCurrent(data.showIndicator);
-            sci.IndicatorClearRange(0, sci.Length());
             if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
         }
         return FALSE;

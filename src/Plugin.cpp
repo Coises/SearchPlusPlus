@@ -77,7 +77,7 @@ FuncItem menuDefinition[] = {
     { 0                     , 0                                          , 0, false, 0},
     { L"&Find"              , []() {plugin.cmd(menuCommandFind        );}, 0, false, 0},
     { L"&Replace"           , []() {plugin.cmd(menuCommandReplace     );}, 0, false, 0},
-    { L"&Tools Menu"        , []() {plugin.cmd(showToolsMenu          );}, 0, false, 0},
+    { L"&Tools menu"        , []() {plugin.cmd(showToolsMenu          );}, 0, false, 0},
     { 0                     , 0                                          , 0, false, 0},
     { L"S&ettings..."       , []() {plugin.cmd(showSettingsDialog     );}, 0, false, 0},
     { L"&Help/About..."     , []() {plugin.cmd(showAboutDialog        );}, 0, false, 0}
