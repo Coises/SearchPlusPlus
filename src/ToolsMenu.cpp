@@ -21,6 +21,7 @@ void showSettingsDialog();
 void clearHitlist();
 void closeSearchInFilesDialog();
 bool hitlistEmpty();
+HWND hitlistHwnd();
 void hideHitlist();
 void showHitlist();
 void showSearchDialog();
@@ -115,6 +116,7 @@ namespace {
         bool anySelected = false;
         bool anyShown    = false;
         bool anyVisible  = false;
+        bool hitVisible  = false;
         bool selVisible  = false;
         bool shift       = false;
         void get() {
@@ -132,6 +134,10 @@ namespace {
                 anyShown = p != 0 && p != sci.Length();
             }
             anyVisible = sci.LineVisible(0) || sci.VisibleFromDocLine(sci.LineCount() - 1);
+            {
+                HWND hh = hitlistHwnd();
+                hitVisible = hh && IsWindowVisible(hh);
+            }
             if (!anyHidden) selVisible = true;
             else if (!anyVisible) selVisible = false;
             else {
@@ -738,7 +744,7 @@ void showToolsMenu(HWND button) {
     AddToolItem(pum, ToolsCommand::Settings, button);
     if (button) AddToolItem(pum, ToolsCommand::SearchDialog_Close, button);
 
-    EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , ts.anyHits                     ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , ts.hitVisible || ts.anyHits    ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ShowLines         , ts.anyHidden                   ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ShowShown         , ts.anyShown                    ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ExpandVisible     , ts.anyHidden && ts.anyVisible  ? MF_ENABLED : MF_GRAYED);

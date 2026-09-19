@@ -615,6 +615,7 @@ INT_PTR CALLBACK hitlistDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARA
 
 void clearHitlist() { if (hitlist) clearAll(); }
 bool hitlistEmpty() { if (!hitlist) return true; return sciHits.Length() == 0; }
+HWND hitlistHwnd () { return hitlist; }
 void hideHitlist () { if (hitlist) npp(NPPM_DMMHIDE, 0, hitlist); }
 void showHitlist () { if (hitlist) npp(NPPM_DMMSHOW, 0, hitlist); }
 
