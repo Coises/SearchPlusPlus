@@ -115,6 +115,7 @@ namespace {
         bool anyMarked   = false;
         bool anySelected = false;
         bool anyShown    = false;
+        bool anyShownNn  = false;
         bool anyVisible  = false;
         bool hitVisible  = false;
         bool selVisible  = false;
@@ -128,10 +129,19 @@ namespace {
                 anyMarked = p != 0 && p != sci.Length();
             }
             anySelected = !sci.SelectionEmpty();
-            if (sci.IndicatorValueAt(data.showIndicator, 0)) anyShown = true;
+            if (sci.IndicatorValueAt(data.showIndicator, 0)) anyShownNn = true;
             else {
                 Scintilla::Position p = sci.IndicatorEnd(data.showIndicator, 0);
-                anyShown = p != 0 && p != sci.Length();
+                anyShownNn = p != 0 && p != sci.Length();
+            }
+            if (anyShownNn) anyShown = true;
+            else if (!zlmIndicator) anyShown = false;
+            else {
+                if (sci.IndicatorValueAt(zlmIndicator + 1, 0)) anyShown = true;
+                else {
+                    Scintilla::Position p = sci.IndicatorEnd(zlmIndicator + 1, 0);
+                    anyShown = p != 0 && p != sci.Length();
+                }
             }
             anyVisible = sci.LineVisible(0) || sci.VisibleFromDocLine(sci.LineCount() - 1);
             {
@@ -152,7 +162,7 @@ namespace {
                         break;
                     }
                     if (cpMax == cpMin) continue;
-                    Scintilla::Line lnMax = sci.LineFromPosition(cpMax);
+                    Scintilla::Line lnMax = sci.LineFromPosition(cpMax - 1);
                     if (lnMax == lnMin) continue;
                     if (!sci.LineVisible(lnMax)) {
                         selVisible = false;
@@ -366,6 +376,16 @@ namespace {
                 Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
                 if (cpMax <= cpMin) cpMax = documentLength;
                 if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
+                    Scintilla::Position b = std::max(cpMin, cpMax - 1);
+                    sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
+                }
+                if (cpMax == documentLength) break;
+                cpMin = cpMax;
+            }
+            if (zlmIndicator) for (Scintilla::Position cpMin = 0;;) {
+                Scintilla::Position cpMax = sci.IndicatorEnd(zlmIndicator + 1, cpMin);
+                if (cpMax <= cpMin) cpMax = documentLength;
+                if (sci.IndicatorValueAt(zlmIndicator + 1, cpMin)) {
                     Scintilla::Position b = std::max(cpMin, cpMax - 1);
                     sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
                 }
@@ -717,7 +737,7 @@ void showToolsMenu(HWND button) {
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     if (ts.anySelected && ts.anyMarked) AddToolItem(pum, ToolsCommand::SelToMark, button, L" (Shift: clear first)");
                                    else AddToolItem(pum, ToolsCommand::SelToMark, button);
-    if (ts.anyShown && ts.anyMarked   ) AddToolItem(pum, ToolsCommand::MarkShown, button, L" (Shift: clear first)");
+    if (ts.anyShownNn  && ts.anyMarked) AddToolItem(pum, ToolsCommand::MarkShown, button, L" (Shift: clear first)");
                                    else AddToolItem(pum, ToolsCommand::MarkShown, button);
     AddToolItem(pum, ToolsCommand::MarkToSel         , button);
     AddToolItem(pum, ToolsCommand::RemoveMarksFromSel, button);
@@ -750,7 +770,7 @@ void showToolsMenu(HWND button) {
     EnableMenuItem(pum, ToolsCommand::ExpandVisible     , ts.anyHidden && ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::HideAll           , ts.anyVisible                  ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::SelToMark         , ts.anySelected                 ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::MarkShown         , ts.anyShown           	     ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::MarkShown         , ts.anyShownNn                  ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::MarkToSel         , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, ts.anySelected && ts.anyMarked ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::CopyMarked        , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
