@@ -1,5 +1,17 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.7 -- September 20th, 2026
+
+* Use different styles for **Mark** and **Show**. This helps keep **Mark** and **Show** cleanly separated, and it makes **Always hide all lines and remove Show style from text before Show command** behave more as one would expect with the default scope **Show** command, without introducing an inconsistency with the way other default scope commands behave.
+
+* Add several commands to the **Tools** menu, including support for the new Show style and more ability to manipulate Marked text. Some shortcuts have changed: most underlined menu characters and associated shortcut keys now match.
+
+* **Expand visible** on the Tools menu gives a rudimentary ability to show context for matches when using the **Show** command. Each expand visible action adds a line to the beginning and end of each visible block of text.
+
+* Add **Find**, **Replace** and **Show tools** to the main plugin menu. These commands are not very useful from the menu itself, but adding them makes it possible to set Notepad++ keyboard shortcuts for them.
+
+* Correct a fault in **Show All Lines** from the **Tools** menu that caused unexpected scrolling behavior. Improve the logic for vertical positioning when using **Show All Lines**.
+
 ## Version 0.6.6 -- September 8th, 2026
 
 * Add tab icons to the docking search dialog and the results list. (When you have more than one dialog docked to the same edge in Notepad++, the icon shows on the tabs that are not active.)
