@@ -96,6 +96,8 @@ div.hscroll  {overflow-x: auto;}
 ul    {margin: 0 0 .5em 0;}
 ul li {margin: .25em 0;}
 
+ul.tight li {margin: 0; padding: 0;}
+
 pre   {font-size: .9em; line-height: 1.1; background: #ddd; padding: .5em; overflow: auto;}
 pre a {white-space: pre;}
 
@@ -243,13 +245,18 @@ window.addEventListener("load", doPageLoad);
 
 <h3 id="search-engine">Search engine selection</h3>
 
-<p>At the top of the dialog there are buttons from which you can choose a <strong>Plain</strong> text search or a <strong>Regex</strong> (regular expression) search. To the right of those buttons there is a <strong>Tools</strong> button, which will be described later.</p>
+<p>At the top left of the dialog there are buttons from which you can choose a <strong>Plain</strong> text search or a <strong>Regex</strong> (regular expression) search.</p>
 
-<p class=note>In the preliminary versions there may also be a button labeled <strong>ICU</strong>. The ICU search is mostly intended for comparison testing during development and will probably be removed before the first stable version. It is a relatively simple-minded implementation of finding (no replacing) in UTF-8 documents only using the regular expression engine built into ICU4C.</p>
+<p class=note>In preliminary versions thus far there is a third button labeled <strong>ICU</strong>. ICU search is primarily intended for comparison testing during development; it may be removed before the first stable version. At present it provides a relatively straightforward implementation of finding (no replacing) in UTF-8 documents only using the regular expression engine built into ICU4C.</p>
 
 <p>A <strong>Plain</strong> text search is simple: it looks for exactly what you’ve entered in the Find box. Options further down in the dialog let you choose whether to match or ignore case and whether to search only for whole words. Stepwise plain text searches can proceed forward (right and down the page) or backward (left and up the page).</p>
 
 <p>A regular expression (<strong>Regex</strong>) search allows you to specify a pattern to find and a replacement string that can reference parts of the pattern that matched. The <a href="#regular">Regular expressions</a> section of this help describes them in detail. Stepwise regular expression searches can only move forward (right and down the page).</p>
+
+<h3 id="search-tools">Tools</h3>
+
+<p>The <strong>Tools</strong> button, to the right of the search engine selection buttons, opens a <a href="#tools">menu</a> that offers some convenient settings and actions you might want to use in conjunction with searching. You can also access these functions using the associated keyboard shortcuts when focus is in the Search dialog.</p>
+
 
 <h3 id="search-boxes">The Find and Replace boxes</h3>
 
@@ -301,13 +308,9 @@ window.addEventListener("load", doPageLoad);
 
 </ul>
 
-<h3 id="search-tools">Tools</h3>
-
-<p>The <strong>Tools</strong> button opens a <a href="#tools">menu</a> that offers some convenient settings and actions you might want to use in conjunction with searching; you can also use the keyboard shortcuts shown when focus is in the Search dialog.</p>
-
 <h3 id="search-keyboard">Keyboard navigation</h3>
 
-<p>The search dialog responds to the usual methods of keyboard navigation for a dialog (such as typing an underlined character with the Alt key). In addition, there are several general navigation commands you can use in the Search dialog, the <a href="#searchinfiles">Search in Files</a> dialog and the <a href="#results">Search results window</a>:</p>
+<p>The search dialog responds to the usual methods of keyboard navigation for a dialog (such as typing an underlined character with the Alt key). In addition to those and the shortcuts associated with the <a href="#tools">Tools menu</a>, there are several general navigation commands you can use in the Search dialog, the <a href="#searchinfiles">Search in Files</a> dialog and the <a href="#results">Search results window</a>:</p>
 
 <table>
 <tr><th>Ctrl+G</th><td>Open the Search in Files dialog if it is not already open, and switch keyboard focus to it.</td></tr>
@@ -381,16 +384,18 @@ d="M265 180v640h-90v-640h90zM110 180v640h-90v-640h90zM980 545h-549l263 263h-121l
 
 <tr><th>Find All</th><td>searches for occurrences of the find string and lists them in the <a href="#results">Search results window</a>.</td></tr>
 
-<tr><th>Select</th><td><p>searches for occurrences of the find string and creates a multiple selection with one selection corresponding to each match. By default, any existing selection is cleared if the search succeeds; you can change this behavior in the <a href="#settings-clearing">Settings</a> dialog.</p>
+<tr id="commands-select"><th>Select</th><td><p>searches for occurrences of the find string and creates a multiple selection with one selection corresponding to each match. By default, any existing selection is cleared if the search succeeds; you can change this behavior in the <a href="#settings-clearing">Settings</a> dialog.</p>
 <p class=note>It is possible to <strong>Select In Selection</strong>. After determining which text is selected, previous selections are cleared when a <strong>Select in Selection</strong> command succeeds, regardless of the <strong>Always clear selections before Select command</strong> setting, since the command could accomplish nothing otherwise.</p></td></tr>
 
-<tr><th>Mark</th><td><p>searches for occurrences of the find string and marks the matches using the <strong>Mark style</strong> selected in the <a href="#settings-marked-text">Settings</a> dialog. By default, marks already in the document are not cleared; you can change this behavior in the <a href="#settings-clearing">Settings</a> dialog.</p>
+<tr id="commands-mark"><th>Mark</th><td><p>searches for occurrences of the find string and marks the matches using the <strong>Mark style</strong> selected in the <a href="#settings-marked-text">Settings</a> dialog. By default, marks already in the document are not cleared; you can change this behavior in the <a href="#settings-clearing">Settings</a> dialog.</p>
 <p class=note>The default <strong>Mark style</strong> is the <em>Find Mark Style</em>, which is the same style used by the <strong>Mark</strong> tab of the built-in search dialog in Notepad++.</p>
+<p class=note></p>
+<p class=note>It is not possible to mark empty (zero-length) matches, and marked text cannot separate adjoining matches: if two or more matches have no intervening characters, they constitute a single run of marked text. If you need to keep adjoining matches separate and/or to retain empty matches, use <strong>Select</strong> rather than <strong>Mark</strong>.</p>
 <p class=note>It is possible to <strong>Mark in Marked Text</strong>. After determining which text is marked, all previously marked text is unmarked when a <strong>Mark in Marked Text</strong> command succeeds, regardless of the <strong>Always unmark all text before a mark command</strong> setting, since the command could accomplish nothing otherwise.</p></td></tr>
 
 <tr><th>Show</th><td><p>unhides lines containing matches and shows the matches using the <strong>Show style</strong> selected in the <a href="#settings-marked-text">Settings</a> dialog. If no lines are hidden before the command is given, <strong>Show</strong> first hides all lines. By default, if any lines are already hidden, <strong>Show</strong> doesn’t hide anything, and it doesn’t remove the Show style from text that already has it; you can change this behavior in the <a href="#settings-clearing">Settings</a> dialog.</p>
 <p class=note>The default <strong>Show style</strong> is <em>Mark Style 5</em>.</p>
-<p class=note>Unlike <strong>Mark</strong>, which uses only the style assigned to it, <strong>Show</strong> also uses an additional style to indicate empty matches from regular expressions using an upward-pointing triangle on the baseline of the text, in the same color as the Show style. However, there is a limitation: the empty match mark won’t be visible at the end of lines if line endings are not shown, and an empty match at the very end of the document will never be visible.</p></td></tr>
+<p class=note>Unlike <strong>Mark</strong>, which uses only the style assigned to it, <strong>Show</strong> uses an additional style to indicate empty matches from regular expressions with an upward-pointing triangle on the baseline of the text in the same color as the Show style. However, there is a limitation: the empty match mark won’t be visible at the end of lines if line endings are not shown, and an empty match at the very end of the document will never be visible. This additional style is only used with Notepad++ versions 8.5.6 (release date 2023-08-15) or later.</p></td></tr>
 
 <tr><th>Replace All</th><td>searches for occurrences of the find string and replaces them with the replace string.</td></tr>
 
@@ -574,7 +579,7 @@ d="M90 20h820v960h-820v-960zM180 110v780h640v-780h-640z" />
 
 <p>The <strong>Tools</strong> menu offers some convenient settings and actions you might want to use in conjunction with searching. You can open it using the <strong>Tools</strong> button in the main Search dialog, with the <strong>Tools menu</strong> command on the <a href="#plugin">plugin menu</a>, or with a keyboard shortcut set to the plugin menu command.</p>
 
-<p>When opened from <strong>Tools</strong> button in the main Search dialog the menu shows keyboard shortcuts, which you can use when focus is in the Search dialog. When focus is in the document, you can use a keyboard shortcut you’ve set to the plugin menu command to open the Tools menu without first setting focus to the Search dialog; then use the mouse or the underlined letter in each item to make a selection.</p>
+<p>You can use the keyboard shortcuts associated with these functions when keyboard focus is in the main Search dialog. (The menu shows the shortcuts when it is opened using the <strong>Tools</strong> button.) When focus is in the document, you can use a keyboard shortcut you’ve set to the plugin menu command to open the Tools menu without first setting focus to the Search dialog; then use the mouse or the underlined letter in each item to make a selection.</p>
 
 <table>
 <tr><th colspan=3 class=group>Search++ Tools menu commands</th></tr>
@@ -583,33 +588,32 @@ d="M90 20h820v960h-820v-960zM180 110v780h640v-780h-640z" />
 <tr><th>Searc<u>h</u> Results...</th><th>Ctrl+H<br>Ctrl+Shift+H</th><td>opens or sets keyboard focus to the <a href="#results">Search results window</a>.<br><em>Use the Shift key with this option to close the Search results window.</em></td></tr>
 <tr><th><u>B</u>ookmark lines when marking text</th><th>Ctrl+B</th><td>This is a toggle. When checked, <strong>Mark</strong> commands also bookmark each line in which they find a match.</td></tr>
 <tr><th><u>J</u>ump to next match after replace</th><th>Ctrl+J</th><td>This is a toggle. When checked, <strong>Replace</strong> commands automatically select and scroll to the next occurrence of the find string after replacing text. When not checked, after text is replaced the replaced text is selected and the document remains scrolled to show the replacement; the next <strong>Replace</strong> command finds the next occurrence, the next replaces, and so on.</td></tr>
-<tr><th>Show selected li<u>n</u>es (Shift: all)<hr>Show all li<u>n</u>es</th><th>Ctrl+Q<br>Ctrl+Shift+Q</th><td>If the caret is on a hidden line, or if the current selection includes any part of a hidden line: shows the line that contains the caret, or all lines that contain any part of the current selection. <em>Use the Shift key with this option to ignore the current selection and show all lines in the active document.</em>
-<hr>If the caret is not on a hidden line and the current selection does not include any part of a hidden line: shows all lines in the active document.</td></tr>
-<tr><th>Sho<u>w</u> only lines with shown text</th><th>Ctrl+Shift+W</th><td>Show only lines containing text with the style used by <strong>Show</strong> commands to indicate matches and hides all other lines.</td></tr>
-<tr><th>Ex<u>p</u>and visible</th><th>Ctrl+P</th><td>When the active document contains both hidden and visible lines, show the line before and the line after each block of visible lines.</td></tr>
+<tr><th>Show selected li<u>n</u>es (Shift: all)<hr>Show all li<u>n</u>es</th><th>Ctrl+Q<br>Ctrl+Shift+Q</th><td>If the current selection includes any part of a hidden line, or if there is no selection and the caret is on a hidden line: shows lines containing the selection, or the line containing the caret.<br><em>Use the Shift key with this option to ignore the current selection and show all lines in the active document.</em>
+<hr>Otherwise: shows all lines in the active document.</td></tr>
+<tr><th>Sho<u>w</u> only lines with shown text</th><th>Ctrl+Shift+W</th><td>shows only lines containing text or empty matches with the style used by <strong>Show</strong> commands, and hides all other lines.</td></tr>
+<tr><th>Ex<u>p</u>and visible</th><th>Ctrl+P</th><td>When the active document contains both hidden and visible lines: shows the line before and the line after each block of visible lines.</td></tr>
 <tr><th>Hi<u>d</u>e all lines</th><th>Ctrl+Shift+D</th><td>hides all lines in the active document.</td></tr>
-<tr><th><u>M</u>ark selected text (Shift: clear first)</th><th>Ctrl+M<br>Ctrl+Shift+M</th><td>marks selected text with the style used by <strong>Mark</strong> commands. <em>Use the Shift key with this option to remove all marks in the active document first, so that only the selected text is marked.</em></td></tr>
-<tr><th>Mar<u>k</u> shown text (Shift: clear first)</th><th>Ctrl+K<br>Ctrl+Shift+K</th><td>marks text which has the style used by <strong>Show</strong> commands with the style used by <strong>Mark</strong> commands. <em>Use the Shift key with this option to remove all marks in the active document first, so that only shown text is marked.</em></td></tr>
+<tr><th><u>M</u>ark selected text (Shift: clear first)</th><th>Ctrl+M<br>Ctrl+Shift+M</th><td>marks selected text with the style used by <strong>Mark</strong> commands.<br><em>Use the Shift key with this option to remove all marks in the active document first, so that only the selected text is marked.</em></td></tr>
+<tr><th>Mar<u>k</u> shown text (Shift: clear first)</th><th>Ctrl+K<br>Ctrl+Shift+K</th><td>marks text which has the style used by <strong>Show</strong> commands with the style used by <strong>Mark</strong> commands.<br><em>Use the Shift key with this option to remove all marks in the active document first, so that only shown text is marked.</em></td></tr>
 <tr><th>Se<u>l</u>ect marked text</th><th>Ctrl+Shift+S</th><td>selects all text in the active document with the style used by <strong>Mark</strong> commands. Note that this does not add to the current selection; the current selection is lost.</td></tr>
 <tr><th>Remove marks from selected te<u>x</u>t</th><th>Ctrl+Shift+X</th><td>Removes the style used by <strong>Mark</strong> commands from selected text.</td></tr>
 <tr><th><u>I</u>nvert marked text</th><th>Ctrl+Shift+I</th><td>Adds the mark style to text in the active document that doesn’t have it, and removes it from text that does have it.</td></tr>
-<tr><th><u>C</u>opy marked text
-<ul>
-<li>with no separators
-<li>separated by blanks
-<li>separated by tabs
-<li>separated by line breaks
-<li>separated by custom string
-</ul></th><th>Ctrl+Shift+C</th><td>copies to the clipboard all text in the active document with the style used by <strong>Mark</strong> commands as if it were a single selection. The separator, if any, that will be added between separate runs of marked text is indicated; the default is <strong>line breaks</strong>, which you can change using the next menu option.</td></tr>
+<tr><th><u>C</u>opy marked text with no separators
+<hr><u>C</u>opy marked text separated by
+<br>&middot;&nbsp;blanks
+<br>&middot;&nbsp;tabs
+<br>&middot;&nbsp;line&nbsp;breaks
+<br>&middot;&nbsp;custom&nbsp;string
+</th><th>Ctrl+Shift+C</th><td><p>copies to the clipboard all text in the active document with the style used by <strong>Mark</strong> commands as if it were a single selection. The separator, if any, that will be added between separate runs of marked text is indicated; the default is <strong>line breaks</strong>, which you can change using the next menu option.</p><p class=note>Marked text does not separate adjoining matches: if two or more matches have no intervening characters, they constitute a single run of marked text. If you need to keep adjoining matches separate, use <a href="#commands-select">Select</a> rather than <a href="#commands-mark">Mark</a>.</p></td></tr>
 <tr><th>Cop<u>y</u> marked text...</th><th>Ctrl+Shift+Y</th><td><p>opens a dialog in which you can choose how you would like separate runs of marked text to be separated, and then copies all marked text in the same way as the option above. The separator you choose becomes the new separator for the menu option above.</p>
 <p class=note>If you choose <strong>Custom</strong>, you can enter a string of text you prefer: for example, you might want to use a comma followed by a blank to separate items that will go into a list. You can use <code>\t</code>, <code>\r</code> and <code>\n</code> for tabs, returns and new lines; use <code>\\</code> for a backslash before <code>t</code>, <code>r</code> or <code>n</code>. Note that in practice, you don’t need to worry about how you code a line ending unless you will be pasting somewhere other than Notepad++; when pasting in Notepad++ line endings are always converted to the line ending type set for the active document.</p></td></tr>
 <tr><th>Copy marked <u>t</u>ext as multiple selections</th><th>Ctrl+Shift+T</th><td>copies to the clipboard all text in the active document with the style used by <strong>Mark</strong> commands as if it were a multiple selection. This affects how the copied text pastes, since it will paste like a column or multiple selection rather than like a single selection. The separator for multiple selections is always a line break.</td></tr>
 <tr><th><u>R</u>emove marks from active document<hr><u>R</u>emove marks and bookmarks from active document</th><th>Ctrl+Shift+R</th><td>removes all marks in the style used by <strong>Mark</strong> commands from the active document. If <strong>Bookmark lines when marking text</strong> is checked bookmarks are also removed.</td></tr>
 <tr><th>Remo<u>v</u>e marks from multiple documents...</th><th>Ctrl+Shift+V</th><td>opens a dialog with options to remove all marks in the mark style chosen in the <a href="#settings-marked-text">Settings</a> dialog from documents in this view or from all open documents. You might want to use these options along with the <strong>Mark in Documents in this View</strong> or <strong>Mark in Open Documents</strong> commands.</td></tr>
-<tr><th>Clear shown (show <u>a</u>ll and clear style)</th><th>Ctrl+Shift+A</th><td></td></tr>
+<tr><th>Clear shown (show <u>a</u>ll and clear style)</th><th>Ctrl+Shift+A</th><td>shows all lines and removes the Show style from all text.</td></tr>
 <tr><th>Clear search res<u>u</u>lts list</th><th></th><td>removes all results currently accumulated in the search results list.</td></tr>
 <tr><th>S<u>e</u>ttings...</th><th>Ctrl+Shift+E</th><td>opens the Search++ <a href="#settings">Settings</a> dialog.</td></tr>
-<tr><th>Cl<u>o</u>se</th><th>Ctrl+O</th><td>Closes the main Search dialog. <em>This option only appears on the menu when it is shown by the Tools button.</em></td></tr>
+<tr><th>Cl<u>o</u>se</th><th>Ctrl+Shift+O</th><td>Closes the main Search dialog.<br><em>This option only appears on the menu shown by the Tools button.</em></td></tr>
 </table>
 
 <p>The styles used by <strong>Mark</strong> and <strong>Show</strong> commands can be changed in the <a href="#settings-marked-text">Settings</a> dialog.</p>
@@ -980,7 +984,16 @@ Up to <strong><em>d</em></strong> decimal places will be shown, but no fewer tha
 <tr><th>None</th><td>All file names are processed. The content of the Filter text box is ignored.</td></tr>
 <tr><th>Extensions</th><td>Only files with the file extension(s) listed are processed. You can list as many extensions as you like, separated by blanks, semicolons or vertical bars (<code>|</code>). You can include the leading period, but it is not required: <code>xml</code> and <code>.xml</code> both limit the search to files ending in <code>.xml</code>.</td></tr>
 <tr><th>Exclude</th><td>All files are processed <em>except</em> those with one of the extensions you list.</td></tr>
-<tr><th>Reg. exp.</th><td>The filter box contains a regular expression, which is matched against the portion of the file path beginning after the back slash (<code>\</code>) following the Folder.</td></tr>
+<tr><th>Reg. exp.</th><td><p>The portion of each file path beginning after the back slash (<code>\</code>) following the Folder is searched for the regular expression in the Filter text box, and the file is processed if there is a match. Case insensitive matching is default (you can change that with <code>(?-i)</code>). Use <code>^</code> to anchor the beginning of the match to the first character of the file path following the back slash following the Folder; use <code>$</code> to anchor the end of the match to the end of the file extension (or name, if there is no extension).</p>
+<p>Examples:</p>
+<ul>
+<li>Files anywhere under a subfolder named foobar: <code class=nowrap>(^|\\)foobar\\</code>
+<li>Files directly in a subfolder named foobar: <code class=nowrap>(^|\\)foobar\\[^\\]++$</code>
+<li>Files at most one subfolder deep: <code class=nowrap>^([^\\]++\\)?[^\\]++$</code>
+<li>File names (excluding extension) that do not end in “-bak”: <code class=nowrap>(?&lt;!-bak)(\.[^.\\]++)$</code>
+<li>Files that are not under a folder named foobar: <code class=nowrap>^(|.+\\)foobar\\(*COMMIT)(*FAIL)|(*ACCEPT)</code>
+</ul>
+</td></tr>
 </table>
 
 <p>Below the Folder and Filter boxes are controls to limit the sizes and dates of files to be searched. Check the <strong>Size</strong> box and/or the <strong>Date</strong> box to enable the corresponding limits. For Size, chose the lower and upper bounds; for Date, choose the type of date (Created, Modified or Accessed) to test and pick the earliest and latest dates to be considered.</p>
@@ -1007,7 +1020,7 @@ The search options are similar to those in the main search dialog:
 
 <p>Click the <strong>Find in Files</strong> button to begin searching. The middle button will change to <strong>Cancel All</strong> and the progress of the search will be displayed in the bottom section of the dialog. A message will indicate when the search is complete, and the middle button will change back to <strong>Close</strong>. If you do not cancel the search, when it is complete results will be shown in the <a href="#results" class=wrappable>Search results window</a>.</p>
 
-<p>The middle button is labeled <strong>Cancel All</strong> when a search is in progress and <strong>Close</strong> otherwise. Use <strong>Cancel All</strong> to stop all searches in progress as soon as possible. (The nature of the search engine implementation is that searches will not always stop immediately on request.)</p>
+<p>The middle button is labeled <strong>Cancel All</strong> when a search is in progress and <strong>Close</strong> otherwise. Use <strong>Cancel All</strong> to stop all searches in progress as soon as possible.</p>
 
 <h3 id="searchinfiles-progress">Progress and file list</h3>
 
