@@ -190,8 +190,10 @@ bool progressiveSearch(ProgressInfo& pi) {
             }
             else ++pii.countEmpty;
             if (data.markAlsoBookmarks) {
-                Scintilla::Line line = sci.LineFromPosition(matchStart);
-                if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                Scintilla::Line line1 = sci.LineFromPosition(matchStart);
+                Scintilla::Line line2 = data.bookmarksFirst || matchEnd - 1 <= matchStart ? line1 : sci.LineFromPosition(matchEnd - 1);
+                for (Scintilla::Line line = line1; line <= line2; ++line)
+                    if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
             }
             break;
         }

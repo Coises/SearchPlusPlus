@@ -67,8 +67,14 @@ inline struct CommonData {
     config<bool> clearMarked           = { "unmark before mark"                , false }; // IDC_SETTINGS_CLEARMARKED
     config<bool> hideBeforeShow        = { "hide before show"                  , false }; // IDC_SETTINGS_HIDEBEFORESHOW
     config<bool> autoClearMarks        = { "automatic clear marks"             , false }; // IDC_SETTINGS_AUTOCLEAR_MARKS
-    config<bool> markAlsoBookmarks     = { "marking also bookmarks line"       , false };
     config<bool> purgeSearchResults    = { "automatically purge search results", false };
+
+    config<bool>          markAlsoBookmarks = { "marking also bookmarks line", false               }; // IDC_BOOKMARKS_USE
+    config<bool>          bookmarksFirst    = { "bookmark first line only"   , false               }; // IDC_BOOKMARKS_EVERY/FIRST
+    config<bool>          bookmarksClear    = { "automatic clear bookmarks"  , true                }; // IDC_BOOKMARKS_CLEAR
+    config<BookmarkTools> bookmarkTools     = { "bookmark tools"             , BookmarkTools::None }; // IDC_BOOKMARKS_TOOLS_NONE/ADD/SYNC
+
+    config<bool> bookmarksMultiple = { "remove bookmarks from multiple documents", false }; // IDC_REMOVEMARKS_BOOKMARKS
 
     config<CopyMarkedSeparator> copyMarkedSeparator     = { "copy marked separator"     , CopyMarkedSeparator::Line };
     config<std::string>         copyMarkedSeparatorText = { "copy marked separator text", ""                        };
