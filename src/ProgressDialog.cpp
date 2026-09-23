@@ -149,7 +149,7 @@ void ProgressInfo::preClear() {
         if (data.clearMarked || req.command.scope == SearchCommand::Region) {
             sci.SetIndicatorCurrent(data.markIndicator);
             sci.IndicatorClearRange(0, sci.Length());
-            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+            if (data.markAlsoBookmarks && data.bookmarksClear) sci.MarkerDeleteAll(data.bookMarker);
         }
         break;
     case SearchCommand::Show:

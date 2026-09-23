@@ -41,6 +41,13 @@ NLOHMANN_JSON_SERIALIZE_ENUM(SearchEngine, {
     {SearchEngine::ICU  , "ICU"   }
     })
 
+enum class BookmarkTools { None, Add, Sync };
+NLOHMANN_JSON_SERIALIZE_ENUM(BookmarkTools, {
+    {BookmarkTools::None, "none" },
+    {BookmarkTools::Add , "add"  },
+    {BookmarkTools::Sync, "sync" }
+    })
+
 enum class CopyMarkedSeparator { None, Blank, Tab, Line, Custom };
 NLOHMANN_JSON_SERIALIZE_ENUM(CopyMarkedSeparator, {
     {CopyMarkedSeparator::None  , "none"   },

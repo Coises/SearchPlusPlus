@@ -35,6 +35,7 @@ namespace ToolsCommand {
     constexpr unsigned char SearchInFiles      = 'g';
     constexpr unsigned char Hitlist_Show       = 'h';
     constexpr unsigned char BookmarkWhenMark   = 'b';
+    constexpr unsigned char BookmarksConfigure = 'B';
     constexpr unsigned char JumpReplace        = 'j';
     constexpr unsigned char SaveSearch         = 's';
     constexpr unsigned char ShowLines          = 'q';
@@ -55,6 +56,7 @@ namespace ToolsCommand {
     constexpr unsigned char CopyMarkedMultiple = 'T';
     constexpr unsigned char ClearMarks         = 'R';
     constexpr unsigned char ClearMarksMultiple = 'V';
+    constexpr unsigned char SyncBookmarks      = 'Z';
     constexpr unsigned char ShowAllClear       = 'A';
     constexpr unsigned char ClearHitlist       = 1  ;
     constexpr unsigned char Settings           = 'E';
@@ -73,30 +75,31 @@ namespace ToolsCommand {
 namespace {
 
     const std::map<const unsigned char, const wchar_t*> Tools_Text {
-        { ToolsCommand::Focus_Find_Or_Repl, L"Search &Open Documents..."                },
-        { ToolsCommand::SearchInFiles     , L"Search in &Files..."                      },
-        { ToolsCommand::Hitlist_Show      , L"Searc&h Results..."                       },
-        { ToolsCommand::BookmarkWhenMark  , L"&Bookmark lines when marking text"        },
-        { ToolsCommand::JumpReplace       , L"&Jump to next match after replace"        },
-        { ToolsCommand::SaveSearch        , L"&Save search..."                          },
-        { ToolsCommand::ShowLines         , L"Show "                                    },
-        { ToolsCommand::ShowShown         , L"Sho&w only lines with shown text"         },
-        { ToolsCommand::ExpandVisible     , L"Ex&pand visible"                          },
-        { ToolsCommand::HideAll           , L"Hi&de all lines"                          },
-        { ToolsCommand::SelToMark         , L"&Mark selected text"                      },
-        { ToolsCommand::MarkShown         , L"Mar&k shown text"                         },
-        { ToolsCommand::MarkToSel         , L"Se&lect marked text"                      },
-        { ToolsCommand::RemoveMarksFromSel, L"Remove marks from selected te&xt"         },
-        { ToolsCommand::InvertMarked      , L"&Invert marked text"                      },
-        { ToolsCommand::CopyMarked        , L"&Copy marked text "                       },
-        { ToolsCommand::CopyMarkedDialog  , L"Cop&y marked text..."                     },
-        { ToolsCommand::CopyMarkedMultiple, L"Copy marked &text as multiple selections" },
-        { ToolsCommand::ClearMarks        , L"&Remove marks "                           },
-        { ToolsCommand::ClearMarksMultiple, L"Remo&ve marks from multiple documents..." },
-        { ToolsCommand::ShowAllClear      , L"Clear shown (show &all and clear style)"  },
-        { ToolsCommand::ClearHitlist      , L"Clear search res&ults list"               },
-        { ToolsCommand::Settings          , L"S&ettings..."                             },
-        { ToolsCommand::SearchDialog_Close, L"Cl&ose"                                   }
+        { ToolsCommand::Focus_Find_Or_Repl, L"Search &Open Documents..."                            },
+        { ToolsCommand::SearchInFiles     , L"Search in &Files..."                                  },
+        { ToolsCommand::Hitlist_Show      , L"Searc&h Results..."                                   },
+        { ToolsCommand::BookmarkWhenMark  , L"&Bookmark lines when marking text (Shift: configure)" },
+        { ToolsCommand::JumpReplace       , L"&Jump to next match after replace"                    },
+        { ToolsCommand::SaveSearch        , L"&Save search..."                                      },
+        { ToolsCommand::ShowLines         , L"Show "                                                },
+        { ToolsCommand::ShowShown         , L"Sho&w only lines with shown text"                     },
+        { ToolsCommand::ExpandVisible     , L"Ex&pand visible"                                      },
+        { ToolsCommand::HideAll           , L"Hi&de all lines"                                      },
+        { ToolsCommand::SelToMark         , L"&Mark selected text"                                  },
+        { ToolsCommand::MarkShown         , L"Mar&k shown text"                                     },
+        { ToolsCommand::MarkToSel         , L"Se&lect marked text"                                  },
+        { ToolsCommand::RemoveMarksFromSel, L"Remove marks from selected te&xt"                     },
+        { ToolsCommand::InvertMarked      , L"&Invert marked text"                                  },
+        { ToolsCommand::CopyMarked        , L"&Copy marked text "                                   },
+        { ToolsCommand::CopyMarkedDialog  , L"Cop&y marked text..."                                 },
+        { ToolsCommand::CopyMarkedMultiple, L"Copy marked &text as multiple selections"             },
+        { ToolsCommand::ClearMarks        , L"&Remove marks "                                       },
+        { ToolsCommand::ClearMarksMultiple, L"Remo&ve marks from multiple documents..."             },
+        { ToolsCommand::SyncBookmarks     , L"Synchroni&ze bookmarks to marked text"                },
+        { ToolsCommand::ShowAllClear      , L"Clear shown (show &all and clear style)"              },
+        { ToolsCommand::ClearHitlist      , L"Clear search res&ults list"                           },
+        { ToolsCommand::Settings          , L"S&ettings..."                                         },
+        { ToolsCommand::SearchDialog_Close, L"Cl&ose"                                               }
     };
     
     void AddToolItem(HMENU menu, unsigned char command, bool accelerator, const std::wstring& tag = L"") {
@@ -178,6 +181,43 @@ namespace {
             }
         }
     };
+
+
+    // Dialog procedure for Tools | Configure bookmarks
+
+    INT_PTR CALLBACK configureBookmarksDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM) {
+        switch (uMsg) {
+        case WM_DESTROY:
+            return TRUE;
+        case WM_INITDIALOG:
+            config_rect::show(hwndDlg);
+            CheckRadioButton(hwndDlg, IDC_BOOKMARKS_EVERY, IDC_BOOKMARKS_FIRST,
+                data.bookmarksFirst ? IDC_BOOKMARKS_FIRST : IDC_BOOKMARKS_EVERY);
+            CheckRadioButton(hwndDlg, IDC_BOOKMARKS_TOOLS_NONE, IDC_BOOKMARKS_TOOLS_SYNC,
+                data.bookmarkTools == BookmarkTools::Sync ? IDC_BOOKMARKS_TOOLS_SYNC
+              : data.bookmarkTools == BookmarkTools::Add  ? IDC_BOOKMARKS_TOOLS_ADD : IDC_BOOKMARKS_TOOLS_NONE);
+            data.bookmarksClear.put(hwndDlg, IDC_BOOKMARKS_CLEAR);
+            data.markAlsoBookmarks.put(hwndDlg, IDC_BOOKMARKS_USE);
+            if (npp(NPPM_ISDARKMODEENABLED, 0, 0)) npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);
+            return TRUE;
+        case WM_COMMAND:
+            switch (LOWORD(wParam)) {
+            case IDCANCEL:
+                EndDialog(hwndDlg, 1);
+                return TRUE;
+            case IDOK:
+                data.bookmarksFirst = IsDlgButtonChecked(hwndDlg, IDC_BOOKMARKS_FIRST) == BST_CHECKED;
+                data.bookmarkTools = IsDlgButtonChecked(hwndDlg, IDC_BOOKMARKS_TOOLS_SYNC) == BST_CHECKED ? BookmarkTools::Sync
+                                   : IsDlgButtonChecked(hwndDlg, IDC_BOOKMARKS_TOOLS_ADD ) == BST_CHECKED ? BookmarkTools::Add
+                                                                                                          : BookmarkTools::None;
+                data.bookmarksClear.get(hwndDlg, IDC_BOOKMARKS_CLEAR);
+                data.markAlsoBookmarks.get(hwndDlg, IDC_BOOKMARKS_USE);
+                EndDialog(hwndDlg, 0);
+                return TRUE;
+            }
+        }
+        return FALSE;
+    }
 
 
     // Dialog procedure for Tools | Copy Marked Text...
@@ -263,7 +303,7 @@ namespace {
     }
     
     
-    // Dialog procedure for Remove Marks from multiple documents
+    // Dialog procedure for Tools | Remove Marks from multiple documents
     
     INT_PTR CALLBACK removeMarksDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM) {
         switch (uMsg) {
@@ -271,6 +311,8 @@ namespace {
             return TRUE;
         case WM_INITDIALOG:
             config_rect::show(hwndDlg);
+            if (data.markAlsoBookmarks) data.bookmarksMultiple.put(hwndDlg, IDC_REMOVEMARKS_BOOKMARKS);
+            else EnableWindow(GetDlgItem(hwndDlg, IDC_REMOVEMARKS_BOOKMARKS), FALSE);
             if (npp(NPPM_ISDARKMODEENABLED, 0, 0)) npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);
             return TRUE;
         case WM_COMMAND:
@@ -279,9 +321,11 @@ namespace {
                 EndDialog(hwndDlg, 1);
                 return TRUE;
             case IDC_REMOVEMARKS_VIEW:
+                if (data.markAlsoBookmarks) data.bookmarksMultiple.get(hwndDlg, IDC_REMOVEMARKS_BOOKMARKS);
                 EndDialog(hwndDlg, IDC_REMOVEMARKS_VIEW);
                 return TRUE;
             case IDC_REMOVEMARKS_OPEN:
+                if (data.markAlsoBookmarks) data.bookmarksMultiple.get(hwndDlg, IDC_REMOVEMARKS_BOOKMARKS);
                 EndDialog(hwndDlg, IDC_REMOVEMARKS_OPEN);
                 return TRUE;
             }
@@ -328,8 +372,19 @@ namespace {
             break;
     
         case ToolsCommand::BookmarkWhenMark:
-            data.markAlsoBookmarks = !data.markAlsoBookmarks;
+            if (!ts.shift) {
+                data.markAlsoBookmarks = !data.markAlsoBookmarks;
+                break;
+            }
+        [[fallthrough]];
+
+        case ToolsCommand::BookmarksConfigure:
+        {
+            HWND focus = GetFocus();
+            DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_BOOKMARKS), focus, configureBookmarksDialogProc);
+            SetFocus(focus);
             break;
+        }
     
         case ToolsCommand::JumpReplace:
         {
@@ -369,6 +424,7 @@ namespace {
     
         case ToolsCommand::ShowShown:
         {
+            if (!ts.anyShown) break;
             ShowPosition sp(sci);
             sci.HideLines(0, sci.LineCount() - 1);
             Scintilla::Position documentLength = sci.Length();
@@ -398,9 +454,9 @@ namespace {
     
         case ToolsCommand::ExpandVisible:
         {
-            Scintilla::Line lineCount = sci.LineCount();
-            if (sci.AllLinesVisible() || (sci.VisibleFromDocLine(sci.LineCount() - 1) == 0 && !sci.LineVisible(0))) break;
+            if (!ts.anyHidden || !ts.anyVisible) break;
             ShowPosition sp(sci);
+            Scintilla::Line lineCount = sci.LineCount();
             for (Scintilla::Line line = 0; line < lineCount; ++line) {
                 if (!sci.LineVisible(line)) {
                     if (line == 0) line = sci.DocLineFromVisible(0);
@@ -422,22 +478,23 @@ namespace {
         case ToolsCommand::SelToMark:
         case ToolsCommand::SelToMarkShift:
         {
+            if (!ts.anySelected) break;
             sci.SetIndicatorCurrent(data.markIndicator);
             if (ts.shift) {
                 sci.IndicatorClearRange(0, sci.Length());
-                if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+                if (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync) sci.MarkerDeleteAll(data.bookMarker);
             }
             sci.SetIndicatorValue(1);
             int n = sci.Selections();
             for (int i = 0; i < n; ++i) {
                 Scintilla::Position a = sci.SelectionNStart(i);
                 Scintilla::Position b = sci.SelectionNEnd(i);
-                if (b > a) {
-                    sci.IndicatorFillRange(a, b - a);
-                    if (data.markAlsoBookmarks) {
-                        Scintilla::Line line = sci.LineFromPosition(a);
+                if (b > a) sci.IndicatorFillRange(a, b - a);
+                if (data.markAlsoBookmarks && data.bookmarkTools != BookmarkTools::None) {
+                    Scintilla::Line line1 = sci.LineFromPosition(a);
+                    Scintilla::Line line2 = data.bookmarksFirst || b - a < 2 ? line1 : sci.LineFromPosition(b - 1);
+                    for (Scintilla::Line line = line1; line <= line2; ++line)
                         if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
-                    }
                 }
             }
             break;
@@ -446,10 +503,11 @@ namespace {
         case ToolsCommand::MarkShown:
         case ToolsCommand::MarkShownShift:
         {
+            if (data.markAlsoBookmarks && data.bookmarkTools != BookmarkTools::None ? !ts.anyShown : !ts.anyShownNn) break;
             sci.SetIndicatorCurrent(data.markIndicator);
             if (ts.shift) {
                 sci.IndicatorClearRange(0, sci.Length());
-                if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+                if (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync) sci.MarkerDeleteAll(data.bookMarker);
             }
             sci.SetIndicatorValue(1);
             Scintilla::Position documentLength = sci.Length();
@@ -458,24 +516,39 @@ namespace {
                 if (cpMax <= cpMin) cpMax = documentLength;
                 if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
                     sci.IndicatorFillRange(cpMin, cpMax - cpMin);
-                    if (data.markAlsoBookmarks) {
-                        Scintilla::Line line = sci.LineFromPosition(cpMin);
-                        if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                    if (data.markAlsoBookmarks && data.bookmarkTools != BookmarkTools::None) {
+                        Scintilla::Line line1 = sci.LineFromPosition(cpMin);
+                        Scintilla::Line line2 = data.bookmarksFirst || cpMax - cpMin < 2 ? line1 : sci.LineFromPosition(cpMax - 1);
+                        for (Scintilla::Line line = line1; line <= line2; ++line)
+                            if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
                     }
                 }
                 if (cpMax == documentLength) break;
                 cpMin = cpMax;
+            }
+            if (data.markAlsoBookmarks && data.bookmarkTools != BookmarkTools::None && zlmIndicator) {
+                for (Scintilla::Position cpMin = 0;;) {
+                    Scintilla::Position cpMax = sci.IndicatorEnd(zlmIndicator + 1, cpMin);
+                    if (cpMax <= cpMin) cpMax = documentLength;
+                    if (sci.IndicatorValueAt(zlmIndicator + 1, cpMin)) {
+                        Scintilla::Line line = sci.LineFromPosition(cpMin);
+                        if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                    }
+                    if (cpMax == documentLength) break;
+                    cpMin = cpMax;
+                }
             }
             break;
         }
     
         case ToolsCommand::MarkToSel:
         {
+            if (!ts.anyMarked) break;
             bool first = true;
             Scintilla::Position documentLength = sci.Length();
             for (Scintilla::Position cpMin = 0;;) {
                 Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
-                if (cpMax == cpMin) break;
+                if (cpMax <= cpMin) cpMax = documentLength;
                 if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
                     if (first) {
                         sci.ClearSelections();
@@ -492,12 +565,31 @@ namespace {
     
         case ToolsCommand::RemoveMarksFromSel:
         {
+            if (!ts.anySelected || !ts.anyMarked) break;
             sci.SetIndicatorCurrent(data.markIndicator);
             int n = sci.Selections();
             for (int i = 0; i < n; ++i) {
                 Scintilla::Position a = sci.SelectionNStart(i);
                 Scintilla::Position b = sci.SelectionNEnd(i);
                 if (b > a) sci.IndicatorClearRange(a, b - a);
+                if (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync) {
+                    Scintilla::Line line1 = sci.LineFromPosition(a);
+                    Scintilla::Line line2 = b - a < 2 ? a : sci.LineFromPosition(b - 1);
+                    Scintilla::Position p = sci.PositionFromLine(line1);
+                    Scintilla::Position q = p + sci.LineLength(line1);
+                    if (!sci.IndicatorValueAt(data.markIndicator, p)) {
+                        Scintilla::Position ie = sci.IndicatorEnd(data.markIndicator, p);
+                        if (ie <= p || ie >= q) sci.MarkerDelete(line1, data.bookMarker);
+                    }
+                    if (line1 == line2) continue;
+                    p = sci.PositionFromLine(line2);
+                    q = p + sci.LineLength(line2);
+                    if (!sci.IndicatorValueAt(data.markIndicator, p)) {
+                        Scintilla::Position ie = sci.IndicatorEnd(data.markIndicator, p);
+                        if (ie <= p || ie >= q) sci.MarkerDelete(line2, data.bookMarker);
+                    }
+                    for (Scintilla::Line line = line1 + 1; line < line2; ++line) sci.MarkerDelete(line, data.bookMarker);
+                }
             }
             break;
         }
@@ -507,16 +599,18 @@ namespace {
             sci.SetIndicatorCurrent(data.markIndicator);
             sci.SetIndicatorValue(1);
             Scintilla::Position documentLength = sci.Length();
-            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+            if (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync) sci.MarkerDeleteAll(data.bookMarker);
             for (Scintilla::Position cpMin = 0;;) {
                 Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
                 if (cpMax <= cpMin) cpMax = documentLength;
                 if (sci.IndicatorValueAt(data.markIndicator, cpMin)) sci.IndicatorClearRange(cpMin, cpMax - cpMin);
                 else {
                     sci.IndicatorFillRange(cpMin, cpMax - cpMin);
-                    if (data.markAlsoBookmarks) {
-                        Scintilla::Line line = sci.LineFromPosition(cpMin);
-                        if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                    if (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync) {
+                        Scintilla::Line line1 = sci.LineFromPosition(cpMin);
+                        Scintilla::Line line2 = data.bookmarksFirst || cpMax - cpMin < 2 ? line1 : sci.LineFromPosition(cpMax - 1);
+                        for (Scintilla::Line line = line1; line <= line2; ++line)
+                            if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
                     }
                 }
                 if (cpMax == documentLength) break;
@@ -527,6 +621,7 @@ namespace {
     
         case ToolsCommand::CopyMarkedDialog:
         {
+            if (!ts.anyMarked) break;
             HWND focus = GetFocus();
             INT_PTR cancel = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_TOOLS_COPYMARKED), data.searchDialog, copyMarkedDialogProc);
             SetFocus(focus);
@@ -536,7 +631,7 @@ namespace {
     
         case ToolsCommand::CopyMarked:
         {
-            plugin.getScintillaPointers();
+            if (!ts.anyMarked) break;
             std::string text;
             bool first = true;
             Scintilla::Position documentLength = sci.Length();
@@ -569,6 +664,7 @@ namespace {
     
         case ToolsCommand::CopyMarkedMultiple:
         {
+            if (!ts.anyMarked) break;
             std::string text;
             Scintilla::Position documentLength = sci.Length();
             Scintilla::EndOfLine eolm = sci.EOLMode();
@@ -615,7 +711,7 @@ namespace {
         case ToolsCommand::ClearMarks:
             sci.SetIndicatorCurrent(data.markIndicator);
             sci.IndicatorClearRange(0, sci.Length());
-            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+            if (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync) sci.MarkerDeleteAll(data.bookMarker);
             break;
     
         case ToolsCommand::ClearMarksMultiple:
@@ -633,7 +729,7 @@ namespace {
                             plugin.getScintillaPointers();
                             sci.SetIndicatorCurrent(data.markIndicator);
                             sci.IndicatorClearRange(0, sci.Length());
-                            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
+                            if (data.markAlsoBookmarks && data.bookmarksMultiple) sci.MarkerDeleteAll(data.bookMarker);
                         }
                         npp(NPPM_ACTIVATEDOC, view, originalDocIndex);
                     }
@@ -641,6 +737,27 @@ namespace {
                 }
             }
             SetFocus(focus);
+            break;
+        }
+
+        case ToolsCommand::SyncBookmarks:
+        {
+            sci.SetIndicatorCurrent(data.markIndicator);
+            sci.SetIndicatorValue(1);
+            Scintilla::Position documentLength = sci.Length();
+            sci.MarkerDeleteAll(data.bookMarker);
+            for (Scintilla::Position cpMin = 0;;) {
+                Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
+                if (cpMax <= cpMin) cpMax = documentLength;
+                if (sci.IndicatorValueAt(data.markIndicator, cpMin)) {
+                    Scintilla::Line line1 = sci.LineFromPosition(cpMin);
+                    Scintilla::Line line2 = data.bookmarksFirst || cpMax - cpMin < 2 ? line1 : sci.LineFromPosition(cpMax - 1);
+                    for (Scintilla::Line line = line1; line <= line2; ++line)
+                        if (!(sci.MarkerGet(line) & (1 << data.bookMarker))) sci.MarkerAdd(line, data.bookMarker);
+                }
+                if (cpMax == documentLength) break;
+                cpMin = cpMax;
+            }
             break;
         }
     
@@ -721,6 +838,8 @@ void showToolsMenu(HWND button) {
     plugin.getScintillaPointers();
     ts.get();
 
+    bool enableMarkShown = data.markAlsoBookmarks && data.bookmarkTools != BookmarkTools::None ? ts.anyShown : ts.anyShownNn;
+
     HMENU pum = CreatePopupMenu();
     if (!button) AddToolItem(pum, ToolsCommand::Focus_Find_Or_Repl, 0);
     AddToolItem(pum, ToolsCommand::SearchInFiles, button);
@@ -735,10 +854,10 @@ void showToolsMenu(HWND button) {
     AddToolItem(pum, ToolsCommand::ExpandVisible, button);
     AddToolItem(pum, ToolsCommand::HideAll      , button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
-    if (ts.anySelected && ts.anyMarked) AddToolItem(pum, ToolsCommand::SelToMark, button, L" (Shift: clear first)");
-                                   else AddToolItem(pum, ToolsCommand::SelToMark, button);
-    if (ts.anyShownNn  && ts.anyMarked) AddToolItem(pum, ToolsCommand::MarkShown, button, L" (Shift: clear first)");
-                                   else AddToolItem(pum, ToolsCommand::MarkShown, button);
+    if (ts.anySelected  && ts.anyMarked) AddToolItem(pum, ToolsCommand::SelToMark, button, L" (Shift: clear first)");
+                                    else AddToolItem(pum, ToolsCommand::SelToMark, button);
+    if (enableMarkShown && ts.anyMarked) AddToolItem(pum, ToolsCommand::MarkShown, button, L" (Shift: clear first)");
+                                    else AddToolItem(pum, ToolsCommand::MarkShown, button);
     AddToolItem(pum, ToolsCommand::MarkToSel         , button);
     AddToolItem(pum, ToolsCommand::RemoveMarksFromSel, button);
     AddToolItem(pum, ToolsCommand::InvertMarked      , button);
@@ -754,9 +873,10 @@ void showToolsMenu(HWND button) {
     AddToolItem(pum, ToolsCommand::CopyMarkedMultiple, button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     AddToolItem(pum, ToolsCommand::ClearMarks, button,
-        data.markAlsoBookmarks ? L"and bookmarks from active document"
-                               : L"from active document");
+        data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync ? L"and bookmarks from active document"
+                                                                            : L"from active document");
     AddToolItem(pum, ToolsCommand::ClearMarksMultiple, button);
+    AddToolItem(pum, ToolsCommand::SyncBookmarks, button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     AddToolItem(pum, ToolsCommand::ShowAllClear, button);
     AddToolItem(pum, ToolsCommand::ClearHitlist, button);
@@ -770,7 +890,7 @@ void showToolsMenu(HWND button) {
     EnableMenuItem(pum, ToolsCommand::ExpandVisible     , ts.anyHidden && ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::HideAll           , ts.anyVisible                  ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::SelToMark         , ts.anySelected                 ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::MarkShown         , ts.anyShownNn                  ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::MarkShown         , enableMarkShown                ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::MarkToSel         , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, ts.anySelected && ts.anyMarked ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::CopyMarked        , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
@@ -779,7 +899,8 @@ void showToolsMenu(HWND button) {
     EnableMenuItem(pum, ToolsCommand::ShowAllClear      , ts.anyHidden || ts.anyShown    ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ClearHitlist      , ts.anyHits                     ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ClearMarks,
-        ts.anyMarked || (data.markAlsoBookmarks && sci.MarkerNext(0, 1 << data.bookMarker) >= 0) ? MF_ENABLED : MF_GRAYED);
+        ts.anyMarked || (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync
+                         && sci.MarkerNext(0, 1 << data.bookMarker) >= 0) ? MF_ENABLED : MF_GRAYED);
     MENUITEMINFO mii;
     mii.cbSize = sizeof mii;
     mii.fMask = MIIM_STATE;
@@ -792,7 +913,7 @@ void showToolsMenu(HWND button) {
         TPMPARAMS tpmp;
         tpmp.cbSize = sizeof tpmp;
         GetWindowRect(button, &tpmp.rcExclude);
-        choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL,
+        choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL | TPM_RIGHTBUTTON,
                                   tpmp.rcExclude.left, tpmp.rcExclude.bottom, GetParent(button), &tpmp);
     }
     else {
@@ -807,10 +928,10 @@ void showToolsMenu(HWND button) {
             pt.y += sci.TextHeight(sci.LineFromPosition(caret));
             ClientToScreen(plugin.currentScintilla(), &pt);
         }
-        choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL,
+        choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL | TPM_RIGHTBUTTON,
                                   pt.x, pt.y, plugin.nppData._nppHandle, 0);
     }
-    ts.shift = GetAsyncKeyState(VK_SHIFT) < 0;
+    ts.shift = GetAsyncKeyState(VK_SHIFT) < 0 || GetAsyncKeyState(GetSystemMetrics(SM_SWAPBUTTON) ? VK_LBUTTON : VK_RBUTTON);
     DestroyMenu(pum);
     processToolsCommandWithState(static_cast<unsigned char>(choice), ts);
 

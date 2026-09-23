@@ -12,6 +12,7 @@
 #define IDD_TOOLS_COPYMARKED            170
 #define IDD_REMOVEMARKS                 180
 #define IDD_SIF                         190
+#define IDD_BOOKMARKS                   200
 #define IDI_SEARCH                      900
 #define IDI_LIST                        901
 #define IDC_ABOUT_VERSION               1101
@@ -75,8 +76,9 @@
 #define IDC_COPYMARKED_LINE             1704
 #define IDC_COPYMARKED_CUSTOM           1705
 #define IDC_COPYMARKED_TEXT             1706
-#define IDC_REMOVEMARKS_VIEW            1801
-#define IDC_REMOVEMARKS_OPEN            1802
+#define IDC_REMOVEMARKS_BOOKMARKS       1801
+#define IDC_REMOVEMARKS_VIEW            1802
+#define IDC_REMOVEMARKS_OPEN            1803
 #define IDC_SIF_SUBFOLDERS              1901
 #define IDC_SIF_HIDDEN                  1902
 #define IDC_SIF_BROWSE                  1903
@@ -110,6 +112,13 @@
 #define IDC_SIF_REPLACE                 1931
 #define IDC_SIF_MESSAGE                 1932
 #define IDC_SIF_LIST                    1933
+#define IDC_BOOKMARKS_EVERY             2001
+#define IDC_BOOKMARKS_FIRST             2002
+#define IDC_BOOKMARKS_CLEAR             2003
+#define IDC_BOOKMARKS_TOOLS_NONE        2004
+#define IDC_BOOKMARKS_TOOLS_ADD         2005
+#define IDC_BOOKMARKS_TOOLS_SYNC        2006
+#define IDC_BOOKMARKS_USE               2007
 #define ID_SCMSCI_UNDO                  40001
 #define ID_SCMSCI_REDO                  40002
 #define ID_SCMSCI_CUT                   40003
@@ -143,9 +152,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        200
+#define _APS_NEXT_RESOURCE_VALUE        202
 #define _APS_NEXT_COMMAND_VALUE         40029
-#define _APS_NEXT_CONTROL_VALUE         1934
+#define _APS_NEXT_CONTROL_VALUE         2101
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
