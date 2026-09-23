@@ -788,7 +788,6 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             plugin.getScintillaPointers();
             sci.SetIndicatorCurrent(data.markIndicator);
             sci.IndicatorClearRange(0, sci.Length());
-            if (data.markAlsoBookmarks) sci.MarkerDeleteAll(data.bookMarker);
         }
         return FALSE;
 
@@ -1140,9 +1139,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             default:
                 return FALSE;
             }
-            int choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL,
+            int choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL | TPM_RIGHTBUTTON,
                                           tpmp.rcExclude.left, tpmp.rcExclude.bottom, hwndDlg, &tpmp);
-            bool shifted = GetAsyncKeyState(VK_SHIFT) < 0;
+            bool shifted = GetAsyncKeyState(VK_SHIFT) < 0 || GetAsyncKeyState(GetSystemMetrics(SM_SWAPBUTTON) ? VK_LBUTTON : VK_RBUTTON);
             DestroyMenu(pum);
             if (choice) {
                 if (shifted) {
