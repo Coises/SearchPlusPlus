@@ -16,6 +16,7 @@
 
 #include "Host/dockingResource.h"
 #include "CommonData.h"
+#include "MonitoredTrackPopupMenu.h"
 #include "resource.h"
 #include <windowsx.h>
 
@@ -1139,16 +1140,16 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
             default:
                 return FALSE;
             }
-            int choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL | TPM_RIGHTBUTTON,
-                                          tpmp.rcExclude.left, tpmp.rcExclude.bottom, hwndDlg, &tpmp);
-            bool shifted = GetAsyncKeyState(VK_SHIFT) < 0 || GetAsyncKeyState(GetSystemMetrics(SM_SWAPBUTTON) ? VK_LBUTTON : VK_RBUTTON);
+            MonitoredTrackPopupMenu mtpm(pum,
+                                         TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL | TPM_RIGHTBUTTON,
+                                         tpmp.rcExclude.left, tpmp.rcExclude.bottom, hwndDlg, &tpmp);
             DestroyMenu(pum);
-            if (choice) {
-                if (shifted) {
-                    *searchButton = choice;
-                    SetDlgItemText(hwndDlg, static_cast<int>(bd.hdr.idFrom), Command_Button(choice));
+            if (mtpm.choice) {
+                if (mtpm.right || mtpm.shift) {
+                    *searchButton = mtpm.choice;
+                    SetDlgItemText(hwndDlg, static_cast<int>(bd.hdr.idFrom), Command_Button(mtpm.choice));
                 }
-                auto result = RequestSearch(choice, data.context, data.find, data.repl, plugin.currentScintilla());
+                auto result = RequestSearch(mtpm.choice, data.context, data.find, data.repl, plugin.currentScintilla());
                 showMessage(hwndDlg, result);
             }
             return TRUE;

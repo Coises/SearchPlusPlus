@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "CommonData.h"
+#include "MonitoredTrackPopupMenu.h"
 #include "resource.h"
 
 void showSettingsDialog();
@@ -908,13 +909,13 @@ void showToolsMenu(HWND button) {
     SetMenuItemInfo(pum, ToolsCommand::BookmarkWhenMark, FALSE, &mii);
     mii.fState = SearchCommand(data.buttonReplace).verb == SearchCommand::Replace ? MFS_CHECKED : 0;
     SetMenuItemInfo(pum, ToolsCommand::JumpReplace, FALSE, &mii);
-    int choice;
+    MonitoredTrackPopupMenu mtpm;
     if (button) {
         TPMPARAMS tpmp;
         tpmp.cbSize = sizeof tpmp;
         GetWindowRect(button, &tpmp.rcExclude);
-        choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL | TPM_RIGHTBUTTON,
-                                  tpmp.rcExclude.left, tpmp.rcExclude.bottom, GetParent(button), &tpmp);
+        mtpm.show(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL | TPM_RIGHTBUTTON,
+                  tpmp.rcExclude.left, tpmp.rcExclude.bottom, GetParent(button), &tpmp);
     }
     else {
         Scintilla::Position caret = sci.CurrentPos();
@@ -928,12 +929,12 @@ void showToolsMenu(HWND button) {
             pt.y += sci.TextHeight(sci.LineFromPosition(caret));
             ClientToScreen(plugin.currentScintilla(), &pt);
         }
-        choice = TrackPopupMenuEx(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL | TPM_RIGHTBUTTON,
-                                  pt.x, pt.y, plugin.nppData._nppHandle, 0);
+        mtpm.show(pum, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_NONOTIFY | TPM_RETURNCMD | TPM_VERTICAL | TPM_RIGHTBUTTON,
+                  pt.x, pt.y, plugin.nppData._nppHandle, 0);
     }
-    ts.shift = GetAsyncKeyState(VK_SHIFT) < 0 || GetAsyncKeyState(GetSystemMetrics(SM_SWAPBUTTON) ? VK_LBUTTON : VK_RBUTTON);
     DestroyMenu(pum);
-    processToolsCommandWithState(static_cast<unsigned char>(choice), ts);
+    ts.shift = mtpm.right || mtpm.shift;
+    processToolsCommandWithState(static_cast<unsigned char>(mtpm.choice), ts);
 
 }
 
