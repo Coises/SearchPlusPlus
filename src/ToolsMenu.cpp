@@ -129,7 +129,7 @@ namespace {
         { ToolsCommand::SyncBookAddFirst    , L"Add a bookmark to the &first line of each span of marked text"      },
         { ToolsCommand::SyncBookOnlyEach    , L"&Bookmark only lines with marked text"                              },
         { ToolsCommand::SyncBookOnlyFirst   , L"Bookmark &only the first line of each span of marked text"          },
-        { ToolsCommand::BookmarkVisible     , L"Bookmark &Visible lines"                                            },
+        { ToolsCommand::BookmarkVisible     , L"Bookmark &visible lines"                                            },
         { ToolsCommand::SyncMarkAdd         , L"&Add marks to all text in bookmarked lines"                         },
         { ToolsCommand::SyncMarkAddEx       , L"A&dd marks to all text in bookmarked lines, excluding line endings" },
         { ToolsCommand::SyncMarkOnly        , L"&Mark only text in bookmarked lines"                                },
