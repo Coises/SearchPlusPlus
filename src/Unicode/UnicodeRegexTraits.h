@@ -32,6 +32,7 @@
 
 #pragma warning( push )
 #pragma warning( disable : 4244 4459 )
+#define COISES_BOOST_REGEX_MODIFICATIONS
 #include <boost/regex.hpp>
 #pragma warning( pop )
 

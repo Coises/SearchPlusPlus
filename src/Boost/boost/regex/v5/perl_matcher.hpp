@@ -242,10 +242,17 @@ iterator  re_is_set_member(iterator next,
          }
       }
    }
+#ifdef COISES_BOOST_REGEX_MODIFICATIONS  // semantic change: named classes disregard case insensitivity
+   if(traits_inst.isctype(*next, set_->cclasses) == true)
+      return set_->isnot ? next : ++next;
+   if((set_->cnclasses != 0) && (traits_inst.isctype(*next, set_->cnclasses) == false))
+      return set_->isnot ? next : ++next;
+#else
    if(traits_inst.isctype(col, set_->cclasses) == true)
       return set_->isnot ? next : ++next;
    if((set_->cnclasses != 0) && (traits_inst.isctype(col, set_->cnclasses) == false))
       return set_->isnot ? next : ++next;
+#endif
    return set_->isnot ? ++next : next;
 }
 

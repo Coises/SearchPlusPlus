@@ -660,6 +660,115 @@ bool perl_matcher<BidiIterator, Allocator, traits>::match_jump()
    return true;
 }
 
+#ifdef COISES_BOOST_REGEX_MODIFICATIONS
+
+// Make the \X escape work properly for Unicode grapheme segmentation
+// reference: https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundaries
+
+#include <unicode/uchar.h>
+
+enum class PairClusters {yes, no, maybe};
+
+inline PairClusters pairCluster(const char32_t c1, const char32_t c2) {
+    using enum PairClusters;
+    if (c1 < 128 && c2 < 128) return c1 == '\r' && c2 == '\n' ? yes : no;
+    const auto gb1 = u_getIntPropertyValue(c1, UCHAR_GRAPHEME_CLUSTER_BREAK);
+    const auto gb2 = u_getIntPropertyValue(c2, UCHAR_GRAPHEME_CLUSTER_BREAK);
+    if (gb1 == U_GCB_CR || gb1 == U_GCB_LF || gb1 == U_GCB_CONTROL) return no;
+    if (gb2 == U_GCB_CR || gb2 == U_GCB_LF || gb2 == U_GCB_CONTROL) return no;
+    if ((gb1 == U_GCB_L && (gb2 == U_GCB_L || gb2 == U_GCB_V || gb2 == U_GCB_LV || gb2 == U_GCB_LVT))
+        || ((gb1 == U_GCB_LV || gb1 == U_GCB_V) && (gb2 == U_GCB_V || gb2 == U_GCB_T))
+        || ((gb1 == U_GCB_LVT || gb1 == U_GCB_T) && gb2 == U_GCB_T))
+        return yes;
+    if (gb2 == U_GCB_EXTEND || gb2 == U_GCB_ZWJ) return yes;
+    if (gb1 == U_GCB_PREPEND || gb2 == U_GCB_SPACING_MARK) return yes;
+    if (gb1 == U_GCB_REGIONAL_INDICATOR && gb2 == U_GCB_REGIONAL_INDICATOR) return maybe;
+    if (gb1 == U_GCB_ZWJ && u_hasBinaryProperty(c2, UCHAR_EXTENDED_PICTOGRAPHIC)) return maybe;
+    const auto ib1 = u_getIntPropertyValue(c1, UCHAR_INDIC_CONJUNCT_BREAK);
+    const auto ib2 = u_getIntPropertyValue(c2, UCHAR_INDIC_CONJUNCT_BREAK);
+    if ((ib1 == U_INCB_EXTEND || ib1 == U_INCB_LINKER) && ib2 == U_INCB_CONSONANT) return maybe;
+    return no;
+}
+
+template<typename DocumentIterator> inline bool multipleCluster(const DocumentIterator& position, const DocumentIterator& backstop) {
+
+    const char32_t c = *position;
+
+    if (u_getIntPropertyValue(c, UCHAR_GRAPHEME_CLUSTER_BREAK) == U_GCB_REGIONAL_INDICATOR) {
+        auto p = position;
+        size_t count = 0;
+        while (p != backstop && u_getIntPropertyValue(*--p, UCHAR_GRAPHEME_CLUSTER_BREAK) == U_GCB_REGIONAL_INDICATOR) ++count;
+        return count & 1;
+    }
+
+    if (u_hasBinaryProperty(c, UCHAR_EXTENDED_PICTOGRAPHIC)) {
+        auto p = position;
+        if (p == backstop || *--p != 0x200D) return false;
+        while (p != backstop && u_getIntPropertyValue(*--p, UCHAR_GRAPHEME_CLUSTER_BREAK) == U_GCB_EXTEND);
+        return u_hasBinaryProperty(*p, UCHAR_EXTENDED_PICTOGRAPHIC);
+    }
+
+    if (u_getIntPropertyValue(c, UCHAR_INDIC_CONJUNCT_BREAK) == U_INCB_CONSONANT) {
+        bool foundLinker = false;
+        auto p = position;
+        while (p != backstop) {
+            --p;
+            switch (u_getIntPropertyValue(*p, UCHAR_INDIC_CONJUNCT_BREAK)) {
+            case U_INCB_CONSONANT :
+                return foundLinker;
+            case U_INCB_EXTEND:
+                break;
+            case U_INCB_LINKER:
+                foundLinker = true;
+                break;
+            case U_INCB_NONE:
+                return false;
+            }
+        }
+        return false;
+    }
+
+    return false;
+
+}
+
+template<typename DocumentIterator>
+bool inline implement_match_combining(DocumentIterator& position, const DocumentIterator& last, const DocumentIterator& backstop) {
+
+    if (position == last) return false;
+
+    char32_t c1 = *position;
+
+    if (position != backstop) /* we could be within a grapheme; if so, we must return false */ {
+        auto prior = position;
+        --prior;
+        char32_t c0 = *prior;
+        PairClusters pc01 = pairCluster(c0, c1);
+        if (pc01 == PairClusters::yes) return false;
+        if (pc01 == PairClusters::maybe && multipleCluster(position, backstop)) return false;
+    }
+
+    for (char32_t c2; ++position != last; c1 = c2) {
+        c2 = *position;
+        PairClusters pc12 = pairCluster(c1, c2);
+        if (pc12 == PairClusters::no) break;
+        if (pc12 == PairClusters::yes) continue;
+        if (!multipleCluster(position, backstop)) break;
+    }
+
+    return true;
+
+}
+
+template <class BidiIterator, class Allocator, class traits>
+bool perl_matcher<BidiIterator, Allocator, traits>::match_combining() {
+    if (!implement_match_combining(position, last, backstop)) return false;
+    pstate = pstate->next.p;
+    return true;
+}
+
+#else
+
 template <class BidiIterator, class Allocator, class traits>
 bool perl_matcher<BidiIterator, Allocator, traits>::match_combining()
 {
@@ -673,6 +782,8 @@ bool perl_matcher<BidiIterator, Allocator, traits>::match_combining()
    pstate = pstate->next.p;
    return true;
 }
+
+#endif
 
 template <class BidiIterator, class Allocator, class traits>
 bool perl_matcher<BidiIterator, Allocator, traits>::match_soft_buffer_end()

@@ -273,20 +273,26 @@ basic_regex_creator<charT, traits>::basic_regex_creator(regex_data<charT, traits
    m_pdata->m_status = ::boost::regex_constants::error_ok;
    static const charT w = 'w';
    static const charT s = 's';
+#ifndef COISES_BOOST_REGEX_MODIFICATIONS  // semantic change: named classes disregard case insensitivity
    static const charT l[5] = { 'l', 'o', 'w', 'e', 'r', };
    static const charT u[5] = { 'u', 'p', 'p', 'e', 'r', };
    static const charT a[5] = { 'a', 'l', 'p', 'h', 'a', };
+#endif
    m_word_mask = m_traits.lookup_classname(&w, &w +1);
    m_mask_space = m_traits.lookup_classname(&s, &s +1);
+#ifndef COISES_BOOST_REGEX_MODIFICATIONS  // semantic change: named classes disregard case insensitivity
    m_lower_mask = m_traits.lookup_classname(l, l + 5);
    m_upper_mask = m_traits.lookup_classname(u, u + 5);
    m_alpha_mask = m_traits.lookup_classname(a, a + 5);
+#endif
    m_pdata->m_word_mask = m_word_mask;
    BOOST_REGEX_ASSERT(m_word_mask != 0); 
    BOOST_REGEX_ASSERT(m_mask_space != 0); 
+#ifndef COISES_BOOST_REGEX_MODIFICATIONS  // semantic change: named classes disregard case insensitivity
    BOOST_REGEX_ASSERT(m_lower_mask != 0); 
    BOOST_REGEX_ASSERT(m_upper_mask != 0); 
    BOOST_REGEX_ASSERT(m_alpha_mask != 0); 
+#endif
 }
 
 template <class charT, class traits>

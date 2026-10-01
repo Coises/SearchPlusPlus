@@ -525,8 +525,6 @@ public:
 };
 
 
-#include "RegularExpressionTS.h"
-
 std::string  RegularExpression::format  (const std::string& replacement) const {return poly->format  (replacement    );}
 intptr_t     RegularExpression::length  (int n                         ) const {return poly->length  (n              );}
 intptr_t     RegularExpression::position(int n                         ) const {return poly->position(n              );}

@@ -19,6 +19,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Boost\boost\regex\v5\basic_regex_creator.hpp" />
+    <ClInclude Include="src\Boost\boost\regex\v5\perl_matcher.hpp" />
+    <ClInclude Include="src\Boost\boost\regex\v5\perl_matcher_common.hpp" />
     <ClInclude Include="src\Calculation.h" />
     <ClInclude Include="src\CommonData.h" />
     <ClInclude Include="src\ConfigEnums.h" />
@@ -38,7 +41,6 @@
     <ClInclude Include="src\RegexUTF16.h" />
     <ClInclude Include="src\RegularExpression.h" />
     <ClInclude Include="src\RegularExpressionExtension.h" />
-    <ClInclude Include="src\RegularExpressionTS.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\Host\BoostRegexSearch.h" />
     <ClInclude Include="src\Host\menuCmdID.h" />

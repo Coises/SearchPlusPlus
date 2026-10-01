@@ -1,0 +1,13 @@
+This folder contains a modified version of the Boost Regex library.
+
+Modifications are Copyright 2026 by Randy Fellmy <https://www.coises.com/>
+and are released under the same license as the Boost Regex library.
+
+Modifications are enabled by #define COISES_BOOST_REGEX_MODIFICATIONS
+and can be recognized as #ifdef COISES_BOOST_REGEX_MODIFICATIONS blocks.
+
+Modified files:
+
+boost\regex\v5\basic_regex_creator.hpp
+boost\regex\v5\perl_matcher.hpp
+boost\regex\v5\perl_matcher_common.hpp

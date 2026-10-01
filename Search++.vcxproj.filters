@@ -17,6 +17,9 @@
     <Filter Include="Symbol Font">
       <UniqueIdentifier>{5d48a251-84f8-4108-8162-27c05cb09c96}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Modified Boost Regex Files">
+      <UniqueIdentifier>{a5be32f1-742d-4eda-aeeb-e50e4cc72a19}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Host\BoostRegexSearch.h">
@@ -88,9 +91,6 @@
     <ClInclude Include="src\RegularExpression.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\RegularExpressionTS.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\ProgressInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -132,6 +132,18 @@
     </ClInclude>
     <ClInclude Include="src\RegexUTF16.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MonitoredTrackPopupMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Boost\boost\regex\v5\basic_regex_creator.hpp">
+      <Filter>Modified Boost Regex Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Boost\boost\regex\v5\perl_matcher.hpp">
+      <Filter>Modified Boost Regex Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Boost\boost\regex\v5\perl_matcher_common.hpp">
+      <Filter>Modified Boost Regex Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
