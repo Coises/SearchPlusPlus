@@ -111,8 +111,8 @@ public:
             unsigned char c4 = at(pos + 3);
             if (c4 < 0xDC || c4 > 0xDF) return (static_cast<char32_t>(c2) << 8) | static_cast<char32_t>(c1);
             unsigned char c3 = at(pos + 2);
-            return (((static_cast<char32_t>(c2) & 3) << 24)
-                | (static_cast<char32_t>(c1) << 16)
+            return (((static_cast<char32_t>(c2) & 3) << 18)
+                | (static_cast<char32_t>(c1) << 10)
                 | ((static_cast<char32_t>(c4) & 3) << 8)
                 | static_cast<char32_t>(c3)) + 0x10000;
         }
@@ -263,8 +263,8 @@ public:
             unsigned char c3 = at(pos + 2);
             if (c3 < 0xDC || c3 > 0xDF) return (static_cast<char32_t>(c1) << 8) | static_cast<char32_t>(c2);
             unsigned char c4 = at(pos + 3);
-            return (((static_cast<char32_t>(c1) & 3) << 24)
-                | (static_cast<char32_t>(c2) << 16)
+            return (((static_cast<char32_t>(c1) & 3) << 18)
+                | (static_cast<char32_t>(c2) << 10)
                 | ((static_cast<char32_t>(c3) & 3) << 8)
                 | static_cast<char32_t>(c4)) + 0x10000;
         }

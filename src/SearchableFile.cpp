@@ -488,8 +488,8 @@ void SearchableFile::trueSearch() {
 
         struct CurrentLine {
             SearchableFile& sf;
-            size_t idx, pos, end;
-            CurrentLine(SearchableFile& sf) : sf(sf), idx(0), pos(0), end(endFromPos(sf.text, 0)) {}
+            size_t idx, pos, end, cachePos, cacheOff;
+            CurrentLine(SearchableFile& sf) : sf(sf), idx(0), pos(0), cachePos(0), cacheOff(0), end(endFromPos(sf.text, 0)) {}
             size_t endFromPos(std::string_view s, size_t p) {
                 const uint16_t* const w = reinterpret_cast<const uint16_t* const>(s.data());
                 const size_t len = s.length();
@@ -529,9 +529,17 @@ void SearchableFile::trueSearch() {
             void push(size_t matchPos, size_t matchLen) {
                 if (sf.results.index.empty() || sf.results.index.back().lineNumber != static_cast<intptr_t>(idx)) push();
                 const std::wstring_view w(reinterpret_cast<const wchar_t*>(sf.text.data()), sf.text.length() / 2);
-                size_t p = matchPos == pos ? 0 : utf16to8Length(w.substr(pos / 2, (matchPos - pos) / 2));
+                if (pos > cachePos) {
+                    cachePos = pos;
+                    cacheOff = 0;
+                }
+                size_t p = matchPos == cachePos ? cacheOff
+                         : utf16to8Length(w.substr(cachePos / 2, (matchPos - cachePos) / 2)) + cacheOff;
                 size_t q = matchLen == 0 ? 0 : utf16to8Length(w.substr(matchPos / 2, matchLen / 2));
+                cachePos = matchPos + matchLen;
+                cacheOff = p + q;
                 sf.results.index.back().matches.emplace_back(p, q);
+                sf.bytes_processed = cachePos;
             }
 
         };
@@ -545,8 +553,8 @@ void SearchableFile::trueSearch() {
 
         struct CurrentLine {
             SearchableFile& sf;
-            size_t idx, pos, end;
-            CurrentLine(SearchableFile& sf) : sf(sf), idx(0), pos(0), end(endFromPos(sf.text, 0)) {}
+            size_t idx, pos, end, cachePos, cacheOff;
+            CurrentLine(SearchableFile& sf) : sf(sf), idx(0), pos(0), cachePos(0), cacheOff(0), end(endFromPos(sf.text, 0)) {}
             size_t endFromPos(std::string_view s, size_t p) {
                 const uint16_t* const w = reinterpret_cast<const uint16_t* const>(s.data());
                 const size_t len = s.length();
@@ -584,9 +592,17 @@ void SearchableFile::trueSearch() {
             }
             void push(size_t matchPos, size_t matchLen) {
                 if (sf.results.index.empty() || sf.results.index.back().lineNumber != static_cast<intptr_t>(idx)) push();
-                size_t p = matchPos == pos ? 0 : utf16BEto8Length(sf.text.substr(pos, matchPos - pos));
+                if (pos > cachePos) {
+                    cachePos = pos;
+                    cacheOff = 0;
+                }
+                size_t p = matchPos == cachePos ? cacheOff
+                         : utf16BEto8Length(sf.text.substr(cachePos, matchPos - cachePos)) + cacheOff;
                 size_t q = matchLen == 0 ? 0 : utf16BEto8Length(sf.text.substr(matchPos, matchLen));
+                cachePos = matchPos + matchLen;
+                cacheOff = p + q;
                 sf.results.index.back().matches.emplace_back(p, q);
+                sf.bytes_processed = cachePos;
             }
 
         };
@@ -600,8 +616,8 @@ void SearchableFile::trueSearch() {
 
         struct CurrentLine {
             SearchableFile& sf;
-            size_t idx, pos, end;
-            CurrentLine(SearchableFile& sf) : sf(sf), idx(0), pos(0), end(endFromPos(sf.text, 0)) {}
+            size_t idx, pos, end, cachePos, cacheOff;
+            CurrentLine(SearchableFile& sf) : sf(sf), idx(0), pos(0), cachePos(0), cacheOff(0), end(endFromPos(sf.text, 0)) {}
             size_t endFromPos(std::string_view s, size_t p) {
                 size_t e = s.find_first_of("\r\n", p);
                 if (e == std::string::npos) return s.length();
@@ -640,10 +656,18 @@ void SearchableFile::trueSearch() {
                 if (sf.results.index.empty() || sf.results.index.back().lineNumber != static_cast<intptr_t>(idx)) push();
                 if (sf.codepage == CP_UTF8) sf.results.index.back().matches.emplace_back(matchPos - pos, matchLen);
                 else {
-                    size_t p = matchPos == pos ? 0 : utf16to8Length(toWide(sf.text.substr(pos, matchPos - pos), sf.codepage));
+                    if (pos > cachePos) {
+                        cachePos = pos;
+                        cacheOff = 0;
+                    }
+                    size_t p = matchPos == cachePos ? cacheOff
+                             : utf16to8Length(toWide(sf.text.substr(cachePos, matchPos - cachePos), sf.codepage)) + cacheOff;
                     size_t q = matchLen == 0 ? 0 : utf16to8Length(toWide(sf.text.substr(matchPos, matchLen), sf.codepage));
+                    cachePos = matchPos + matchLen;
+                    cacheOff = p + q;
                     sf.results.index.back().matches.emplace_back(p, q);
                 }
+                sf.bytes_processed = cachePos;
             }
 
         };
