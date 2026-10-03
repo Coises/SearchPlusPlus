@@ -1,5 +1,23 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.7.1 -- October 3rd, 2026
+
+* Fix incorrect decoding of surrogate pairs in UTF-16 files when using Search in Files.
+
+* Fix failure to apply regex customizations (named classes ignore case insensitivity, \\X follows Unicode standard) when searching UTF-16 files using Search in Files.
+
+* Fix Replace All doesn’t add to replace box history.
+
+* Improve efficiency of search in files for file encodings other than UTF-8 when the files have long lines with multiple matches per line.
+
+* More accurate updates to progress (percent) monitoring in Search in Files when there are long lines with multiple matches per line.
+
+* Make right-click equivalent to Shift+click in menus.
+
+* Add **Configure bookmarks** dialog, accessible from the **Tools** menu, offering options regarding bookmark handling when **Bookmark lines when marking text** is active.
+
+* Add **Synchronize marks and bookmarks** sub-menu on the **Tools** menu.
+
 ## Version 0.7 -- September 20th, 2026
 
 * Use different styles for **Mark** and **Show**. This helps keep **Mark** and **Show** cleanly separated, and it makes **Always hide all lines and remove Show style from text before Show command** behave more as one would expect with the default scope **Show** command, without introducing an inconsistency with the way other default scope commands behave.
