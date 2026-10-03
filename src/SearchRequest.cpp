@@ -134,7 +134,8 @@ SearchResult SearchRequest::exec
 
     if (!result.error()) {
         data.find.push();
-        if (command.verb == SearchCommand::Verb::Replace || command.verb == SearchCommand::Verb::ReplStop) data.repl.push();
+        if (command.verb == SearchCommand::Verb::Replace || command.verb == SearchCommand::Verb::ReplStop
+         || command.verb == SearchCommand::Verb::ReplaceAll) data.repl.push();
         if (result.success()) {
             if (convertSelectionToMarks) {
                 plugin.getScintillaPointers(sciText);
