@@ -47,7 +47,7 @@ SearchResult singleFind(SearchRequest& req, bool postReplace = false) {
 
     for (size_t range = 0; range < req.ranges.size(); ++range) {
         auto& r = req.ranges[range];
-        if (searchFrom >= r.cpMax) continue;
+        if (searchFrom > r.cpMax) continue;
         if (rx.search(std::max(searchFrom, r.cpMin), r.cpMax, r.cpMin)) {
             Scintilla::Position found  = rx.position();
             Scintilla::Position length = rx.length(0);
@@ -186,13 +186,13 @@ bool progressiveSearch(ProgressInfo& pi) {
         pib.rx.invalidate();
     }
 
-    if (!rxSuccess || position >= r.cpMax) {
+    if (!rxSuccess || position > r.cpMax) {
         if (++pi.rangeIndex >= req.ranges.size()) return false;
         pib.offset1 = pib.offset2;
         position = req.ranges[pi.rangeIndex].cpMin;
     }
 
-    return position < rangeEnd;
+    return position <= rangeEnd;
 
 }
 

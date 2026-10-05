@@ -90,7 +90,7 @@ SearchResult singleFind(SearchRequest& req, bool postReplace = false) {
 
     for (size_t range = 0; range < req.ranges.size(); ++range) {
         auto& r = req.ranges[range];
-        if (searchFrom >= r.cpMax) continue;
+        if (searchFrom > r.cpMax) continue;
         UTextObject body;
         if (body.openUTF8(reinterpret_cast<char*>(sci.RangePointer(r.cpMin, r.cpMax)), r.cpMax - r.cpMin) != U_ZERO_ERROR)
             return req.error(L"Failed to set search text.");
@@ -200,13 +200,13 @@ bool progressiveSearch(ProgressInfo& pi) {
         if (matchStart == matchEnd) ++position;
     }
 
-    if (!found || position >= r.cpMax) {
+    if (!found || position > r.cpMax) {
         if (++pi.rangeIndex >= req.ranges.size()) return false;
         pii.offset1 = pii.offset2;
         position = req.ranges[pi.rangeIndex].cpMin;
     }
 
-    return position < rangeEnd;
+    return position <= rangeEnd;
 
 }
 
