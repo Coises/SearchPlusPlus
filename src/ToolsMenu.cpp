@@ -66,12 +66,13 @@ namespace ToolsCommand {
     constexpr unsigned char BookmarkVisible    = 11;
     constexpr unsigned char SyncMarkOnly       = 12;
     constexpr unsigned char SyncBookAddEach    = 13;
-    constexpr unsigned char SyncMarkAdd        = 14;
+    constexpr unsigned char BookmarkVisibleAdd = 14;
+    constexpr unsigned char SyncMarkAdd        = 15;
 
     // The following two commands do not appear on the Tools menu, but code is kept in case they are restored later
 
-    constexpr unsigned char SyncMarkOnlyEx     = 15;
-    constexpr unsigned char SyncMarkAddEx      = 16;
+    constexpr unsigned char SyncMarkOnlyEx     = 16;
+    constexpr unsigned char SyncMarkAddEx      = 17;
 
     // Following are not on the Tools menu, but use this mechanism to implement dialog-wide shortcuts
 
@@ -112,11 +113,12 @@ namespace {
         { ToolsCommand::Settings          , L"S&ettings..."                                         },
         { ToolsCommand::SearchDialog_Close, L"Cl&ose"                                               },
 
-        { ToolsCommand::SyncBookOnlyEach, L"&Bookmark lines with marked text, and clear other bookmarks" },
-        { ToolsCommand::BookmarkVisible , L"Bookmark &visible lines, and clear other bookmarks"          },
-        { ToolsCommand::SyncMarkOnly    , L"&Mark all text in bookmarked lines, and clear other marks"   },
-        { ToolsCommand::SyncBookAddEach , L"&Add bookmarks to lines with marked text"                    },
-        { ToolsCommand::SyncMarkAdd     , L"Add mar&ks to all text in bookmarked lines"                  },
+        { ToolsCommand::SyncBookOnlyEach  , L"&Bookmark lines with marked text"                     },
+        { ToolsCommand::BookmarkVisible   , L"Bookmark &visible lines"                              },
+        { ToolsCommand::SyncMarkOnly      , L"&Mark all text in bookmarked lines"                   },
+        { ToolsCommand::SyncBookAddEach   , L"&Add bookmarks to lines with marked text"             },
+        { ToolsCommand::BookmarkVisibleAdd, L"A&dd bookmarks to visible lines"                      },
+        { ToolsCommand::SyncMarkAdd       , L"Add mar&ks to all text in bookmarked lines"           },
 
     };
     
@@ -131,6 +133,7 @@ namespace {
     }
 
     struct ToolsState {
+        bool anyBookmark = false;
         bool anyHidden   = false;
         bool anyHits     = false;
         bool anyMarked   = false;
@@ -142,6 +145,7 @@ namespace {
         bool selVisible  = false;
         bool shift       = false;
         void get() {
+            anyBookmark = sci.MarkerNext(0, 1 << data.bookMarker) >= 0;
             anyHidden = !sci.AllLinesVisible();
             anyHits = !hitlistEmpty();
             if (sci.IndicatorValueAt(data.markIndicator, 0)) anyMarked = true;
@@ -793,8 +797,10 @@ namespace {
         }
 
         case ToolsCommand::BookmarkVisible:
+        case ToolsCommand::BookmarkVisibleAdd:
         {
             if (!ts.anyVisible) break;
+            if (command == ToolsCommand::BookmarkVisible) sci.MarkerDeleteAll(data.bookMarker);
             int bookMask = 1 << data.bookMarker;
             Scintilla::Line lineCount = sci.LineCount();
             for (Scintilla::Line line = 0; line < lineCount; ++line)
@@ -907,12 +913,20 @@ void showToolsMenu(HWND button) {
     bool enableMarkShown = data.markAlsoBookmarks && data.bookmarkTools != BookmarkTools::None ? ts.anyShown : ts.anyShownNn;
 
     HMENU pumSync = CreatePopupMenu();
-    AddToolItem(pumSync, ToolsCommand::SyncBookOnlyEach, 0);
-    AddToolItem(pumSync, ToolsCommand::BookmarkVisible , 0);
-    AddToolItem(pumSync, ToolsCommand::SyncMarkOnly    , 0);
+    AddToolItem(pumSync, ToolsCommand::SyncBookOnlyEach, 0, ts.anyBookmark ? L", and clear other bookmarks" : L"");
+    AddToolItem(pumSync, ToolsCommand::BookmarkVisible , 0, ts.anyBookmark ? L", and clear other bookmarks" : L"");
+    AddToolItem(pumSync, ToolsCommand::SyncMarkOnly    , 0, ts.anyMarked   ? L", and clear other marks"     : L"");
     AppendMenu(pumSync, MF_SEPARATOR, 0, 0);
-    AddToolItem(pumSync, ToolsCommand::SyncBookAddEach , 0);
-    AddToolItem(pumSync, ToolsCommand::SyncMarkAdd     , 0);
+    AddToolItem(pumSync, ToolsCommand::SyncBookAddEach   , 0);
+    AddToolItem(pumSync, ToolsCommand::BookmarkVisibleAdd, 0);
+    AddToolItem(pumSync, ToolsCommand::SyncMarkAdd       , 0);
+    EnableMenuItem(pumSync, ToolsCommand::SyncBookOnlyEach  , ts.anyMarked   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pumSync, ToolsCommand::SyncBookAddEach   , ts.anyMarked   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pumSync, ToolsCommand::BookmarkVisible   , ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pumSync, ToolsCommand::BookmarkVisibleAdd, ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pumSync, ToolsCommand::SyncMarkOnly      , ts.anyBookmark ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pumSync, ToolsCommand::SyncMarkAdd       , ts.anyBookmark ? MF_ENABLED : MF_GRAYED);
+
 
     HMENU pum = CreatePopupMenu();
     if (!button) AddToolItem(pum, ToolsCommand::Focus_Find_Or_Repl, 0);
@@ -976,8 +990,9 @@ void showToolsMenu(HWND button) {
     EnableMenuItem(pum, ToolsCommand::ShowAllClear      , ts.anyHidden || ts.anyShown    ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ClearHitlist      , ts.anyHits                     ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ClearMarks,
-        ts.anyMarked || (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync
-                         && sci.MarkerNext(0, 1 << data.bookMarker) >= 0) ? MF_ENABLED : MF_GRAYED);
+        ts.anyMarked || (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync && ts.anyBookmark)
+        ? MF_ENABLED : MF_GRAYED);
+                         
     MENUITEMINFO mii;
     mii.cbSize = sizeof mii;
     mii.fMask = MIIM_STATE;
