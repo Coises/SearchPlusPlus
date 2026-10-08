@@ -16,6 +16,7 @@
 
 #include "CommonData.h"
 
+void checkExpandVisibleState();
 void colorHitlist();
 void colorSearch();
 void colorSif();
@@ -43,6 +44,7 @@ void scnUpdateUI(const Scintilla::NotificationData* scnp) {
 
 void bufferActivated() {
     data.context.clear();
+    checkExpandVisibleState();
 }
 
 void darkModeChanged() {

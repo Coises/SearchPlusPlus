@@ -79,6 +79,7 @@ namespace ToolsCommand {
 namespace {
     constexpr int HideBegin = 19;
     constexpr int HideEnd   = 18;
+    HWND expandVisibleDialog = 0;
 }
 
 
@@ -114,7 +115,7 @@ namespace {
         { ToolsCommand::SaveSearch        , L"&Save search..."                                      },
         { ToolsCommand::ShowLines         , L"Show "                                                },
         { ToolsCommand::ShowShown         , L"Sho&w only lines with shown text"                     },
-        { ToolsCommand::ExpandVisible     , L"Ex&pand visible (Shift: details)"                     },
+        { ToolsCommand::ExpandVisible     , L"Ex&pand visible"                                      },
         { ToolsCommand::HideAll           , L"Hi&de all lines"                                      },
         { ToolsCommand::SelToMark         , L"&Mark selected text"                                  },
         { ToolsCommand::MarkShown         , L"Mar&k shown text"                                     },
@@ -246,6 +247,29 @@ namespace {
 
     };
 
+}
+
+
+void checkExpandVisibleState() {
+    if (!expandVisibleDialog) return;
+    ToolsState ts;
+    plugin.getScintillaPointers();
+    ts.get();
+    bool canExpand = ts.anyHidden && ts.anyVisible;
+    bool changes = data.expandVisibleBefore  .peek(expandVisibleDialog, IDC_EXPANDVISIBLE_BEFORE_SPIN) != data.expandVisibleBefore
+                || data.expandVisibleAfter   .peek(expandVisibleDialog, IDC_EXPANDVISIBLE_AFTER_SPIN ) != data.expandVisibleAfter
+                || data.expandVisibleSelected.peek(expandVisibleDialog, IDC_EXPANDVISIBLE_SELECTED   ) != data.expandVisibleSelected;
+    bool notBothZero = data.expandVisibleBefore.peek(expandVisibleDialog, IDC_EXPANDVISIBLE_BEFORE_SPIN) > 0
+                    || data.expandVisibleAfter .peek(expandVisibleDialog, IDC_EXPANDVISIBLE_AFTER_SPIN ) > 0;
+    EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_BEFORE_PUSH), canExpand                ? TRUE : FALSE);
+    EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_AFTER_PUSH ), canExpand                ? TRUE : FALSE);
+    EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_RESET      ), ts.anyShown              ? TRUE : FALSE);
+    EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_EXPAND     ), notBothZero && canExpand ? TRUE : FALSE);
+    EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_SAVE       ), notBothZero && changes   ? TRUE : FALSE);
+}
+
+    
+namespace {
 
     void expandVisible(int before, int after, bool selected) {
         ShowPosition sp(sci);
@@ -281,6 +305,7 @@ namespace {
         }
         sp.scroll();
         syncNppHideMarkers();
+        checkExpandVisibleState();
     }
 
 
@@ -310,6 +335,7 @@ namespace {
         }
         sp.scroll();
         syncNppHideMarkers();
+        checkExpandVisibleState();
     }
 
 
@@ -369,25 +395,12 @@ namespace {
     }
 
 
-    // Dialog procedure for Tools | Expand visible details
+    // Dialog procedure for Tools | Expand visible configure
 
-    HWND expandVisibleDialog = 0;
     HWND expandVisibleFocus  = 0;
     config_rect expandVisiblePlacement = { "Expand visible placement" };
 
-    void checkExpandVisibleState() {
-        if (!expandVisibleDialog) return;
-        ToolsState ts;
-        plugin.getScintillaPointers();
-        ts.get();
-        bool canExpand = ts.anyHidden && ts.anyVisible;
-        EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_BEFORE_PUSH), canExpand   ? TRUE : FALSE);
-        EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_AFTER_PUSH ), canExpand   ? TRUE : FALSE);
-        EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_EXPAND     ), canExpand   ? TRUE : FALSE);
-        EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_RESET      ), ts.anyShown ? TRUE : FALSE);
-    }
-
-    INT_PTR CALLBACK expandVisibleDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM) {
+    INT_PTR CALLBACK expandVisibleDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         switch (uMsg) {
         case WM_DESTROY:
             npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, hwndDlg);
@@ -396,12 +409,13 @@ namespace {
             return TRUE;
         case WM_INITDIALOG:
         {
+            expandVisibleDialog = hwndDlg;
             expandVisiblePlacement.put(hwndDlg);
             SendDlgItemMessage(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN, UDM_SETRANGE32, 0, 99);
             SendDlgItemMessage(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN , UDM_SETRANGE32, 0, 99);
-            data.expandVisibleBefore.put(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN);
-            data.expandVisibleAfter.put(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN);
-            data.expandVisibleSelected.put(hwndDlg, IDC_EXPANDVISIBLE_SELECTED);
+            data.expandVisibleBefore  .put(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN);
+            data.expandVisibleAfter   .put(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN );
+            data.expandVisibleSelected.put(hwndDlg, IDC_EXPANDVISIBLE_SELECTED   );
             checkExpandVisibleState();
             npp(NPPM_MODELESSDIALOG, MODELESSDIALOGADD, hwndDlg);
             npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);
@@ -419,38 +433,40 @@ namespace {
                 expandVisiblePlacement.get(hwndDlg);
                 DestroyWindow(hwndDlg);
                 return TRUE;
-            case IDOK:
-                expandVisiblePlacement.get(hwndDlg);
-                data.expandVisibleBefore.get(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN);
-                data.expandVisibleAfter.get(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN);
-                data.expandVisibleSelected.get(hwndDlg, IDC_EXPANDVISIBLE_SELECTED);
-                DestroyWindow(hwndDlg);
-                return TRUE;
             case IDC_EXPANDVISIBLE_BEFORE_PUSH:
                 plugin.getScintillaPointers();
                 expandVisible(std::max(1, data.expandVisibleBefore.peek(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN)), 0,
-                                          data.expandVisibleSelected.peek(hwndDlg, IDC_EXPANDVISIBLE_SELECTED));
-                checkExpandVisibleState();
+                              data.expandVisibleSelected.peek(hwndDlg, IDC_EXPANDVISIBLE_SELECTED));
                 return TRUE;
             case IDC_EXPANDVISIBLE_AFTER_PUSH:
                 plugin.getScintillaPointers();
                 expandVisible(0, std::max(1, data.expandVisibleAfter.peek(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN)),
-                                             data.expandVisibleSelected.peek(hwndDlg, IDC_EXPANDVISIBLE_SELECTED));
-                checkExpandVisibleState();
-                return TRUE;
-            case IDC_EXPANDVISIBLE_EXPAND:
-                plugin.getScintillaPointers();
-                expandVisible(data.expandVisibleBefore.peek(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN),
-                              data.expandVisibleAfter.peek(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN),
                               data.expandVisibleSelected.peek(hwndDlg, IDC_EXPANDVISIBLE_SELECTED));
                 checkExpandVisibleState();
                 return TRUE;
             case IDC_EXPANDVISIBLE_RESET:
                 plugin.getScintillaPointers();
                 showShown();
+                return TRUE;
+            case IDC_EXPANDVISIBLE_EXPAND:
+                plugin.getScintillaPointers();
+                expandVisible(data.expandVisibleBefore  .peek(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN),
+                              data.expandVisibleAfter   .peek(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN ),
+                              data.expandVisibleSelected.peek(hwndDlg, IDC_EXPANDVISIBLE_SELECTED   ));
+                return TRUE;
+            case IDC_EXPANDVISIBLE_SAVE:
+                data.expandVisibleBefore  .get(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN);
+                data.expandVisibleAfter   .get(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN );
+                data.expandVisibleSelected.get(hwndDlg, IDC_EXPANDVISIBLE_SELECTED   );
+                EnableWindow(reinterpret_cast<HWND>(lParam), FALSE);
+                return TRUE;
+            case IDC_EXPANDVISIBLE_BEFORE_EDIT:
+            case IDC_EXPANDVISIBLE_AFTER_EDIT:
+            case IDC_EXPANDVISIBLE_SELECTED:
                 checkExpandVisibleState();
                 return TRUE;
             }
+            return FALSE;
         }
         return FALSE;
     }
@@ -632,6 +648,7 @@ namespace {
                 }
                 syncNppHideMarkers();
             }
+            checkExpandVisibleState();
             break;
     
         case ToolsCommand::ShowShown:
@@ -653,8 +670,8 @@ namespace {
         {
             if (expandVisibleDialog) SetForegroundWindow(expandVisibleDialog);
             else {
-                expandVisibleDialog = CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_EXPANDVISIBLE),
-                                                   plugin.nppData._nppHandle, expandVisibleDialogProc);
+                CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_EXPANDVISIBLE),
+                             plugin.nppData._nppHandle, expandVisibleDialogProc);
                 ShowWindow(expandVisibleDialog, SW_NORMAL);
             }
             break;
@@ -668,6 +685,7 @@ namespace {
             sci.MarkerDeleteAll(HideEnd);
             sci.MarkerAdd(0, HideBegin);
             sci.MarkerAdd(lastLine, HideEnd);
+            checkExpandVisibleState();
             break;
         }
     
@@ -1073,9 +1091,11 @@ void showToolsMenu(HWND button) {
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     if (ts.selVisible) AddToolItem(pum, ToolsCommand::ShowLines, button, L"all li&nes");
                   else AddToolItem(pum, ToolsCommand::ShowLines, button, L"selected li&nes (Shift: all)");
-    AddToolItem(pum, ToolsCommand::ShowShown    , button);
-    AddToolItem(pum, ToolsCommand::ExpandVisible, button);
-    AddToolItem(pum, ToolsCommand::HideAll      , button);
+    AddToolItem(pum, ToolsCommand::ShowShown, button);
+    AddToolItem(pum, ToolsCommand::ExpandVisible, button, !ts.anyHidden || !ts.anyVisible ? L"" :
+        std::format(L" {}:{}{} (Shift: configure)", data.expandVisibleBefore.get(), data.expandVisibleAfter.get(),
+        data.expandVisibleSelected ? L" selected" : L"").data());
+    AddToolItem(pum, ToolsCommand::HideAll, button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     if (ts.anySelected  && ts.anyMarked) AddToolItem(pum, ToolsCommand::SelToMark, button, L" (Shift: clear first)");
                                     else AddToolItem(pum, ToolsCommand::SelToMark, button);

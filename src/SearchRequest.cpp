@@ -23,6 +23,7 @@ SearchResult searchPlain(SearchRequest& req);
 SearchResult searchBoost(SearchRequest& req);
 SearchResult searchICU(SearchRequest& req);
 
+void checkExpandVisibleState();
 void scrollIntoView(HWND scintilla, HWND avoid, Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select);
 void syncNppHideMarkers();
 
@@ -155,6 +156,7 @@ SearchResult SearchRequest::exec
             }
             else if (command.verb == SearchCommand::Show) {
                 syncNppHideMarkers();
+                checkExpandVisibleState();
                 if (data.focusShow) SetFocus(sciText);
             }
         }
