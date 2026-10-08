@@ -53,8 +53,56 @@ void showToolsMenu();
 void destroySearchDialogs();
 
 
-// Name and define any shortcut keys to be assigned as menu item defaults: Ctrl, Alt, Shift and the virtual key code
-//
+namespace {
+
+    LRESULT CALLBACK fixHiddenFirstLast(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR) {
+        constexpr int SymbolMargin  = 1;
+        constexpr int HideBegin     = 19;
+        constexpr int HideEnd       = 18;
+        constexpr int HideBeginMask = 1 << HideBegin;
+        constexpr int HideEndMask   = 1 << HideEnd  ;
+        switch (uMsg) {
+        case WM_DESTROY:
+            RemoveWindowSubclass(hWnd, fixHiddenFirstLast, uIdSubclass);
+            break;
+        case WM_NOTIFY:
+        {
+            auto& nmhdr = *reinterpret_cast<NMHDR*&>(lParam);
+            if (nmhdr.code != SCN_MARGINCLICK) break;
+            if (nmhdr.hwndFrom != plugin.nppData._scintillaMainHandle && nmhdr.hwndFrom != plugin.nppData._scintillaSecondHandle) break;
+            auto& scn = *reinterpret_cast<Scintilla::NotificationData*>(lParam);
+            if (scn.margin != SymbolMargin) break;
+            if (scn.modifiers != Scintilla::KeyMod::Norm) break;
+            plugin.getScintillaPointers(nmhdr.hwndFrom);
+            Scintilla::Line line = sci.LineFromPosition(scn.position);
+            int mask = sci.MarkerGet(line);
+            if (mask & HideBeginMask) {
+                Scintilla::Line lineCount = sci.LineCount();
+                if (line >= lineCount - 1) break;
+                Scintilla::Line term = sci.MarkerNext(line + 1, HideEndMask);
+                if (term == lineCount - 1) sci.ShowLines(term, term);
+                else if (term == -1) {
+                    sci.MarkerAdd(lineCount - 1, HideEnd);
+                    sci.ShowLines(lineCount - 1, lineCount - 1);
+                }
+            }
+            else if (mask & HideEndMask)  {
+                if (line <= 0) break;
+                Scintilla::Line start = sci.MarkerPrevious(line - 1, HideBeginMask);
+                if (start == 0) sci.ShowLines(0, 0);
+                else if (start == -1) {
+                    sci.MarkerAdd(0, HideBegin);
+                    sci.ShowLines(0, 0);
+                }
+            }
+            break;
+        }
+        }
+        return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+    }
+}
+
+
 // Define menu commands:
 //     text to appear on menu (ignored for a menu separator line)
 //     address of a void, zero-argument function that processes the command (0 for a menu separator line)
@@ -62,14 +110,6 @@ void destroySearchDialogs();
 //     ignored on call; on return, Notepad++ will fill this in with the menu command ID it assigns
 //     whether to show a checkmark beside this item on initial display of the menu
 //     0 or default shortcut key (menu accelerator) specified as the address of an NPP::ShortcutKey structure
-//
-// If you will reference any menu items elsewhere, define mnemonic references for them following the menu definition,
-// where it's easy to see and update them if you change the menu; then you can use:
-//    extern NPP::FuncItem menuDefinition[];
-//    extern int mnemonic;
-// in other source files; use the mnemonic to get the ordinal position in the original menu, and:
-//    menuDefinition[mnemonic]._cmdID
-// to get the menu item identifier assigned by Notepad++.
 
 FuncItem menuDefinition[] = {
     { L"&Search..."         , []() {plugin.cmd(showSearchDialog       );}, 0, false, 0},
@@ -108,9 +148,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *np) {
     plugin.bypassNotifications = true;
     auto*& nmhdr = reinterpret_cast<NMHDR*&>(np);
 
-    // Example Notepad++ notifications; you can add others as needed.
-    // Note that most of the notifications listed below have some connection to plugin framework code;
-    // it's best to leave those and just remove any function calls you don't use.
+    // Notepad++ notifications
 
     if (nmhdr->hwndFrom == plugin.nppData._nppHandle) {
       
@@ -150,6 +188,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *np) {
             npp(NPPM_ALLOCATEINDICATOR, 2, &zlmIndicator);
             npp(NPPM_ADDSCNMODIFIEDFLAGS, 0, SC_MOD_INSERTTEXT | SC_MOD_DELETETEXT);                  
             data.bookMarker = static_cast<int>(npp(NPPM_GETBOOKMARKID, 0, 0));
+            SetWindowSubclass(plugin.nppData._nppHandle, fixHiddenFirstLast, 1, 0);
             plugin.startupOrShutdown = false;
             bufferActivated();
             break;
@@ -163,7 +202,7 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *np) {
 
     }
 
-    // Example Scintilla notifications; use only the notifications you need.
+    // Scintilla notifications
 
     else if (nmhdr->hwndFrom == plugin.nppData._scintillaMainHandle || nmhdr->hwndFrom == plugin.nppData._scintillaSecondHandle) {
 

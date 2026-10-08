@@ -77,6 +77,32 @@ namespace ToolsCommand {
 
 
 namespace {
+    constexpr int HideBegin = 19;
+    constexpr int HideEnd   = 18;
+}
+
+
+void syncNppHideMarkers() {
+    Scintilla::Line lineCount = sci.LineCount();
+    sci.MarkerDeleteAll(HideBegin);
+    sci.MarkerDeleteAll(HideEnd);
+    bool visible = true;
+    for (Scintilla::Line line = 0; line < lineCount; ++line) {
+        if (sci.LineVisible(line) == visible) continue;
+        if (visible) {
+            sci.MarkerAdd(line > 0 ? line - 1 : 0, HideBegin);
+            visible = false;
+        }
+        else {
+            sci.MarkerAdd(line, HideEnd);
+            visible = true;
+        }
+    }
+    if (!visible) sci.MarkerAdd(lineCount - 1, HideEnd);
+}
+
+
+namespace {
 
     const std::map<const unsigned char, const wchar_t*> Tools_Text {
 
@@ -254,6 +280,7 @@ namespace {
             if (line2 >= line1) sci.ShowLines(line1, line2);
         }
         sp.scroll();
+        syncNppHideMarkers();
     }
 
 
@@ -282,6 +309,7 @@ namespace {
             cpMin = cpMax;
         }
         sp.scroll();
+        syncNppHideMarkers();
     }
 
 
@@ -591,6 +619,8 @@ namespace {
                 ShowPosition sp(sci);
                 sci.ShowLines(0, sci.LineCount() - 1);
                 sp.scroll();
+                sci.MarkerDeleteAll(HideBegin);
+                sci.MarkerDeleteAll(HideEnd);
             }
             else {
                 int n = sci.Selections();
@@ -600,6 +630,7 @@ namespace {
                     if (b > a) --b;
                     sci.ShowLines(sci.LineFromPosition(a), sci.LineFromPosition(b));
                 }
+                syncNppHideMarkers();
             }
             break;
     
@@ -630,8 +661,15 @@ namespace {
         }
     
         case ToolsCommand::HideAll:
-            sci.HideLines(0, sci.LineCount() - 1);
+        {
+            Scintilla::Line lastLine = sci.LineCount() - 1;
+            sci.HideLines(0, lastLine);
+            sci.MarkerDeleteAll(HideBegin);
+            sci.MarkerDeleteAll(HideEnd);
+            sci.MarkerAdd(0, HideBegin);
+            sci.MarkerAdd(lastLine, HideEnd);
             break;
+        }
     
         case ToolsCommand::SelToMark:
         case ToolsCommand::SelToMarkShift:

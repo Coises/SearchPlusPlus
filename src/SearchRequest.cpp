@@ -24,6 +24,7 @@ SearchResult searchBoost(SearchRequest& req);
 SearchResult searchICU(SearchRequest& req);
 
 void scrollIntoView(HWND scintilla, HWND avoid, Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select);
+void syncNppHideMarkers();
 
 
 SearchResult SearchRequest::exec
@@ -146,13 +147,15 @@ SearchResult SearchRequest::exec
             }
             if (data.focusStepwise && (command.extent == SearchCommand::Forward || command.extent == SearchCommand::Backward))
                 SetFocus(sciText);
-            else if (data.focusShow &&command.verb == SearchCommand::Show)
-                SetFocus(sciText);
             else if (data.focusSelect && command.verb == SearchCommand::Select) {
                 SetFocus(sciText);
                 plugin.getScintillaPointers();
                 sci.SetMainSelection(0);
                 scrollIntoView(sci.SelectionNStart(0), sci.SelectionNEnd(0), false);
+            }
+            else if (command.verb == SearchCommand::Show) {
+                syncNppHideMarkers();
+                if (data.focusShow) SetFocus(sciText);
             }
         }
     }
