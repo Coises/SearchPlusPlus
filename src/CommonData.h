@@ -74,6 +74,10 @@ inline struct CommonData {
     config<bool>          bookmarksClear    = { "automatic clear bookmarks"  , true                }; // IDC_BOOKMARKS_CLEAR
     config<BookmarkTools> bookmarkTools     = { "bookmark tools"             , BookmarkTools::None }; // IDC_BOOKMARKS_TOOLS_NONE/ADD/SYNC
 
+    config<int>  expandVisibleBefore   = { "expand visible before"  , 1     }; // IDC_EXPANDVISIBLE_BEFORE_EDIT/SPIN
+    config<int>  expandVisibleAfter    = { "expand visible after"   , 1     }; // IDC_EXPANDVISIBLE_AFTER_EDIT/SPIN
+    config<bool> expandVisibleSelected = { "expand visible selected", false }; // IDC_EXPANDVISIBLE_SELECTED
+
     config<bool> bookmarksMultiple = { "remove bookmarks from multiple documents", false }; // IDC_REMOVEMARKS_BOOKMARKS
 
     config<CopyMarkedSeparator> copyMarkedSeparator     = { "copy marked separator"     , CopyMarkedSeparator::Line };

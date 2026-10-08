@@ -13,6 +13,7 @@
 #define IDD_REMOVEMARKS                 180
 #define IDD_SIF                         190
 #define IDD_BOOKMARKS                   200
+#define IDD_EXPANDVISIBLE               210
 #define IDI_SEARCH                      900
 #define IDI_LIST                        901
 #define IDC_ABOUT_VERSION               1101
@@ -119,6 +120,15 @@
 #define IDC_BOOKMARKS_TOOLS_NONE        2005
 #define IDC_BOOKMARKS_TOOLS_ADD         2006
 #define IDC_BOOKMARKS_TOOLS_SYNC        2007
+#define IDC_EXPANDVISIBLE_BEFORE_EDIT   2101
+#define IDC_EXPANDVISIBLE_BEFORE_SPIN   2102
+#define IDC_EXPANDVISIBLE_BEFORE_PUSH   2103
+#define IDC_EXPANDVISIBLE_AFTER_EDIT    2104
+#define IDC_EXPANDVISIBLE_AFTER_SPIN    2105
+#define IDC_EXPANDVISIBLE_AFTER_PUSH    2106
+#define IDC_EXPANDVISIBLE_SELECTED      2107
+#define IDC_EXPANDVISIBLE_EXPAND        2108
+#define IDC_EXPANDVISIBLE_RESET         2109
 #define ID_SCMSCI_UNDO                  40001
 #define ID_SCMSCI_REDO                  40002
 #define ID_SCMSCI_CUT                   40003
@@ -152,9 +162,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        202
+#define _APS_NEXT_RESOURCE_VALUE        220
 #define _APS_NEXT_COMMAND_VALUE         40029
-#define _APS_NEXT_CONTROL_VALUE         2101
+#define _APS_NEXT_CONTROL_VALUE         2110
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

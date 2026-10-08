@@ -62,17 +62,9 @@ namespace ToolsCommand {
     constexpr unsigned char Settings           = 'E';
     constexpr unsigned char SearchDialog_Close = 'O';
 
-    constexpr unsigned char SyncBookOnlyEach   = 10;
-    constexpr unsigned char BookmarkVisible    = 11;
-    constexpr unsigned char SyncMarkOnly       = 12;
-    constexpr unsigned char SyncBookAddEach    = 13;
-    constexpr unsigned char BookmarkVisibleAdd = 14;
-    constexpr unsigned char SyncMarkAdd        = 15;
-
-    // The following two commands do not appear on the Tools menu, but code is kept in case they are restored later
-
-    constexpr unsigned char SyncMarkOnlyEx     = 16;
-    constexpr unsigned char SyncMarkAddEx      = 17;
+    constexpr unsigned char SyncBookToMark     = 10;
+    constexpr unsigned char SyncBookToVisible  = 11;
+    constexpr unsigned char SyncMarkToBook     = 12;
 
     // Following are not on the Tools menu, but use this mechanism to implement dialog-wide shortcuts
 
@@ -96,7 +88,7 @@ namespace {
         { ToolsCommand::SaveSearch        , L"&Save search..."                                      },
         { ToolsCommand::ShowLines         , L"Show "                                                },
         { ToolsCommand::ShowShown         , L"Sho&w only lines with shown text"                     },
-        { ToolsCommand::ExpandVisible     , L"Ex&pand visible"                                      },
+        { ToolsCommand::ExpandVisible     , L"Ex&pand visible (Shift: details)"                     },
         { ToolsCommand::HideAll           , L"Hi&de all lines"                                      },
         { ToolsCommand::SelToMark         , L"&Mark selected text"                                  },
         { ToolsCommand::MarkShown         , L"Mar&k shown text"                                     },
@@ -113,12 +105,9 @@ namespace {
         { ToolsCommand::Settings          , L"S&ettings..."                                         },
         { ToolsCommand::SearchDialog_Close, L"Cl&ose"                                               },
 
-        { ToolsCommand::SyncBookOnlyEach  , L"&Bookmark lines with marked text"                     },
-        { ToolsCommand::BookmarkVisible   , L"Bookmark &visible lines"                              },
-        { ToolsCommand::SyncMarkOnly      , L"&Mark all text in bookmarked lines"                   },
-        { ToolsCommand::SyncBookAddEach   , L"&Add bookmarks to lines with marked text"             },
-        { ToolsCommand::BookmarkVisibleAdd, L"A&dd bookmarks to visible lines"                      },
-        { ToolsCommand::SyncMarkAdd       , L"Add mar&ks to all text in bookmarked lines"           },
+        { ToolsCommand::SyncBookToMark    , L"&Bookmark lines with marked text"                     },
+        { ToolsCommand::SyncBookToVisible , L"Bookmark &visible lines"                              },
+        { ToolsCommand::SyncMarkToBook    , L"&Mark all text in bookmarked lines"                   },
 
     };
     
@@ -205,6 +194,97 @@ namespace {
     };
 
 
+    struct ShowPosition {
+
+        Scintilla::ScintillaCall& sci;
+        Scintilla::Line startDoc;
+        Scintilla::Line startVis;
+        Scintilla::Line firstVis;
+        Scintilla::Line firstDoc;
+        Scintilla::Line firstSub;
+
+        ShowPosition(Scintilla::ScintillaCall& sci)
+            : sci(sci)
+            , startDoc(sci.LineFromPosition(sci.SelectionStart()))
+            , startVis(sci.VisibleFromDocLine(startDoc))
+            , firstVis(sci.FirstVisibleLine())
+            , firstDoc(sci.DocLineFromVisible(firstVis))
+            , firstSub(firstVis - sci.VisibleFromDocLine(firstDoc))
+        {}
+
+        void scroll() /* If beginning of selection was on screen, keep it in place; otherwise keep first visible line in place */ {
+            if (startVis >= firstVis && startVis < firstVis + sci.LinesOnScreen())
+                sci.SetFirstVisibleLine(sci.VisibleFromDocLine(startDoc) - (startVis - firstVis));
+            else sci.ScrollVertical(firstDoc, firstSub);
+        }
+
+    };
+
+
+    void expandVisible(int before, int after, bool selected) {
+        ShowPosition sp(sci);
+        Scintilla::Line lineCount = sci.LineCount();
+        std::vector <std::pair<Scintilla::Line, Scintilla::Line>> selectedRanges;
+        if (selected) {
+            int n = sci.Selections();
+            for (int i = 0; i < n; ++i) {
+                Scintilla::Position cpMin = sci.SelectionNStart(i);
+                Scintilla::Position cpMax = sci.SelectionNEnd(i);
+                Scintilla::Line line1 = sci.LineFromPosition(cpMin);
+                Scintilla::Line line2 = cpMax > cpMin + 1 ? sci.LineFromPosition(cpMax - 1) : line1;
+                selectedRanges.emplace_back(line1, line2);
+            }
+            std::sort(selectedRanges.begin(), selectedRanges.end());
+        }
+        std::vector<std::pair<Scintilla::Line, Scintilla::Line>> visibleRanges;
+        for (Scintilla::Line line = 0; line < lineCount; ++line) {
+            if (!sci.LineVisible(line)) continue;
+            if (!visibleRanges.empty() && visibleRanges.back().second == line - 1) visibleRanges.back().second = line;
+            else visibleRanges.emplace_back(line, line);
+        }
+        size_t selRng = 0;
+        for (size_t i = 0; i < visibleRanges.size(); ++i) {
+            if (selected) {
+                while (selRng < selectedRanges.size() && visibleRanges[i].first > selectedRanges[selRng].second) ++selRng;
+                if (selRng >= selectedRanges.size()) break;
+                if (selectedRanges[selRng].first > visibleRanges[i].second) continue;
+            }
+            Scintilla::Line line1 = std::max(static_cast<Scintilla::Line>(0), visibleRanges[i].first - before);
+            Scintilla::Line line2 = std::min(lineCount - 1, visibleRanges[i].second + after);
+            if (line2 >= line1) sci.ShowLines(line1, line2);
+        }
+        sp.scroll();
+    }
+
+
+    void showShown() {
+        ShowPosition sp(sci);
+        sci.HideLines(0, sci.LineCount() - 1);
+        Scintilla::Position documentLength = sci.Length();
+        for (Scintilla::Position cpMin = 0;;) {
+            Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
+            if (cpMax <= cpMin) cpMax = documentLength;
+            if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
+                Scintilla::Position b = std::max(cpMin, cpMax - 1);
+                sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
+            }
+            if (cpMax == documentLength) break;
+            cpMin = cpMax;
+        }
+        if (zlmIndicator) for (Scintilla::Position cpMin = 0;;) {
+            Scintilla::Position cpMax = sci.IndicatorEnd(zlmIndicator + 1, cpMin);
+            if (cpMax <= cpMin) cpMax = documentLength;
+            if (sci.IndicatorValueAt(zlmIndicator + 1, cpMin)) {
+                Scintilla::Position b = std::max(cpMin, cpMax - 1);
+                sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
+            }
+            if (cpMax == documentLength) break;
+            cpMin = cpMax;
+        }
+        sp.scroll();
+    }
+
+
     // Dialog procedure for Tools | Configure bookmarks
 
     INT_PTR CALLBACK configureBookmarksDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM) {
@@ -255,6 +335,93 @@ namespace {
                 EnableWindow(GetDlgItem(hwndDlg, IDC_BOOKMARKS_TOOLS_ADD ), mab);
                 EnableWindow(GetDlgItem(hwndDlg, IDC_BOOKMARKS_TOOLS_SYNC), mab);
             }
+            }
+        }
+        return FALSE;
+    }
+
+
+    // Dialog procedure for Tools | Expand visible details
+
+    HWND expandVisibleDialog = 0;
+    HWND expandVisibleFocus  = 0;
+    config_rect expandVisiblePlacement = { "Expand visible placement" };
+
+    void checkExpandVisibleState() {
+        if (!expandVisibleDialog) return;
+        ToolsState ts;
+        plugin.getScintillaPointers();
+        ts.get();
+        bool canExpand = ts.anyHidden && ts.anyVisible;
+        EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_BEFORE_PUSH), canExpand   ? TRUE : FALSE);
+        EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_AFTER_PUSH ), canExpand   ? TRUE : FALSE);
+        EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_EXPAND     ), canExpand   ? TRUE : FALSE);
+        EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_RESET      ), ts.anyShown ? TRUE : FALSE);
+    }
+
+    INT_PTR CALLBACK expandVisibleDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM) {
+        switch (uMsg) {
+        case WM_DESTROY:
+            npp(NPPM_MODELESSDIALOG, MODELESSDIALOGREMOVE, hwndDlg);
+            expandVisibleDialog = 0;
+            SetFocus(expandVisibleFocus && IsWindowVisible(expandVisibleFocus) ? expandVisibleFocus : plugin.currentScintilla());
+            return TRUE;
+        case WM_INITDIALOG:
+        {
+            expandVisiblePlacement.put(hwndDlg);
+            SendDlgItemMessage(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN, UDM_SETRANGE32, 0, 99);
+            SendDlgItemMessage(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN , UDM_SETRANGE32, 0, 99);
+            data.expandVisibleBefore.put(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN);
+            data.expandVisibleAfter.put(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN);
+            data.expandVisibleSelected.put(hwndDlg, IDC_EXPANDVISIBLE_SELECTED);
+            checkExpandVisibleState();
+            npp(NPPM_MODELESSDIALOG, MODELESSDIALOGADD, hwndDlg);
+            npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);
+            return TRUE;
+        }
+        case WM_ACTIVATE:
+            if (wParam) {
+                expandVisibleFocus = GetFocus();
+                checkExpandVisibleState();
+            }
+            return FALSE;
+        case WM_COMMAND:
+            switch (LOWORD(wParam)) {
+            case IDCANCEL:
+                expandVisiblePlacement.get(hwndDlg);
+                DestroyWindow(hwndDlg);
+                return TRUE;
+            case IDOK:
+                expandVisiblePlacement.get(hwndDlg);
+                data.expandVisibleBefore.get(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN);
+                data.expandVisibleAfter.get(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN);
+                data.expandVisibleSelected.get(hwndDlg, IDC_EXPANDVISIBLE_SELECTED);
+                DestroyWindow(hwndDlg);
+                return TRUE;
+            case IDC_EXPANDVISIBLE_BEFORE_PUSH:
+                plugin.getScintillaPointers();
+                expandVisible(std::max(1, data.expandVisibleBefore.peek(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN)), 0,
+                                          data.expandVisibleSelected.peek(hwndDlg, IDC_EXPANDVISIBLE_SELECTED));
+                checkExpandVisibleState();
+                return TRUE;
+            case IDC_EXPANDVISIBLE_AFTER_PUSH:
+                plugin.getScintillaPointers();
+                expandVisible(0, std::max(1, data.expandVisibleAfter.peek(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN)),
+                                             data.expandVisibleSelected.peek(hwndDlg, IDC_EXPANDVISIBLE_SELECTED));
+                checkExpandVisibleState();
+                return TRUE;
+            case IDC_EXPANDVISIBLE_EXPAND:
+                plugin.getScintillaPointers();
+                expandVisible(data.expandVisibleBefore.peek(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN),
+                              data.expandVisibleAfter.peek(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN),
+                              data.expandVisibleSelected.peek(hwndDlg, IDC_EXPANDVISIBLE_SELECTED));
+                checkExpandVisibleState();
+                return TRUE;
+            case IDC_EXPANDVISIBLE_RESET:
+                plugin.getScintillaPointers();
+                showShown();
+                checkExpandVisibleState();
+                return TRUE;
             }
         }
         return FALSE;
@@ -375,33 +542,6 @@ namespace {
     }
 
 
-    struct ShowPosition {
-    
-        Scintilla::ScintillaCall& sci;
-        Scintilla::Line startDoc;
-        Scintilla::Line startVis;
-        Scintilla::Line firstVis;
-        Scintilla::Line firstDoc;
-        Scintilla::Line firstSub;
-    
-        ShowPosition(Scintilla::ScintillaCall& sci)
-            : sci(sci)
-            , startDoc(sci.LineFromPosition(sci.SelectionStart()))
-            , startVis(sci.VisibleFromDocLine(startDoc))
-            , firstVis(sci.FirstVisibleLine())
-            , firstDoc(sci.DocLineFromVisible(firstVis))
-            , firstSub(firstVis - sci.VisibleFromDocLine(firstDoc))
-        {}
-    
-        void scroll() /* If beginning of selection was on screen, keep it in place; otherwise keep first visible line in place */ {
-            if (startVis >= firstVis && startVis < firstVis + sci.LinesOnScreen())
-                sci.SetFirstVisibleLine(sci.VisibleFromDocLine(startDoc) - (startVis - firstVis));
-            else sci.ScrollVertical(firstDoc, firstSub);
-        }
-    
-    };
-
-
     bool processToolsCommandWithState(unsigned char command, ToolsState& ts) {
     
         switch (command) {
@@ -466,49 +606,26 @@ namespace {
         case ToolsCommand::ShowShown:
         {
             if (!ts.anyShown) break;
-            ShowPosition sp(sci);
-            sci.HideLines(0, sci.LineCount() - 1);
-            Scintilla::Position documentLength = sci.Length();
-            for (Scintilla::Position cpMin = 0;;) {
-                Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
-                if (cpMax <= cpMin) cpMax = documentLength;
-                if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
-                    Scintilla::Position b = std::max(cpMin, cpMax - 1);
-                    sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
-                }
-                if (cpMax == documentLength) break;
-                cpMin = cpMax;
-            }
-            if (zlmIndicator) for (Scintilla::Position cpMin = 0;;) {
-                Scintilla::Position cpMax = sci.IndicatorEnd(zlmIndicator + 1, cpMin);
-                if (cpMax <= cpMin) cpMax = documentLength;
-                if (sci.IndicatorValueAt(zlmIndicator + 1, cpMin)) {
-                    Scintilla::Position b = std::max(cpMin, cpMax - 1);
-                    sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
-                }
-                if (cpMax == documentLength) break;
-                cpMin = cpMax;
-            }
-            sp.scroll();
+            showShown();
             break;
         }
     
         case ToolsCommand::ExpandVisible:
-        {
             if (!ts.anyHidden || !ts.anyVisible) break;
-            ShowPosition sp(sci);
-            Scintilla::Line lineCount = sci.LineCount();
-            for (Scintilla::Line line = 0; line < lineCount; ++line) {
-                if (!sci.LineVisible(line)) {
-                    if (line == 0) line = sci.DocLineFromVisible(0);
-                    else {
-                        sci.ShowLines(line, line);
-                        line = sci.DocLineFromVisible(sci.VisibleFromDocLine(line) + sci.WrapCount(line));
-                    }
-                    if (line > 0 && line < lineCount) sci.ShowLines(line - 1, line - 1);
-                }
+            if (!ts.shift) {
+                expandVisible(data.expandVisibleBefore, data.expandVisibleAfter, data.expandVisibleSelected);
+                break;
             }
-            sp.scroll();
+        [[fallthrough]];
+
+        case ToolsCommand::ExpandVisibleShift:
+        {
+            if (expandVisibleDialog) SetForegroundWindow(expandVisibleDialog);
+            else {
+                expandVisibleDialog = CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_EXPANDVISIBLE),
+                                                   plugin.nppData._nppHandle, expandVisibleDialogProc);
+                ShowWindow(expandVisibleDialog, SW_NORMAL);
+            }
             break;
         }
     
@@ -772,13 +889,13 @@ namespace {
             break;
         }
 
-        case ToolsCommand::SyncBookAddEach:
-        case ToolsCommand::SyncBookOnlyEach:
+        case ToolsCommand::SyncBookToMark:
         {
+            if (!ts.anyMarked) break;
             sci.SetIndicatorCurrent(data.markIndicator);
             sci.SetIndicatorValue(1);
             Scintilla::Position documentLength = sci.Length();
-            if (command == ToolsCommand::SyncBookOnlyEach) sci.MarkerDeleteAll(data.bookMarker);
+            if (ts.shift) sci.MarkerDeleteAll(data.bookMarker);
             for (Scintilla::Position cpMin = 0;;) {
                 Scintilla::Position cpMax = sci.IndicatorEnd(data.markIndicator, cpMin);
                 if (cpMax <= cpMin) cpMax = documentLength;
@@ -796,11 +913,10 @@ namespace {
             break;
         }
 
-        case ToolsCommand::BookmarkVisible:
-        case ToolsCommand::BookmarkVisibleAdd:
+        case ToolsCommand::SyncBookToVisible:
         {
             if (!ts.anyVisible) break;
-            if (command == ToolsCommand::BookmarkVisible) sci.MarkerDeleteAll(data.bookMarker);
+            if (ts.shift) sci.MarkerDeleteAll(data.bookMarker);
             int bookMask = 1 << data.bookMarker;
             Scintilla::Line lineCount = sci.LineCount();
             for (Scintilla::Line line = 0; line < lineCount; ++line)
@@ -808,27 +924,16 @@ namespace {
             break;
         }
 
-        case ToolsCommand::SyncMarkAdd:
-        case ToolsCommand::SyncMarkAddEx:
-        case ToolsCommand::SyncMarkOnly:
-        case ToolsCommand::SyncMarkOnlyEx:
+        case ToolsCommand::SyncMarkToBook:
         {
-            bool excl = command == ToolsCommand::SyncMarkAddEx || command == ToolsCommand::SyncMarkOnlyEx;
             int bookMask = 1 << data.bookMarker;
             sci.SetIndicatorCurrent(data.markIndicator);
             sci.SetIndicatorValue(1);
-            if (command == ToolsCommand::SyncMarkOnly || command == ToolsCommand::SyncMarkOnlyEx)
-                sci.IndicatorClearRange(0, sci.Length());
+            if (ts.shift) sci.IndicatorClearRange(0, sci.Length());
             for (Scintilla::Line line = sci.MarkerNext(0, bookMask); line >= 0; line = sci.MarkerNext(line + 1, bookMask)) {
                 Scintilla::Position a = sci.PositionFromLine(line);
-                if (excl) {
-                    Scintilla::Position b = sci.LineEndPosition(line);
-                    if (a < b) sci.IndicatorFillRange(a, b - a);
-                }
-                else {
-                    Scintilla::Position b = sci.LineLength(line);
-                    if (b > 0) sci.IndicatorFillRange(a, b);
-                }
+                Scintilla::Position b = sci.LineLength(line);
+                if (b > 0) sci.IndicatorFillRange(a, b);
             }
             break;
         }
@@ -913,20 +1018,12 @@ void showToolsMenu(HWND button) {
     bool enableMarkShown = data.markAlsoBookmarks && data.bookmarkTools != BookmarkTools::None ? ts.anyShown : ts.anyShownNn;
 
     HMENU pumSync = CreatePopupMenu();
-    AddToolItem(pumSync, ToolsCommand::SyncBookOnlyEach, 0, ts.anyBookmark ? L", and clear other bookmarks" : L"");
-    AddToolItem(pumSync, ToolsCommand::BookmarkVisible , 0, ts.anyBookmark ? L", and clear other bookmarks" : L"");
-    AddToolItem(pumSync, ToolsCommand::SyncMarkOnly    , 0, ts.anyMarked   ? L", and clear other marks"     : L"");
-    AppendMenu(pumSync, MF_SEPARATOR, 0, 0);
-    AddToolItem(pumSync, ToolsCommand::SyncBookAddEach   , 0);
-    AddToolItem(pumSync, ToolsCommand::BookmarkVisibleAdd, 0);
-    AddToolItem(pumSync, ToolsCommand::SyncMarkAdd       , 0);
-    EnableMenuItem(pumSync, ToolsCommand::SyncBookOnlyEach  , ts.anyMarked   ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pumSync, ToolsCommand::SyncBookAddEach   , ts.anyMarked   ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pumSync, ToolsCommand::BookmarkVisible   , ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pumSync, ToolsCommand::BookmarkVisibleAdd, ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pumSync, ToolsCommand::SyncMarkOnly      , ts.anyBookmark ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pumSync, ToolsCommand::SyncMarkAdd       , ts.anyBookmark ? MF_ENABLED : MF_GRAYED);
-
+    AddToolItem(pumSync, ToolsCommand::SyncBookToMark   , 0, ts.anyMarked   && ts.anyBookmark ? L" (Shift: clear first)" : L"");
+    AddToolItem(pumSync, ToolsCommand::SyncBookToVisible, 0, ts.anyVisible  && ts.anyBookmark ? L" (Shift: clear first)" : L"");
+    AddToolItem(pumSync, ToolsCommand::SyncMarkToBook   , 0, ts.anyBookmark && ts.anyMarked   ? L" (Shift: clear first)" : L"");
+    EnableMenuItem(pumSync, ToolsCommand::SyncBookToMark   , ts.anyMarked   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pumSync, ToolsCommand::SyncBookToVisible, ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pumSync, ToolsCommand::SyncMarkToBook   , ts.anyBookmark ? MF_ENABLED : MF_GRAYED);
 
     HMENU pum = CreatePopupMenu();
     if (!button) AddToolItem(pum, ToolsCommand::Focus_Find_Or_Repl, 0);
