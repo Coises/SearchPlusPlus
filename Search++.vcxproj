@@ -69,6 +69,7 @@
     <ClCompile Include="src\Framework\PluginFramework.cpp" />
     <ClCompile Include="src\Framework\ScintillaCallEx.cpp" />
     <ClCompile Include="src\HitList.cpp" />
+    <ClCompile Include="src\MakeVisible.cpp" />
     <ClCompile Include="src\Numeric.cpp" />
     <ClCompile Include="src\ProcessFileSearchResults.cpp" />
     <ClCompile Include="src\ProgressDialog.cpp" />

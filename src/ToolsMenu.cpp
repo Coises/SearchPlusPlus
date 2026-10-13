@@ -18,15 +18,17 @@
 #include "MonitoredTrackPopupMenu.h"
 #include "resource.h"
 
-void showSettingsDialog();
 void clearHitlist();
 void closeSearchInFilesDialog();
 bool hitlistEmpty();
 HWND hitlistHwnd();
 void hideHitlist();
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
+void makeLinesVisible(Scintilla::Line lnMin, Scintilla::Line lnMax);
 void showHitlist();
 void showSearchDialog();
 void showSearchInFilesDialog();
+void showSettingsDialog();
 void syncReplaceButton();
 
 
@@ -77,33 +79,10 @@ namespace ToolsCommand {
 
 
 namespace {
-    constexpr int HideBegin = 19;
-    constexpr int HideEnd   = 18;
+
+    constexpr int HideBegin  = 19;
+    constexpr int HideEnd    = 18;
     HWND expandVisibleDialog = 0;
-}
-
-
-void syncNppHideMarkers() {
-    Scintilla::Line lineCount = sci.LineCount();
-    sci.MarkerDeleteAll(HideBegin);
-    sci.MarkerDeleteAll(HideEnd);
-    bool visible = true;
-    for (Scintilla::Line line = 0; line < lineCount; ++line) {
-        if (sci.LineVisible(line) == visible) continue;
-        if (visible) {
-            sci.MarkerAdd(line > 0 ? line - 1 : 0, HideBegin);
-            visible = false;
-        }
-        else {
-            sci.MarkerAdd(line, HideEnd);
-            visible = true;
-        }
-    }
-    if (!visible) sci.MarkerAdd(lineCount - 1, HideEnd);
-}
-
-
-namespace {
 
     const std::map<const unsigned char, const wchar_t*> Tools_Text {
 
@@ -301,10 +280,9 @@ namespace {
             }
             Scintilla::Line line1 = std::max(static_cast<Scintilla::Line>(0), visibleRanges[i].first - before);
             Scintilla::Line line2 = std::min(lineCount - 1, visibleRanges[i].second + after);
-            if (line2 >= line1) sci.ShowLines(line1, line2);
+            if (line2 >= line1) makeLinesVisible(line1, line2);
         }
         sp.scroll();
-        syncNppHideMarkers();
         checkExpandVisibleState();
     }
 
@@ -316,25 +294,18 @@ namespace {
         for (Scintilla::Position cpMin = 0;;) {
             Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
             if (cpMax <= cpMin) cpMax = documentLength;
-            if (sci.IndicatorValueAt(data.showIndicator, cpMin)) {
-                Scintilla::Position b = std::max(cpMin, cpMax - 1);
-                sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
-            }
+            if (sci.IndicatorValueAt(data.showIndicator, cpMin)) makeCharsVisible(cpMin, cpMax);
             if (cpMax == documentLength) break;
             cpMin = cpMax;
         }
         if (zlmIndicator) for (Scintilla::Position cpMin = 0;;) {
             Scintilla::Position cpMax = sci.IndicatorEnd(zlmIndicator + 1, cpMin);
             if (cpMax <= cpMin) cpMax = documentLength;
-            if (sci.IndicatorValueAt(zlmIndicator + 1, cpMin)) {
-                Scintilla::Position b = std::max(cpMin, cpMax - 1);
-                sci.ShowLines(sci.LineFromPosition(cpMin), sci.LineFromPosition(b));
-            }
+            if (sci.IndicatorValueAt(zlmIndicator + 1, cpMin)) makeCharsVisible(cpMin, cpMax);
             if (cpMax == documentLength) break;
             cpMin = cpMax;
         }
         sp.scroll();
-        syncNppHideMarkers();
         checkExpandVisibleState();
     }
 
@@ -633,20 +604,15 @@ namespace {
         case ToolsCommand::ShowLinesShift:
             if (command == ToolsCommand::ShowAllClear || ts.shift || ts.selVisible) {
                 ShowPosition sp(sci);
+                sci.FoldAll(Scintilla::FoldAction::Expand);
                 sci.ShowLines(0, sci.LineCount() - 1);
-                sp.scroll();
                 sci.MarkerDeleteAll(HideBegin);
                 sci.MarkerDeleteAll(HideEnd);
+                sp.scroll();
             }
             else {
                 int n = sci.Selections();
-                for (int i = 0; i < n; ++i) {
-                    Scintilla::Position a = sci.SelectionNStart(i);
-                    Scintilla::Position b = sci.SelectionNEnd(i);
-                    if (b > a) --b;
-                    sci.ShowLines(sci.LineFromPosition(a), sci.LineFromPosition(b));
-                }
-                syncNppHideMarkers();
+                for (int i = 0; i < n; ++i) makeCharsVisible(sci.SelectionNStart(i), sci.SelectionNEnd(i));
             }
             checkExpandVisibleState();
             break;
@@ -669,11 +635,8 @@ namespace {
         case ToolsCommand::ExpandVisibleShift:
         {
             if (expandVisibleDialog) SetForegroundWindow(expandVisibleDialog);
-            else {
-                CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_EXPANDVISIBLE),
-                             plugin.nppData._nppHandle, expandVisibleDialogProc);
-                ShowWindow(expandVisibleDialog, SW_NORMAL);
-            }
+            else CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_EXPANDVISIBLE),
+                              plugin.nppData._nppHandle, expandVisibleDialogProc);
             break;
         }
     

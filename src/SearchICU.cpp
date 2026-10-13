@@ -20,6 +20,8 @@
 #include "unicode/errorcode.h"
 #include "unicode/regex.h"
 
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
+
 
 namespace {
 
@@ -165,10 +167,21 @@ bool progressiveSearch(ProgressInfo& pi) {
             break;
         case SearchCommand::Select:
             if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) pi.req.scrollIntoView(matchStart, matchEnd);
-            else sci.AddSelection(matchEnd, matchStart);
+            else {
+                if (count == 1) {
+                    pi.req.scrollIntoView(matchStart, matchEnd, false);
+                    sci.AddSelection(matchEnd, matchStart);
+                }
+                else {
+                    makeCharsVisible(matchStart, matchEnd);
+                    int mainSelection = sci.MainSelection();
+                    sci.AddSelection(matchEnd, matchStart);
+                    sci.SetMainSelection(mainSelection);
+                }
+            }
             break;
         case SearchCommand::Show:
-            sci.ShowLines(sci.LineFromPosition(matchStart), sci.LineFromPosition(matchEnd));
+            makeCharsVisible(matchStart, matchEnd);
             if (matchStart != matchEnd) {
                 sci.SetIndicatorCurrent(data.showIndicator);
                 sci.SetIndicatorValue(1);

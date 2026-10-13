@@ -21,8 +21,9 @@
 
 #include <windowsx.h>
 
+void checkExpandVisibleState();
 void closeSearchInFilesDialog();
-void scrollIntoView(HWND scintilla, HWND avoid, Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select);
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
 void showSearchDialog();
 void showSearchInFilesDialog();
 
@@ -64,9 +65,11 @@ bool caretLineIsBackground = false;               // Set when caret line indicat
 // Handling for double-clicks and the Enter key
 
 bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position cpMax, bool isEnter, bool isShift) {
+
     const Scintilla::Line lnMin = sciHits.LineFromPosition(cpMin);
     if (lnMin >= static_cast<Scintilla::Line>(cumulativeLineIndex.size())) return false;
     Scintilla::FoldLevel foldLevel = sciHits.FoldLevel(lnMin);
+
     if (foldLevel == Level_Search) {
         if (isShift) {
             if (sciHits.FoldExpanded(lnMin) && sciHits.FoldExpanded(lnMin + 1)) {
@@ -78,6 +81,7 @@ bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position
         else sciHits.ToggleFold(lnMin);
         return true;
     }
+
     else if (foldLevel == Level_Document) {
         if (isShift) {
             const std::string lineText = sciHits.GetLine(lnMin);
@@ -89,6 +93,7 @@ bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position
         else sciHits.ToggleFold(lnMin);
         return true;
     }
+
     const Scintilla::Line parentLine = sciHits.FoldParent(lnMin);
     const std::string parentLineText = sciHits.GetLine(parentLine);
     const size_t fn = parentLineText.find(": ");
@@ -112,56 +117,28 @@ bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position
         start += sci.PositionFromLine(lineNumber);
         end = start + length;
     }
+    if (start > 0) start = sci.PositionAfter(sci.PositionBefore(start));  // Assure that start and end are on valid boundaries;
+    if (end   > 0) end   = sci.PositionAfter(sci.PositionBefore(end  ));  // for example, file might have changed since the search
     data.context.clear();
 
-//
-// Following does not always work; occasionally results in an odd crash. Reason not yet determined.
-// 
-//    HWND curSci = plugin.currentScintilla();
-//    UpdateWindow(curSci);             // These lines are needed to ensure that Scintilla calculates layout
-//    sci.EnsureVisible(lineNumber);    // at least up to the line containg the start of the match
-//    sci.WrapCount(lineNumber);        // so that scrolling will be accurate.
-//    scrollIntoView(curSci, data.searchDialog, start, end, true);
-//
-// Following adapted from Searching::displaySectionCentered in FindReplaceDlg.cpp in Notepad++:
-
-    {
-        sci.EnsureVisible(sci.LineFromPosition(start));
-        sci.EnsureVisible(sci.LineFromPosition(end));
-
-        // Jump-scroll to center, if current position is out of view
-        sci.SetVisiblePolicy(static_cast<Scintilla::VisiblePolicy>(CARET_JUMPS | CARET_EVEN), 0);
-        sci.EnsureVisibleEnforcePolicy(sci.LineFromPosition(end));
-        sci.GotoPos(end);
-        sci.SetVisiblePolicy(static_cast<Scintilla::VisiblePolicy>(CARET_EVEN), 0);
-        sci.EnsureVisibleEnforcePolicy(sci.LineFromPosition(end));
-
-        // Adjust so that we see the entire match; primarily horizontally
-        sci.ScrollRange(start, end);
-
-        // make sure won't start/end the selection in the middle of a multibyte character,
-        // or in between a CR/LF pair for Windows files
-        // (needed for stale search-results where user has made doc edits after the search)
-        if (start > 0)
-        {
-            start = sci.PositionBefore(start);
-            start = sci.PositionAfter (start);
+    makeCharsVisible(start, end);
+    sci.SetSelection(start, end);
+    Scintilla::Line line1 = sci.LineFromPosition(start);
+    Scintilla::Line line2 = sci.LineFromPosition(end);
+    Scintilla::Line linesOnScreen = sci.LinesOnScreen();
+    Scintilla::Line vis1 = sci.VisibleFromDocLine(line1);
+    Scintilla::Line vis2 = sci.VisibleFromDocLine(line2) + sci.WrapCount(line2);
+    Scintilla::Line vis0 = sci.FirstVisibleLine();
+    if (vis1 < vis0 || vis2 >= vis0 + linesOnScreen) /* vertical scroll needed */ {
+        Scintilla::Line linesInSelection = vis2 - vis1;
+        if (linesInSelection < linesOnScreen) {
+            Scintilla::Line topMargin = std::min(linesOnScreen / 5, (linesOnScreen - linesInSelection) / 3);
+            sci.SetFirstVisibleLine(vis1 - topMargin);
         }
-        if (end > 0)
-        {
-            end = sci.PositionBefore(end);
-            end = sci.PositionAfter (end);
-        }
-
-        // Move cursor to end of result and select result
-        sci.GotoPos(end);
-        sci.SetAnchor(start);
-
-        // Update Scintilla's knowledge about what column the caret is in, so that if user
-        // does up/down arrow as first navigation after the search result is selected,
-        // the caret doesn't jump to an unexpected column
-        sci.ChooseCaretX();
     }
+    sci.ScrollRange(start, end);
+    sci.ChooseCaretX();
+    checkExpandVisibleState();
 
     if (isEnter != isShift) {
         if (start == end) {
@@ -181,7 +158,9 @@ bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position
         }
         npp(NPPM_DMMSHOW, 0, hitlist);
     }
+
     return true;
+
 }
 
 bool processDoubleClick(POINT click) {

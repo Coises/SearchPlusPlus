@@ -18,6 +18,8 @@
 #include "ProgressInfo.h"
 #include "RegularExpression.h"
 
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
+
 
 namespace {
 
@@ -137,10 +139,21 @@ bool progressiveSearch(ProgressInfo& pi) {
             break;
         case SearchCommand::Select:
             if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) pi.req.scrollIntoView(found, position);
-            else sci.AddSelection(position, found);
+            else {
+                if (count == 1) {
+                    pi.req.scrollIntoView(found, position, false);
+                    sci.AddSelection(position, found);
+                }
+                else {
+                    makeCharsVisible(found, position);
+                    int mainSelection = sci.MainSelection();
+                    sci.AddSelection(position, found);
+                    sci.SetMainSelection(mainSelection);
+                }
+            }
             break;
         case SearchCommand::Show:
-            sci.ShowLines(sci.LineFromPosition(found), sci.LineFromPosition(position));
+            makeCharsVisible(found, position);
             if (length) {
                 sci.SetIndicatorCurrent(data.showIndicator);
                 sci.SetIndicatorValue(1);

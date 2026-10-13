@@ -18,6 +18,8 @@
 #include "CommonData.h"
 #include "ProgressInfo.h"
 
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
+
 
 namespace {
 
@@ -146,22 +148,24 @@ bool progressiveSearch(ProgressInfo& pi) {
             break;
         case SearchCommand::Select:
             if (count == 1 && sci.Selections() == 1 && sci.SelectionEmpty()) pi.req.scrollIntoView(found, position);
-            else sci.AddSelection(position, found);
+            else {
+                if (count == 1) {
+                    pi.req.scrollIntoView(found, position, false);
+                    sci.AddSelection(position, found);
+                }
+                else {
+                    makeCharsVisible(found, position);
+                    int mainSelection = sci.MainSelection();
+                    sci.AddSelection(position, found);
+                    sci.SetMainSelection(mainSelection);
+                }
+            }
             break;
         case SearchCommand::Show:
-            sci.ShowLines(sci.LineFromPosition(found), sci.LineFromPosition(position));
-            if (length) {
-                sci.SetIndicatorCurrent(data.showIndicator);
-                sci.SetIndicatorValue(1);
-                sci.IndicatorFillRange(found, length);
-            }
-            else if (zlmIndicator) {
-                sci.IndicSetStyle(zlmIndicator + 1, Scintilla::IndicatorStyle::Point);
-                sci.IndicSetFore(zlmIndicator + 1, sci.IndicGetFore(data.showIndicator));
-                sci.SetIndicatorCurrent(zlmIndicator + 1);
-                sci.SetIndicatorValue(1);
-                sci.IndicatorFillRange(found, 1);
-            }
+            makeCharsVisible(found, position);
+            sci.SetIndicatorCurrent(data.showIndicator);
+            sci.SetIndicatorValue(1);
+            sci.IndicatorFillRange(found, length);
             break;
         case SearchCommand::Mark:
             sci.SetIndicatorCurrent(data.markIndicator);

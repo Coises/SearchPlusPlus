@@ -25,7 +25,7 @@ SearchResult searchICU(SearchRequest& req);
 
 void checkExpandVisibleState();
 void scrollIntoView(HWND scintilla, HWND avoid, Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select);
-void syncNppHideMarkers();
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
 
 
 SearchResult SearchRequest::exec
@@ -146,19 +146,16 @@ SearchResult SearchRequest::exec
                 sci.IndicatorClearRange(0, documentLength);
                 for (const Scintilla::CharacterRangeFull& r : ranges) sci.IndicatorFillRange(r.cpMin, r.cpMax - r.cpMin);
             }
-            if (data.focusStepwise && (command.extent == SearchCommand::Forward || command.extent == SearchCommand::Backward))
-                SetFocus(sciText);
-            else if (data.focusSelect && command.verb == SearchCommand::Select) {
-                SetFocus(sciText);
-                plugin.getScintillaPointers();
-                sci.SetMainSelection(0);
-                scrollIntoView(sci.SelectionNStart(0), sci.SelectionNEnd(0), false);
+            if (command.extent == SearchCommand::Forward || command.extent == SearchCommand::Backward) {
+                if (data.focusStepwise) SetFocus(sciText);
+            }
+            else if (command.verb == SearchCommand::Select) {
+                if (data.focusSelect) SetFocus(sciText);
             }
             else if (command.verb == SearchCommand::Show) {
-                syncNppHideMarkers();
-                checkExpandVisibleState();
                 if (data.focusShow) SetFocus(sciText);
             }
+            checkExpandVisibleState();
         }
     }
 
@@ -169,6 +166,7 @@ SearchResult SearchRequest::exec
 
 
 void SearchRequest::scrollIntoView(Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select) {
+    makeCharsVisible(foundStart, foundEnd);
     ::scrollIntoView(sciText, data.searchDialog, foundStart, foundEnd, select);
 }
 
