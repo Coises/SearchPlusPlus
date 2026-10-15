@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "CommonData.h"
+#include "NppHideLinesConstants.h"
 using namespace NPP;
 
 // Assigned Scintilla indicator used to show zero length matches, or zero.
@@ -56,11 +57,6 @@ void destroySearchDialogs();
 namespace {
 
     LRESULT CALLBACK fixHiddenFirstLast(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR) {
-        constexpr int SymbolMargin  = 1;
-        constexpr int HideBegin     = 19;
-        constexpr int HideEnd       = 18;
-        constexpr int HideBeginMask = 1 << HideBegin;
-        constexpr int HideEndMask   = 1 << HideEnd  ;
         switch (uMsg) {
         case WM_DESTROY:
             RemoveWindowSubclass(hWnd, fixHiddenFirstLast, uIdSubclass);
@@ -76,19 +72,19 @@ namespace {
             plugin.getScintillaPointers(nmhdr.hwndFrom);
             Scintilla::Line line = sci.LineFromPosition(scn.position);
             int mask = sci.MarkerGet(line);
-            if (mask & HideBeginMask) {
+            if (mask & HideMaskBegin) {
                 Scintilla::Line lineCount = sci.LineCount();
                 if (line >= lineCount - 1) break;
-                Scintilla::Line term = sci.MarkerNext(line + 1, HideEndMask);
+                Scintilla::Line term = sci.MarkerNext(line + 1, HideMaskEnd);
                 if (term == lineCount - 1) sci.ShowLines(term, term);
                 else if (term == -1) {
                     sci.MarkerAdd(lineCount - 1, HideEnd);
                     sci.ShowLines(lineCount - 1, lineCount - 1);
                 }
             }
-            else if (mask & HideEndMask)  {
+            else if (mask & HideMaskEnd)  {
                 if (line <= 0) break;
-                Scintilla::Line start = sci.MarkerPrevious(line - 1, HideBeginMask);
+                Scintilla::Line start = sci.MarkerPrevious(line - 1, HideMaskBegin);
                 if (start == 0) sci.ShowLines(0, 0);
                 else if (start == -1) {
                     sci.MarkerAdd(0, HideBegin);

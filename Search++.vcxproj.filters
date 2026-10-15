@@ -145,6 +145,9 @@
     <ClInclude Include="src\Boost\boost\regex\v5\perl_matcher_common.hpp">
       <Filter>Modified Boost Regex Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\NppHideLinesConstants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\About.cpp">

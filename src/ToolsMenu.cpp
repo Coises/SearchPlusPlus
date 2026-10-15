@@ -20,11 +20,13 @@
 
 void clearHitlist();
 void closeSearchInFilesDialog();
+void hideAllLines();
 bool hitlistEmpty();
 HWND hitlistHwnd();
 void hideHitlist();
 void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
 void makeLinesVisible(Scintilla::Line lnMin, Scintilla::Line lnMax);
+void showAllLines();
 void showHitlist();
 void showSearchDialog();
 void showSearchInFilesDialog();
@@ -80,8 +82,6 @@ namespace ToolsCommand {
 
 namespace {
 
-    constexpr int HideBegin  = 19;
-    constexpr int HideEnd    = 18;
     HWND expandVisibleDialog = 0;
 
     const std::map<const unsigned char, const wchar_t*> Tools_Text {
@@ -604,10 +604,7 @@ namespace {
         case ToolsCommand::ShowLinesShift:
             if (command == ToolsCommand::ShowAllClear || ts.shift || ts.selVisible) {
                 ShowPosition sp(sci);
-                sci.FoldAll(Scintilla::FoldAction::Expand);
-                sci.ShowLines(0, sci.LineCount() - 1);
-                sci.MarkerDeleteAll(HideBegin);
-                sci.MarkerDeleteAll(HideEnd);
+                showAllLines();
                 sp.scroll();
             }
             else {
@@ -642,12 +639,7 @@ namespace {
     
         case ToolsCommand::HideAll:
         {
-            Scintilla::Line lastLine = sci.LineCount() - 1;
-            sci.HideLines(0, lastLine);
-            sci.MarkerDeleteAll(HideBegin);
-            sci.MarkerDeleteAll(HideEnd);
-            sci.MarkerAdd(0, HideBegin);
-            sci.MarkerAdd(lastLine, HideEnd);
+            hideAllLines();
             checkExpandVisibleState();
             break;
         }

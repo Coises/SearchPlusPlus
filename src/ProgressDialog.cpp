@@ -20,6 +20,7 @@
 #include <format>
 #include <set>
 
+void hideAllLines();
 void showHitlist(MatchResults& matchResults);
 
 namespace {
@@ -160,15 +161,7 @@ void ProgressInfo::preClear() {
                 sci.SetIndicatorCurrent(zlmIndicator + 1);
                 sci.IndicatorClearRange(0, sci.Length());
             }
-            Scintilla::Line lastLine = sci.LineCount() - 1;
-            sci.HideLines(0, lastLine);
-            constexpr int HideBegin = 19;
-            constexpr int HideEnd   = 18;
-            sci.MarkerDeleteAll(HideBegin);
-            sci.MarkerDeleteAll(HideEnd);
-            sci.MarkerAdd(0, HideBegin);
-            sci.MarkerAdd(lastLine, HideEnd);
-
+            hideAllLines();
         }
         else if (sci.AllLinesVisible()) sci.HideLines(0, sci.LineCount() - 1);
         break;

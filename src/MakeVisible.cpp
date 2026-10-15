@@ -15,22 +15,22 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Framework/UtilityFramework.h"
+#include "NppHideLinesConstants.h"
 
-namespace {
-    constexpr int HideBegin     = 19;
-    constexpr int HideEnd       = 18;
-    constexpr int HideMaskBegin = 1 << HideBegin;
-    constexpr int HideMaskEnd   = 1 << HideEnd;
-}
-
-
+// *** All routines in this file must be called with sci already set to access the appropriate Scintilla control. ***
+//
+// makeLinesVisible shows lines from lnMin to lnMax,
+// and adjusts folding and hidden line markers to be consistent.
+// 
 // makeCharsVisible shows lines containing characters from cpMix to cpMax,
 // or the line containing the position cpMin if cpMin and cpMax are equal,
 // and adjusts folding and hidden line markers to be consistent.
 //
-// makeVisible must be called with sci already set to access the active Scintilla.
+// hideAllLines makes all lines hidden, removes existing hidden line markers
+// and puts a single pair of hidden line markers on the first and last lines.
 //
-// makeLinesVisible can be called to give line numbers instead of character positions
+// showAllLines expands any folded lines, makes all lines visible
+// and removes all hidden line markers.
 
 
 void makeLinesVisible(Scintilla::Line lnMin, Scintilla::Line lnMax) {
@@ -127,4 +127,22 @@ void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax) {
     Scintilla::Line lnMin = sci.LineFromPosition(cpMin);
     Scintilla::Line lnMax = cpMax - cpMin < 2 ? lnMin : sci.LineFromPosition(cpMax - 1);
     makeLinesVisible(lnMin, lnMax);
+}
+
+
+void hideAllLines() {
+    Scintilla::Line lastLine = sci.LineCount() - 1;
+    sci.HideLines(0, lastLine);
+    sci.MarkerDeleteAll(HideBegin);
+    sci.MarkerDeleteAll(HideEnd);
+    sci.MarkerAdd(0, HideBegin);
+    sci.MarkerAdd(lastLine, HideEnd);
+}
+
+
+void showAllLines() {
+    sci.FoldAll(Scintilla::FoldAction::Expand);
+    sci.ShowLines(0, sci.LineCount() - 1);
+    sci.MarkerDeleteAll(HideBegin);
+    sci.MarkerDeleteAll(HideEnd);
 }
