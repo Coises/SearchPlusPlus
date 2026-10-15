@@ -1,5 +1,17 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.7.2 -- October 15th, 2026
+
+* Correct failure to find a zero-length match at the end of a file, selection or span of marked text when the previous match included last character of the file, selection or span of marked text.
+
+* Condense **Tools** | **Synchronize** sub-menu.
+
+* Implement **Tools** | **Expand visible** configure tool window.
+
+* Keep use of hidden lines in Search++ (almost) consistent with the way Notepad++ handles hidden lines and fold points. Hidden lines now show unhide margin markers. Hidden lines stay hidden after leaving and returning to a tab (except for the first and last line, which Search++ **Hide all lines** and implicit hide before **Show** commands hide, but Notepad++ native actions never do).
+
+* Stepwise searches, **Select** and **Show** commands, and clicking on a match in the results window now properly unfold collapsed sections when necessary to show a match.
+
 ## Version 0.7.1 -- October 3rd, 2026
 
 * Fix incorrect decoding of surrogate pairs in UTF-16 files when using Search in Files.

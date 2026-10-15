@@ -606,7 +606,20 @@ d="M90 20h820v960h-820v-960zM180 110v780h640v-780h-640z" />
 <p><em>Otherwise:</em> shows all lines in the active document.</p>
 <p class=note>Right-click or use the Shift key with this option to ignore the current selection and show all lines in the active document.</p></td></tr>
 <tr><th>Sho<u>w</u> only lines with shown text</th><th>Ctrl+Shift+W</th><td>shows only lines containing text or empty matches with the style used by <strong>Show</strong> commands, and hides all other lines.</td></tr>
-<tr><th>Ex<u>p</u>and visible</th><th>Ctrl+P</th><td>When the active document contains both hidden and visible lines: shows the line before and the line after each block of visible lines.</td></tr>
+<tr><th>Ex<u>p</u>and visible <span style="font-weight: normal"><em>m:n</em></span> (Shift: configure)<hr>Ex<u>p</u>and visible <span style="font-weight: normal"><em>m:n</em></span> selected (Shift: configure)</th><th>Ctrl+P<br>Ctrl+Shift+P</th><td><p>When the active document contains both hidden and visible lines, shows <em>m</em> lines before and <em>n</em> lines after each block of visible lines. If <strong>selected</strong> appears, only lines before and after blocks containing the caret or any part of a selection are affected.</p>
+<hr>
+<p>Right-click or use the Shift key with this option to open the <strong>Expand visible</strong> tool window. This window remains open until you close it using the Escape key or the close (X) button at the top right; you can work in documents or other windows (including Search++ dialogs) while it is open. It offers the following controls:</p>
+<ul>
+<li><strong><u>B</u>efore</strong>: sets the number of hidden lines before a visible block to be shown.
+<li><strong><u>A</u>fter</strong>: sets the number of hidden lines after a visible block to be shown.
+<li><strong><u>O</u>nly blocks with caret or selection</strong>: indicates that only hidden lines before or after blocks that contain the caret or any part of a selection are to be shown.
+<li><strong>Expand b<u>e</u>fore</strong>: shows just the number of lines specified before visible blocks (or one line if <strong>Before</strong> is zero).
+<li><strong>Expand a<u>f</u>ter</strong>: shows just the number of lines specified after visible blocks (or one line if <strong>After</strong> is zero).
+<li><strong><u>R</u>eset</strong>: shows only lines containing text or empty matches with the style used by <strong>Show</strong> commands, and hides all other lines. This is equivalent to the <strong>Show only lines with shown text</strong> command.
+<li><strong>Ex<u>p</u>and</strong>: shows lines according to the settings in the dialog.
+<li><strong><u>S</u>ave</strong>: saves the <strong>Before</strong>, <strong>After</strong> and <strong>Only blocks with caret or selection</strong> settings in the dialog as the defaults for the <strong>Expand visible</strong> command. This button does not close the tool window. Note also that closing the tool window does not save the current settings.
+</ul>
+</td></tr>
 <tr><th>Hi<u>d</u>e all lines</th><th>Ctrl+Shift+D</th><td>hides all lines in the active document.</td></tr>
 <tr><th><u>M</u>ark selected text (Shift: clear first)</th><th>Ctrl+M<br>Ctrl+Shift+M</th><td><p>marks selected text with the style used by <strong>Mark</strong> commands.</p><p class=note>Right-click or use the Shift key with this option to remove all marks in the active document first, so that only the selected text is marked.</p><p class=note>If <strong>Bookmark lines when marking text</strong> is checked, depending on your settings in the <strong>Configure bookmarks</strong> dialog this command may also add bookmarks, and the shifted version may clear bookmarks.</p></td></tr>
 <tr><th>Mar<u>k</u> shown text (Shift: clear first)</th><th>Ctrl+K<br>Ctrl+Shift+K</th><td><p>marks text which has the style used by <strong>Show</strong> commands with the style used by <strong>Mark</strong> commands.</p><p class=note>Right-click or use the Shift key with this option to remove all marks in the active document first, so that only shown text is marked.</p><p class=note>If <strong>Bookmark lines when marking text</strong> is checked, depending on your settings in the <strong>Configure bookmarks</strong> dialog this command may also add bookmarks, and the shifted version may clear bookmarks.</p></td></tr>
@@ -615,14 +628,13 @@ d="M90 20h820v960h-820v-960zM180 110v780h640v-780h-640z" />
 <tr><th><u>I</u>nvert marked text</th><th>Ctrl+Shift+I</th><td>Adds the mark style to text in the active document that doesn’t have it, and removes it from text that does have it.</td></tr>
 <tr><th>Synchroni<u>z</u>e marks and bookmarks</th><td colspan=2>Opens a sub-menu containing these commands:
 <ul>
-<li><strong><u>B</u>ookmark lines with marked text, and clear other bookmarks</strong>:<br>Clears bookmarks, then places a bookmark on every line that contains marked text.
-<li><strong>Bookmark <u>v</u>isible lines, and clear other bookmarks</strong>:<br>Clears bookmarks, then places a bookmark on every visible line.
-<li><strong><u>M</u>ark all text in bookmarked lines, and clear other marks</strong>:<br>Clears existing marks, then marks all the text (including line ending characters) in every line that has a bookmark.
-<li><strong><u>A</u>dd bookmarks to lines with marked text</strong>:<br>Adds a bookmark to every line that contains marked text. No existing bookmarks are removed.
-<li><strong>Add mar<u>k</u>s to all text in bookmarked lines</strong>:<br>Marks all the text (including line ending characters) in every line that has a bookmark. No existing marks are removed.
+<li><strong><u>B</u>ookmark lines with marked text (Shift: clear first)</strong>:<br>Adds a bookmark to every line that contains marked text.
+<li><strong>Bookmark <u>v</u>isible lines (Shift: clear first)</strong>:<br>Adds a bookmark to every visible line.
+<li><strong><u>M</u>ark all text in bookmarked lines (Shift: clear first)</strong>:<br>Marks all the text (including line ending characters) in every line that has a bookmark.
 </ul>
 <hr>
-<p class=note><strong><u>B</u>ookmark lines with marked text, and clear other bookmarks</strong> and <strong><u>A</u>dd bookmarks to lines with marked text</strong> consider a line to contain marked text if any character in the line other than line ending characters is marked, or if the line is empty (has no characters other than line ending characters) and any line ending character is marked.</p>
+<p class=note>Right-click or use the Shift key with these options to remove all bookmarks or marks in the active document first. The <strong>(Shift: clear first)</strong> text appears in the menu item only if there are existing bookmarks or marks to remove.</p>
+<p class=note><strong><u>B</u>ookmark lines with marked text</strong> considers a line to contain marked text if any character in the line other than line ending characters is marked, or if the line is empty (has no characters other than line ending characters) and any line ending character is marked.</p>
 </td></tr>
 <tr><th><u>C</u>opy marked text with no separators
 <hr><u>C</u>opy marked text separated by
