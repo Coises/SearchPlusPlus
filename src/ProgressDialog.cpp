@@ -163,7 +163,7 @@ void ProgressInfo::preClear() {
             }
             hideAllLines();
         }
-        else if (sci.AllLinesVisible()) sci.HideLines(0, sci.LineCount() - 1);
+        else if (sci.AllLinesVisible()) hideAllLines();
         break;
     }
     needPreClear = false;

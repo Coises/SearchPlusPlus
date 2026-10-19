@@ -289,7 +289,7 @@ namespace {
 
     void showShown() {
         ShowPosition sp(sci);
-        sci.HideLines(0, sci.LineCount() - 1);
+        hideAllLines();
         Scintilla::Position documentLength = sci.Length();
         for (Scintilla::Position cpMin = 0;;) {
             Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);

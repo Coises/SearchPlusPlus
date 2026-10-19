@@ -83,14 +83,15 @@ struct ScrollTarget {
 };
 
 ScrollTarget::ScrollTarget(Scintilla::Position foundStart, Scintilla::Position foundEnd) : foundStart(foundStart), foundEnd(foundEnd) {
+    Scintilla::Position foundFinal = foundStart == foundEnd ? foundStart : std::max(foundStart, sci.PositionBefore(foundEnd));
     foundLine = sci.LineFromPosition(foundStart);
-    foundLast = sci.LineFromPosition(foundEnd);
+    foundLast = sci.LineFromPosition(foundFinal);
+    int yLast = sci.PointYFromPosition(foundFinal);
     sci.ShowLines(foundLine, foundLast);
     foundVisibleLine = sci.VisibleFromDocLine(foundLine);
     wrap = sci.WrapMode() != Scintilla::Wrap::None;
     if (wrap) {
         int yFirst = sci.PointYFromPosition(foundStart);
-        int yLast = sci.PointYFromPosition(foundEnd);
         int yLine = sci.PointYFromPosition(sci.PositionFromLine(foundLine));
         int pxHeight = sci.TextHeight(0);
         foundDepth = (yLast - yFirst + pxHeight / 2) / pxHeight + 1;
@@ -101,8 +102,16 @@ ScrollTarget::ScrollTarget(Scintilla::Position foundStart, Scintilla::Position f
         subLineOffset = 0;
     }
     pxStart = sci.PointXFromPosition(foundStart);
-    pxEnd = sci.PointXFromPosition(foundEnd);
     pxLine = sci.PointXFromPosition(sci.PositionFromLine(foundLine));
+    if (yLast == sci.PointYFromPosition(foundEnd)) pxEnd = sci.PointXFromPosition(foundEnd);
+    else if (foundFinal == sci.LineEndPosition(foundLast)) /* target ends with line ending character(s) */ {
+        pxEnd = sci.PointXFromPosition(foundFinal);
+        if (sci.ViewEOL()) /* reasonable approximation */ pxEnd += static_cast<int>(foundEnd - foundFinal) * sci.TextWidth(0, "CR");
+    }
+    else /* target ends with last character before a line wrap */ {
+        std::string finalChar = sci.StringOfRange(Scintilla::Span(foundFinal, foundEnd));
+        pxEnd = sci.PointXFromPosition(foundFinal) + sci.TextWidth(sci.StyleIndexAt(foundFinal), finalChar.data());
+    }
 }
 
 ScrollNeeded ScrollTarget::find(const VisibleArea& va) const {
@@ -190,13 +199,13 @@ void scrollIntoView(HWND scintilla, HWND avoid, Scintilla::Position foundStart, 
         sn = snTop;
         if (snLeft  .betterThan(sn)) sn = snLeft;
         if (snBottom.betterThan(sn)) sn = snBottom;
-        if (snRight.betterThan(sn)) sn = snRight;
+        if (snRight .betterThan(sn)) sn = snRight;
     }
 
     if (sn.vertical) sci.SetFirstVisibleLine(sn.firstVisible);
     if (sn.horizontal) sci.SetXOffset(sn.xOffset);
     if (select) {
-        sci.SetSel(foundStart, foundEnd);
+        sci.SetSelection(foundEnd, foundStart);
         sci.ChooseCaretX();
     }
 
