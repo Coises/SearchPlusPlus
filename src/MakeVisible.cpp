@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "Framework/UtilityFramework.h"
+#include "HiddenLines.h"
 #include "NppHideLinesConstants.h"
 
 // *** All routines in this file must be called with sci already set to access the appropriate Scintilla control. ***
@@ -67,56 +68,10 @@ void makeLinesVisible(Scintilla::Line lnMin, Scintilla::Line lnMax) {
         else sci.MarkerAdd(lnMax, HideBegin);
     }
 
-    if (!anyExpanded) return;
-
-    // Expanding folds can cause lines to be shown that have nothing to do with this show; just check everything
-
-    Scintilla::Line line1 = sci.MarkerNext(0, HideMaskBegin | HideMaskEnd);
-    if (line1 < 0) return;
-    bool firstMark = true;
-    int mark1 = sci.MarkerGet(line1);
-    for (;;) {
-        Scintilla::Line line2 = line1 + 1 >= lineCount ? -1 : sci.MarkerNext(line1 + 1, HideMaskBegin | HideMaskEnd);
-        int mark2 = line2 == -1 ? 0 : sci.MarkerGet(line2);
-        if (mark1 & HideMaskBegin) {
-            if (mark2 & HideMaskEnd) {
-                if (line2 - line1 > 1) sci.HideLines(line1 + 1, line2 - 1);
-                if (mark2 & HideMaskBegin) {
-                    line1 = line2;
-                    mark1 = mark2;
-                }
-                else {
-                    line1 = line2 + 1 >= lineCount ? -1 : sci.MarkerNext(line2 + 1, HideMaskBegin | HideMaskEnd);
-                    if (line1 < 0) break;
-                    mark1 = sci.MarkerGet(line1);
-                }
-            }
-            else if (line2 < 0) /* Orphan hide begin followed by end of document; extend to the end */ {
-                if (line1 < lineCount - 1) {
-                    sci.HideLines(line1 + 1, lineCount - 1);
-                    sci.MarkerAdd(lineCount - 1, HideEnd);
-                }
-                else sci.MarkerDelete(lineCount - 1, HideBegin);
-                break;
-            }
-            else /* orphan hide begin followed by another hide begin; remove it */ {
-                sci.MarkerDelete(line1, HideBegin);
-                line1 = line2;
-                mark1 = mark2;
-            }
-        }
-        else /*orphan hide end */ {
-            if (line1 == 0) sci.MarkerDelete(0, HideEnd);
-            else if (firstMark) /* Orphan hide end follows document start */ {
-                sci.HideLines(0, line1 - 1);
-                sci.MarkerAdd(0, HideBegin);
-            }
-            else sci.MarkerDelete(0, HideEnd);
-            line1 = line2;
-            mark1 = mark2;
-        }
-        firstMark = false;
-    }
+    HiddenLines& hidden = HiddenLines::current();
+    if (lnMin == 0) hidden.first = false;
+    if (lnMax == lineCount - 1) hidden.last = false;
+    if (anyExpanded) HiddenLines::applyMarkers();  // Expanding folds can cause hidden blocks to be incorrectly shown
     
 }
 
@@ -137,6 +92,10 @@ void hideAllLines() {
     sci.MarkerDeleteAll(HideEnd);
     sci.MarkerAdd(0, HideBegin);
     sci.MarkerAdd(lastLine, HideEnd);
+    HiddenLines& hidden = HiddenLines::current();
+    hidden.first = hidden.last = true;
+    (HiddenLines::active2 ? hidden.peek2 : hidden.peek1) = false;
+
 }
 
 
@@ -145,4 +104,9 @@ void showAllLines() {
     sci.ShowLines(0, sci.LineCount() - 1);
     sci.MarkerDeleteAll(HideBegin);
     sci.MarkerDeleteAll(HideEnd);
+    if (HiddenLines::active) {
+        HiddenLines& hidden = *HiddenLines::active;
+        hidden.first = hidden.last = false;
+        (HiddenLines::active2 ? hidden.peek2 : hidden.peek1) = false;
+    }
 }

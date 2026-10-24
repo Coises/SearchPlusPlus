@@ -16,6 +16,7 @@
 
 #include "CommonData.h"
 #include "MonitoredTrackPopupMenu.h"
+#include "HiddenLines.h"
 #include "resource.h"
 
 void clearHitlist();
@@ -42,6 +43,7 @@ namespace ToolsCommand {
     constexpr unsigned char BookmarkWhenMark   = 'b';
     constexpr unsigned char BookmarksConfigure = 'B';
     constexpr unsigned char JumpReplace        = 'j';
+    constexpr unsigned char Peek               = 'E';
     constexpr unsigned char SaveSearch         = 's';
     constexpr unsigned char ShowLines          = 'q';
     constexpr unsigned char ShowLinesShift     = 'Q';
@@ -63,7 +65,7 @@ namespace ToolsCommand {
     constexpr unsigned char ClearMarksMultiple = 'V';
     constexpr unsigned char ShowAllClear       = 'A';
     constexpr unsigned char ClearHitlist       = 1  ;
-    constexpr unsigned char Settings           = 'E';
+    constexpr unsigned char Settings           = 'J';
     constexpr unsigned char SearchDialog_Close = 'O';
 
     constexpr unsigned char SyncBookToMark     = 10;
@@ -91,6 +93,7 @@ namespace {
         { ToolsCommand::Hitlist_Show      , L"Searc&h Results..."                                   },
         { ToolsCommand::BookmarkWhenMark  , L"&Bookmark lines when marking text (Shift: configure)" },
         { ToolsCommand::JumpReplace       , L"&Jump to next match after replace"                    },
+        { ToolsCommand::Peek              , L"P&eek"                                                },
         { ToolsCommand::SaveSearch        , L"&Save search..."                                      },
         { ToolsCommand::ShowLines         , L"Show "                                                },
         { ToolsCommand::ShowShown         , L"Sho&w only lines with shown text"                     },
@@ -108,7 +111,7 @@ namespace {
         { ToolsCommand::ClearMarksMultiple, L"Remo&ve marks from multiple documents..."             },
         { ToolsCommand::ShowAllClear      , L"Clear shown (show &all and clear style)"              },
         { ToolsCommand::ClearHitlist      , L"Clear search res&ults list"                           },
-        { ToolsCommand::Settings          , L"S&ettings..."                                         },
+        { ToolsCommand::Settings          , L"Settin&gs..."                                         },
         { ToolsCommand::SearchDialog_Close, L"Cl&ose"                                               },
 
         { ToolsCommand::SyncBookToMark    , L"&Bookmark lines with marked text"                     },
@@ -590,6 +593,19 @@ namespace {
             syncReplaceButton();
             break;
         }
+
+        case ToolsCommand::Peek:
+            if (ts.anyHidden) {
+                ShowPosition sp(sci);
+                HiddenLines::peek();
+                sp.scroll();
+            }
+            else {
+                ShowPosition sp(sci);
+                HiddenLines::restore();
+                sp.scroll();
+            }
+            break;
     
         case ToolsCommand::ShowAllClear:
             sci.SetIndicatorCurrent(data.showIndicator);
@@ -1043,6 +1059,7 @@ void showToolsMenu(HWND button) {
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     AddToolItem(pum, ToolsCommand::BookmarkWhenMark, button);
     AddToolItem(pum, ToolsCommand::JumpReplace     , button);
+    AddToolItem(pum, ToolsCommand::Peek            , button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     if (ts.selVisible) AddToolItem(pum, ToolsCommand::ShowLines, button, L"all li&nes");
                   else AddToolItem(pum, ToolsCommand::ShowLines, button, L"selected li&nes (Shift: all)");
@@ -1085,24 +1102,24 @@ void showToolsMenu(HWND button) {
     AddToolItem(pum, ToolsCommand::Settings, button);
     if (button) AddToolItem(pum, ToolsCommand::SearchDialog_Close, button);
 
-    EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , ts.hitVisible || ts.anyHits    ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ShowLines         , ts.anyHidden                   ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ShowShown         , ts.anyShown                    ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ExpandVisible     , ts.anyHidden && ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::HideAll           , ts.anyVisible                  ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::SelToMark         , ts.anySelected                 ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::MarkShown         , enableMarkShown                ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, ts.anySelected && ts.anyMarked ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::MarkToSel         , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::CopyMarked        , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ShowAllClear      , ts.anyHidden || ts.anyShown    ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ClearHitlist      , ts.anyHits                     ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , ts.hitVisible || ts.anyHits            ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowLines         , ts.anyHidden || HiddenLines::peeking() ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowShown         , ts.anyShown                            ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ExpandVisible     , ts.anyHidden && ts.anyVisible          ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::HideAll           , ts.anyVisible                          ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::SelToMark         , ts.anySelected                         ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::MarkShown         , enableMarkShown                        ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, ts.anySelected && ts.anyMarked         ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::MarkToSel         , ts.anyMarked                           ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::CopyMarked        , ts.anyMarked                           ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , ts.anyMarked                           ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, ts.anyMarked                           ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowAllClear      , ts.anyHidden || ts.anyShown            ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ClearHitlist      , ts.anyHits                             ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ClearMarks,
         ts.anyMarked || (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync && ts.anyBookmark)
         ? MF_ENABLED : MF_GRAYED);
-                         
+
     MENUITEMINFO mii;
     mii.cbSize = sizeof mii;
     mii.fMask = MIIM_STATE;
@@ -1110,6 +1127,13 @@ void showToolsMenu(HWND button) {
     SetMenuItemInfo(pum, ToolsCommand::BookmarkWhenMark, FALSE, &mii);
     mii.fState = SearchCommand(data.buttonReplace).verb == SearchCommand::Replace ? MFS_CHECKED : 0;
     SetMenuItemInfo(pum, ToolsCommand::JumpReplace, FALSE, &mii);
+    if (ts.anyHidden) {
+        if (HiddenLines::peeking()) CheckMenuRadioItem(pum, ToolsCommand::Peek, ToolsCommand::Peek, ToolsCommand::Peek, MF_BYCOMMAND);
+    }
+    else {
+        mii.fState = HiddenLines::peeking() ? MFS_CHECKED : MFS_GRAYED;
+        SetMenuItemInfo(pum, ToolsCommand::Peek, FALSE, &mii);
+    }
     MonitoredTrackPopupMenu mtpm;
     if (button) {
         TPMPARAMS tpmp;

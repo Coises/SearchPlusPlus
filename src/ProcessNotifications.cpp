@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "CommonData.h"
+#include "HiddenLines.h"
 
 void checkExpandVisibleState();
 void colorHitlist();
@@ -44,6 +45,8 @@ void scnUpdateUI(const Scintilla::NotificationData* scnp) {
 
 void bufferActivated() {
     data.context.clear();
+    HiddenLines::activate();
+    HiddenLines::restoreView();
     checkExpandVisibleState();
 }
 
@@ -51,6 +54,14 @@ void darkModeChanged() {
     colorHitlist();
     colorSearch();
     colorSif();
+}
+
+void fileClosed(const NMHDR* nmhdr) {
+    int32_t viewAndDocIndex = static_cast<int32_t>(npp(NPPM_GETPOSFROMBUFFERID, nmhdr->idFrom, 0));
+    if (viewAndDocIndex == -1) HiddenLines::erase(nmhdr->idFrom);
+    else if (auto it = HiddenLines::map.find(nmhdr->idFrom); it != HiddenLines::map.end()) {
+        (viewAndDocIndex & 0x40000000 ? it->second.peek1 : it->second.peek2) = false;
+    }
 }
 
 void modifyAll(const NMHDR*) {

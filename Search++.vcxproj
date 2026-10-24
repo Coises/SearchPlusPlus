@@ -60,6 +60,7 @@
     <ClInclude Include="src\SearchInFiles.h" />
     <ClInclude Include="src\SearchInFilesConfiguration.h" />
     <ClInclude Include="src\SearchRequest.h" />
+    <ClInclude Include="src\HiddenLines.h" />
     <ClInclude Include="src\Unicode\UnicodeRegexTraits.h" />
   </ItemGroup>
   <ItemGroup>
@@ -69,6 +70,7 @@
     <ClCompile Include="src\DispatchFileSearchTasks.cpp" />
     <ClCompile Include="src\Framework\PluginFramework.cpp" />
     <ClCompile Include="src\Framework\ScintillaCallEx.cpp" />
+    <ClCompile Include="src\HiddenLines.cpp" />
     <ClCompile Include="src\HitList.cpp" />
     <ClCompile Include="src\MakeVisible.cpp" />
     <ClCompile Include="src\Numeric.cpp" />

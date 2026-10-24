@@ -15,6 +15,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "CommonData.h"
+#include "HiddenLines.h"
 #include "NppHideLinesConstants.h"
 using namespace NPP;
 
@@ -37,6 +38,7 @@ void scnUpdateUI(const Scintilla::NotificationData*);
 
 void bufferActivated();
 void darkModeChanged();
+void fileClosed(const NMHDR*);
 void modifyAll(const NMHDR*);
 
 // Routines that process menu commands
@@ -76,19 +78,27 @@ namespace {
                 Scintilla::Line lineCount = sci.LineCount();
                 if (line >= lineCount - 1) break;
                 Scintilla::Line term = sci.MarkerNext(line + 1, HideMaskEnd);
-                if (term == lineCount - 1) sci.ShowLines(term, term);
+                if (term == lineCount - 1) {
+                    sci.ShowLines(term, term);
+                    if (HiddenLines::active) HiddenLines::active->last = false;
+                }
                 else if (term == -1) {
                     sci.MarkerAdd(lineCount - 1, HideEnd);
                     sci.ShowLines(lineCount - 1, lineCount - 1);
+                    if (HiddenLines::active) HiddenLines::active->last = false;
                 }
             }
             else if (mask & HideMaskEnd)  {
                 if (line <= 0) break;
                 Scintilla::Line start = sci.MarkerPrevious(line - 1, HideMaskBegin);
-                if (start == 0) sci.ShowLines(0, 0);
+                if (start == 0) {
+                    sci.ShowLines(0, 0);
+                    if (HiddenLines::active) HiddenLines::active->first = false;
+                }
                 else if (start == -1) {
                     sci.MarkerAdd(0, HideBegin);
                     sci.ShowLines(0, 0);
+                    if (HiddenLines::active) HiddenLines::active->first = false;
                 }
             }
             break;
@@ -170,6 +180,10 @@ extern "C" __declspec(dllexport) void beNotified(SCNotification *np) {
 
         case NPPN_FILEBEFOREOPEN:
             plugin.fileIsOpening = true;
+            break;
+
+        case NPPN_FILECLOSED:
+            fileClosed(nmhdr);
             break;
 
         case NPPN_FILEOPENED:

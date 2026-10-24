@@ -148,6 +148,9 @@
     <ClInclude Include="src\NppHideLinesConstants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\HiddenLines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\About.cpp">
@@ -229,6 +232,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\MakeVisible.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HiddenLines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
