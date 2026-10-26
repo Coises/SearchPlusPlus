@@ -15,8 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "CommonData.h"
-#include "MonitoredTrackPopupMenu.h"
 #include "HiddenLines.h"
+#include "MonitoredTrackPopupMenu.h"
+#include "NppHideLinesConstants.h"
 #include "resource.h"
 
 void clearHitlist();
@@ -25,8 +26,8 @@ void hideAllLines();
 bool hitlistEmpty();
 HWND hitlistHwnd();
 void hideHitlist();
-void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
-void makeLinesVisible(Scintilla::Line lnMin, Scintilla::Line lnMax);
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax, bool applyWhenPeeking);
+void makeLinesVisible(Scintilla::Line lnMin, Scintilla::Line lnMax, bool applyWhenPeeking);
 void showAllLines();
 void showHitlist();
 void showSearchDialog();
@@ -144,7 +145,7 @@ namespace {
         bool shift       = false;
         void get() {
             anyBookmark = sci.MarkerNext(0, 1 << data.bookMarker) >= 0;
-            anyHidden = !sci.AllLinesVisible();
+            anyHidden = !sci.AllLinesVisible() || HiddenLines::indicated();
             anyHits = !hitlistEmpty();
             if (sci.IndicatorValueAt(data.markIndicator, 0)) anyMarked = true;
             else {
@@ -166,7 +167,8 @@ namespace {
                     anyShown = p != 0 && p != sci.Length();
                 }
             }
-            anyVisible = sci.LineVisible(0) || sci.VisibleFromDocLine(sci.LineCount() - 1);
+            Scintilla::Line lastLine = sci.LineCount() - 1;
+            anyVisible = sci.LineVisible(0) || sci.VisibleFromDocLine(lastLine);
             {
                 HWND hh = hitlistHwnd();
                 hitVisible = hh && IsWindowVisible(hh);
@@ -180,22 +182,47 @@ namespace {
                     Scintilla::Position cpMin = sci.SelectionNStart(n);
                     Scintilla::Position cpMax = sci.SelectionNEnd(n);
                     Scintilla::Line lnMin = sci.LineFromPosition(cpMin);
+                    Scintilla::Line lnMax = cpMax - cpMin < 2 ? lnMin : sci.LineFromPosition(cpMax - 1);
+                    if (HiddenLines::active && 
+                        ((lnMin == 0 && HiddenLines::active->first) || (lnMax == lastLine && HiddenLines::active->last))) {
+                        selVisible = false;
+                        break;
+                    }
                     if (!sci.LineVisible(lnMin)) {
                         selVisible = false;
                         break;
                     }
-                    if (cpMax == cpMin) continue;
-                    Scintilla::Line lnMax = sci.LineFromPosition(cpMax - 1);
-                    if (lnMax == lnMin) continue;
-                    if (!sci.LineVisible(lnMax)) {
+                    Scintilla::Line before = sci.MarkerPrevious(lnMin, HideMaskBegin | HideMaskEnd);
+                    if (before >= 0 && before < lnMax && (sci.MarkerGet(before) & HideMaskBegin)) {
                         selVisible = false;
                         break;
                     }
-                    Scintilla::Line lnGap = lnMax - lnMin;
-                    if (lnGap == 1) continue;
-                    if (sci.VisibleFromDocLine(lnMax) - sci.VisibleFromDocLine(lnMin) < lnGap) {
+                    if (lnMax != lnMin) {
+                        if (!sci.LineVisible(lnMax)) {
+                            selVisible = false;
+                            break;
+                        }
+                        Scintilla::Line lnGap = lnMax - lnMin;
+                        if (lnGap > 1 && sci.VisibleFromDocLine(lnMax) - sci.VisibleFromDocLine(lnMin) < lnGap) {
+                            selVisible = false;
+                            break;
+                        }
+                        Scintilla::Line after = sci.MarkerNext(lnMin, HideMaskBegin);
+                        if (after >= 0 && after < lnMax) {
+                            selVisible = false;
+                            break;
+                        }
+                    }
+                    Scintilla::Line cfn = sci.ContractedFoldNext(lnMin);
+                    if (cfn >= 0 && cfn < lnMax) {
                         selVisible = false;
                         break;
+                    }
+                    for (Scintilla::Line fp = sci.FoldParent(lnMin); fp >= 0; fp = sci.FoldParent(fp)) {
+                        if (!sci.FoldExpanded(fp))  {
+                            selVisible = false;
+                            break;
+                        }
                     }
                 }
             }
@@ -255,6 +282,8 @@ namespace {
 
     void expandVisible(int before, int after, bool selected) {
         ShowPosition sp(sci);
+        bool peeking = HiddenLines::peeking();
+        if (peeking) HiddenLines::restore();
         Scintilla::Line lineCount = sci.LineCount();
         std::vector <std::pair<Scintilla::Line, Scintilla::Line>> selectedRanges;
         if (selected) {
@@ -283,8 +312,9 @@ namespace {
             }
             Scintilla::Line line1 = std::max(static_cast<Scintilla::Line>(0), visibleRanges[i].first - before);
             Scintilla::Line line2 = std::min(lineCount - 1, visibleRanges[i].second + after);
-            if (line2 >= line1) makeLinesVisible(line1, line2);
+            if (line2 >= line1) makeLinesVisible(line1, line2, true);
         }
+        if (peeking) HiddenLines::peek();
         sp.scroll();
         checkExpandVisibleState();
     }
@@ -297,14 +327,14 @@ namespace {
         for (Scintilla::Position cpMin = 0;;) {
             Scintilla::Position cpMax = sci.IndicatorEnd(data.showIndicator, cpMin);
             if (cpMax <= cpMin) cpMax = documentLength;
-            if (sci.IndicatorValueAt(data.showIndicator, cpMin)) makeCharsVisible(cpMin, cpMax);
+            if (sci.IndicatorValueAt(data.showIndicator, cpMin)) makeCharsVisible(cpMin, cpMax, false);
             if (cpMax == documentLength) break;
             cpMin = cpMax;
         }
         if (zlmIndicator) for (Scintilla::Position cpMin = 0;;) {
             Scintilla::Position cpMax = sci.IndicatorEnd(zlmIndicator + 1, cpMin);
             if (cpMax <= cpMin) cpMax = documentLength;
-            if (sci.IndicatorValueAt(zlmIndicator + 1, cpMin)) makeCharsVisible(cpMin, cpMax);
+            if (sci.IndicatorValueAt(zlmIndicator + 1, cpMin)) makeCharsVisible(cpMin, cpMax, false);
             if (cpMax == documentLength) break;
             cpMin = cpMax;
         }
@@ -595,14 +625,14 @@ namespace {
         }
 
         case ToolsCommand::Peek:
-            if (ts.anyHidden) {
+            if (sci.AllLinesVisible()) {
                 ShowPosition sp(sci);
-                HiddenLines::peek();
+                HiddenLines::restore();
                 sp.scroll();
             }
             else {
                 ShowPosition sp(sci);
-                HiddenLines::restore();
+                HiddenLines::peek();
                 sp.scroll();
             }
             break;
@@ -625,7 +655,7 @@ namespace {
             }
             else {
                 int n = sci.Selections();
-                for (int i = 0; i < n; ++i) makeCharsVisible(sci.SelectionNStart(i), sci.SelectionNEnd(i));
+                for (int i = 0; i < n; ++i) makeCharsVisible(sci.SelectionNStart(i), sci.SelectionNEnd(i), true);
             }
             checkExpandVisibleState();
             break;
@@ -1102,20 +1132,20 @@ void showToolsMenu(HWND button) {
     AddToolItem(pum, ToolsCommand::Settings, button);
     if (button) AddToolItem(pum, ToolsCommand::SearchDialog_Close, button);
 
-    EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , ts.hitVisible || ts.anyHits            ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ShowLines         , ts.anyHidden || HiddenLines::peeking() ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ShowShown         , ts.anyShown                            ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ExpandVisible     , ts.anyHidden && ts.anyVisible          ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::HideAll           , ts.anyVisible                          ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::SelToMark         , ts.anySelected                         ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::MarkShown         , enableMarkShown                        ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, ts.anySelected && ts.anyMarked         ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::MarkToSel         , ts.anyMarked                           ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::CopyMarked        , ts.anyMarked                           ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , ts.anyMarked                           ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, ts.anyMarked                           ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ShowAllClear      , ts.anyHidden || ts.anyShown            ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ClearHitlist      , ts.anyHits                             ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , ts.hitVisible || ts.anyHits    ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowLines         , ts.anyHidden                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowShown         , ts.anyShown                    ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ExpandVisible     , ts.anyHidden && ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::HideAll           , ts.anyVisible                  ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::SelToMark         , ts.anySelected                 ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::MarkShown         , enableMarkShown                ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::RemoveMarksFromSel, ts.anySelected && ts.anyMarked ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::MarkToSel         , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::CopyMarked        , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowAllClear      , ts.anyHidden || ts.anyShown    ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ClearHitlist      , ts.anyHits                     ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ClearMarks,
         ts.anyMarked || (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync && ts.anyBookmark)
         ? MF_ENABLED : MF_GRAYED);
@@ -1127,12 +1157,15 @@ void showToolsMenu(HWND button) {
     SetMenuItemInfo(pum, ToolsCommand::BookmarkWhenMark, FALSE, &mii);
     mii.fState = SearchCommand(data.buttonReplace).verb == SearchCommand::Replace ? MFS_CHECKED : 0;
     SetMenuItemInfo(pum, ToolsCommand::JumpReplace, FALSE, &mii);
-    if (ts.anyHidden) {
-        if (HiddenLines::peeking()) CheckMenuRadioItem(pum, ToolsCommand::Peek, ToolsCommand::Peek, ToolsCommand::Peek, MF_BYCOMMAND);
-    }
-    else {
-        mii.fState = HiddenLines::peeking() ? MFS_CHECKED : MFS_GRAYED;
-        SetMenuItemInfo(pum, ToolsCommand::Peek, FALSE, &mii);
+    {
+        bool alv = sci.AllLinesVisible();
+        bool peeking = HiddenLines::peeking();
+        if (peeking ? !alv : (alv && ts.anyHidden)) /* inconsistent state */ 
+            CheckMenuRadioItem(pum, ToolsCommand::Peek, ToolsCommand::Peek, ToolsCommand::Peek, MF_BYCOMMAND);
+        else if (alv) {
+            mii.fState = peeking ? MFS_CHECKED : MFS_GRAYED;
+            SetMenuItemInfo(pum, ToolsCommand::Peek, FALSE, &mii);
+        }
     }
     MonitoredTrackPopupMenu mtpm;
     if (button) {

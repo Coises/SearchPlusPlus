@@ -25,7 +25,7 @@ SearchResult searchICU(SearchRequest& req);
 
 void checkExpandVisibleState();
 void scrollIntoView(HWND scintilla, HWND avoid, Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select);
-void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax, bool applyWhenPeeking);
 
 
 SearchResult SearchRequest::exec
@@ -166,7 +166,7 @@ SearchResult SearchRequest::exec
 
 
 void SearchRequest::scrollIntoView(Scintilla::Position foundStart, Scintilla::Position foundEnd, bool select) {
-    makeCharsVisible(foundStart, foundEnd);
+    makeCharsVisible(foundStart, foundEnd, false);
     ::scrollIntoView(sciText, data.searchDialog, foundStart, foundEnd, select);
 }
 

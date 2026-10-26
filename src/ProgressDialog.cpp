@@ -15,8 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "CommonData.h"
-#include "resource.h"
+#include "HiddenLines.h"
 #include "ProgressInfo.h"
+#include "resource.h"
 #include <format>
 #include <set>
 
@@ -163,7 +164,7 @@ void ProgressInfo::preClear() {
             }
             hideAllLines();
         }
-        else if (sci.AllLinesVisible()) hideAllLines();
+        else if (!HiddenLines::peeking() && sci.AllLinesVisible()) hideAllLines();
         break;
     }
     needPreClear = false;

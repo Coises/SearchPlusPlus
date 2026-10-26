@@ -20,7 +20,7 @@
 #include "unicode/errorcode.h"
 #include "unicode/regex.h"
 
-void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax, bool applyWhenPeeking);
 
 
 namespace {
@@ -173,7 +173,7 @@ bool progressiveSearch(ProgressInfo& pi) {
                     sci.AddSelection(matchEnd, matchStart);
                 }
                 else {
-                    makeCharsVisible(matchStart, matchEnd);
+                    makeCharsVisible(matchStart, matchEnd, false);
                     int mainSelection = sci.MainSelection();
                     sci.AddSelection(matchEnd, matchStart);
                     sci.SetMainSelection(mainSelection);
@@ -181,7 +181,7 @@ bool progressiveSearch(ProgressInfo& pi) {
             }
             break;
         case SearchCommand::Show:
-            makeCharsVisible(matchStart, matchEnd);
+            makeCharsVisible(matchStart, matchEnd, true);
             if (matchStart != matchEnd) {
                 sci.SetIndicatorCurrent(data.showIndicator);
                 sci.SetIndicatorValue(1);

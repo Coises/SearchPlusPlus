@@ -76,7 +76,8 @@ void HiddenLines::applyMarkers() {
                 sci.HideLines(0, line1 - 1);
                 sci.MarkerAdd(0, HideBegin);
             }
-            else sci.MarkerDelete(0, HideEnd);
+            else sci.MarkerDelete(line1, HideEnd);
+            if (line1 + 1 >= lineCount) break;
             line1 = line2;
             mark1 = mark2;
         }
@@ -85,6 +86,14 @@ void HiddenLines::applyMarkers() {
 
     }
 
+}
+
+
+bool HiddenLines::indicated() {
+    if (active && (active->first || active->last)) return true;
+    getScintillaPointers();
+    if (sci.MarkerNext(0, HideMaskBegin | HideMaskEnd) >= 0) return true;
+    return sci.ContractedFoldNext(0) >= 0;
 }
 
 

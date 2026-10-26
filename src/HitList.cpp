@@ -23,7 +23,7 @@
 
 void checkExpandVisibleState();
 void closeSearchInFilesDialog();
-void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax, bool applyWhenPeeking);
 void showSearchDialog();
 void showSearchInFilesDialog();
 
@@ -121,7 +121,7 @@ bool processDoubleClickOrEnterKey(Scintilla::Position cpMin, Scintilla::Position
     if (end   > 0) end   = sci.PositionAfter(sci.PositionBefore(end  ));  // for example, file might have changed since the search
     data.context.clear();
 
-    makeCharsVisible(start, end);
+    makeCharsVisible(start, end, false);
     sci.SetSelection(start, end);
     Scintilla::Line line1 = sci.LineFromPosition(start);
     Scintilla::Line line2 = sci.LineFromPosition(end);

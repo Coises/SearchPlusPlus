@@ -41,6 +41,7 @@ struct HiddenLines {
 
     static void applyMarkers();
     static void erase(uintptr_t bufferId) { map.erase(bufferId); }
+    static bool indicated();
     static void peek();
     static void restore();
     static void restoreView();

@@ -18,7 +18,7 @@
 #include "CommonData.h"
 #include "ProgressInfo.h"
 
-void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax);
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax, bool applyWhenPeeking);
 
 
 namespace {
@@ -154,7 +154,7 @@ bool progressiveSearch(ProgressInfo& pi) {
                     sci.AddSelection(position, found);
                 }
                 else {
-                    makeCharsVisible(found, position);
+                    makeCharsVisible(found, position, false);
                     int mainSelection = sci.MainSelection();
                     sci.AddSelection(position, found);
                     sci.SetMainSelection(mainSelection);
@@ -162,7 +162,7 @@ bool progressiveSearch(ProgressInfo& pi) {
             }
             break;
         case SearchCommand::Show:
-            makeCharsVisible(found, position);
+            makeCharsVisible(found, position, true);
             sci.SetIndicatorCurrent(data.showIndicator);
             sci.SetIndicatorValue(1);
             sci.IndicatorFillRange(found, length);

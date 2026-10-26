@@ -34,19 +34,24 @@
 // and removes all hidden line markers.
 
 
-void makeLinesVisible(Scintilla::Line lnMin, Scintilla::Line lnMax) {
+void makeLinesVisible(Scintilla::Line lnMin, Scintilla::Line lnMax, bool applyWhenPeeking) {
 
-    if (sci.AllLinesVisible()) return;
+    bool peeking = applyWhenPeeking && HiddenLines::peeking();
+
+    if (!peeking && sci.AllLinesVisible()) return;
     if (lnMax < lnMin) std::swap(lnMin, lnMax);
 
     Scintilla::Line lineCount = sci.LineCount();
     Scintilla::Line originalLastVisible = sci.VisibleFromDocLine(lineCount - 1);
-    bool anyHidden = false;
-    for (Scintilla::Line line = lnMin; line <= lnMax; ++line) if (!sci.LineVisible(line)) {
-        anyHidden = true;
-        sci.EnsureVisible(line);
+    if (peeking) for (Scintilla::Line line = lnMin; line <= lnMax; ++line) sci.EnsureVisible(line);
+    else {
+        bool anyHidden = false;
+        for (Scintilla::Line line = lnMin; line <= lnMax; ++line) if (!sci.LineVisible(line)) {
+            anyHidden = true;
+            sci.EnsureVisible(line);
+        }
+        if (!anyHidden) return;
     }
-    if (!anyHidden) return;
     bool anyExpanded = sci.VisibleFromDocLine(lineCount - 1) != originalLastVisible;
 
     sci.ShowLines(lnMin, lnMax);
@@ -71,17 +76,17 @@ void makeLinesVisible(Scintilla::Line lnMin, Scintilla::Line lnMax) {
     HiddenLines& hidden = HiddenLines::current();
     if (lnMin == 0) hidden.first = false;
     if (lnMax == lineCount - 1) hidden.last = false;
-    if (anyExpanded) HiddenLines::applyMarkers();  // Expanding folds can cause hidden blocks to be incorrectly shown
+    if (!peeking && anyExpanded) HiddenLines::applyMarkers();  // Expanding folds can cause hidden blocks to be incorrectly shown
     
 }
 
 
-void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax) {
-    if (sci.AllLinesVisible()) return;
+void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax, bool applyWhenPeeking) {
+    if (!(applyWhenPeeking && HiddenLines::peeking()) && sci.AllLinesVisible()) return;
     if (cpMax < cpMin) std::swap(cpMin, cpMax);
     Scintilla::Line lnMin = sci.LineFromPosition(cpMin);
     Scintilla::Line lnMax = cpMax - cpMin < 2 ? lnMin : sci.LineFromPosition(cpMax - 1);
-    makeLinesVisible(lnMin, lnMax);
+    makeLinesVisible(lnMin, lnMax, applyWhenPeeking);
 }
 
 
