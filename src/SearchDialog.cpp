@@ -34,6 +34,9 @@ void showToolsMenu(HWND button);
 
 namespace {
 
+void showMessage(HWND hwndDlg, const SearchResult& result);
+
+
 // Command button and menu text
         
 const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_Text {
@@ -64,10 +67,10 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Count, SearchCommand::After , SearchCommand::Whole    ), {L"Count After in Whole &Document"         , L"\u2003  &Count\u2003"} },
 
 
-    { SearchCommand(SearchCommand::FindAll, SearchCommand::All), {L"&Find All", L"Find &All\u2003"} },
+    { SearchCommand(SearchCommand::FindAll, SearchCommand::All), {L"Find &All", L"Find &All\u2003"} },
     { SearchCommand(SearchCommand::Select , SearchCommand::All), {L"&Select"  , L"&Select\u2003"  } },
-    { SearchCommand(SearchCommand::Mark   , SearchCommand::All), {L"&Mark"    , L"M&ark\u2003"    } },
-    { SearchCommand(SearchCommand::Show   , SearchCommand::All), {L"S&how"    , L"&Show\u2003"    } },
+    { SearchCommand(SearchCommand::Mark   , SearchCommand::All), {L"Mar&k"    , L"Mar&k\u2003"    } },
+    { SearchCommand(SearchCommand::Show   , SearchCommand::All), {L"S&how"    , L"S&how\u2003"    } },
 
     { SearchCommand(SearchCommand::FindAll, SearchCommand::Open), {L"Find All in &Open Documents"        , L"Find &All  \u2003"} },
     { SearchCommand(SearchCommand::FindAll, SearchCommand::View), {L"Find All in Documents in this &View", L"Find &All  \u2003"} },
@@ -90,25 +93,25 @@ const std::map<unsigned int, std::pair<const wchar_t*, const wchar_t*>> Command_
     { SearchCommand(SearchCommand::Select, SearchCommand::Before, SearchCommand::Whole    ), {L"Select Before in W&hole Document", L"\u2003  &Select\u2003"} },
     { SearchCommand(SearchCommand::Select, SearchCommand::After , SearchCommand::Whole    ), {L"Select After in Whole &Document" , L"\u2003  &Select\u2003"} },
 
-    { SearchCommand(SearchCommand::Mark, SearchCommand::Open                            ), {L"Mark in &Open Documents"               , L"M&ark  \u2003"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::View                            ), {L"Mark in Documents in this &View"       , L"M&ark  \u2003"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Selection), {L"Mark in &Selection"                    , L"\u2003  M&ark\u2003"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Region   ), {L"Mark in &Marked Text"                  , L"\u2003  M&ark\u2003"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Region   ), {L"Mark Before in Mar&ked Text"           , L"\u2003  M&ark\u2003"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Region   ), {L"Mark After in Marked &Text"            , L"\u2003  M&ark\u2003"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::Open  , SearchCommand::Region   ), {L"Mark in Marked Text in O&pen Documents", L"\u2003  M&ark  \u2003"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::View  , SearchCommand::Region   ), {L"Mark in Marked Text in this V&iew"     , L"\u2003  M&ark  \u2003"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Whole    ), {L"Mark in &Whole Document"               , L"\u2003  M&ark\u2003"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Whole    ), {L"Mark Before in W&hole Document"        , L"\u2003  M&ark\u2003"} },
-    { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Whole    ), {L"Mark After in Whole &Document"         , L"\u2003  M&ark\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Open                            ), {L"Mark in &Open Documents"               , L"Mar&k  \u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::View                            ), {L"Mark in Documents in this &View"       , L"Mar&k  \u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Selection), {L"Mark in &Selection"                    , L"\u2003  Mar&k\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Region   ), {L"Mark in &Marked Text"                  , L"\u2003  Mar&k\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Region   ), {L"Mark Before in Mar&ked Text"           , L"\u2003  Mar&k\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Region   ), {L"Mark After in Marked &Text"            , L"\u2003  Mar&k\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Open  , SearchCommand::Region   ), {L"Mark in Marked Text in O&pen Documents", L"\u2003  Mar&k  \u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::View  , SearchCommand::Region   ), {L"Mark in Marked Text in this V&iew"     , L"\u2003  Mar&k  \u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::All   , SearchCommand::Whole    ), {L"Mark in &Whole Document"               , L"\u2003  Mar&k\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::Before, SearchCommand::Whole    ), {L"Mark Before in W&hole Document"        , L"\u2003  Mar&k\u2003"} },
+    { SearchCommand(SearchCommand::Mark, SearchCommand::After , SearchCommand::Whole    ), {L"Mark After in Whole &Document"         , L"\u2003  Mar&k\u2003"} },
 
-    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Selection), {L"Show in &Selection"              , L"\u2003  &Show\u2003"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Region   ), {L"Show in &Marked Text"            , L"\u2003  &Show\u2003"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Region   ), {L"Show Before in Mar&ked Text"     , L"\u2003  &Show\u2003"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Region   ), {L"Show After in Marked &Text"      , L"\u2003  &Show\u2003"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole    ), {L"Show in &Whole Document"         , L"\u2003  &Show\u2003"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Whole    ), {L"Show Before in W&hole Document"  , L"\u2003  &Show\u2003"} },
-    { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole    ), {L"Show After in Whole &Document"   , L"\u2003  &Show\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Selection), {L"Show in &Selection"              , L"\u2003  S&how\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Region   ), {L"Show in &Marked Text"            , L"\u2003  S&how\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Region   ), {L"Show Before in Mar&ked Text"     , L"\u2003  S&how\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Region   ), {L"Show After in Marked &Text"      , L"\u2003  S&how\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::All   , SearchCommand::Whole    ), {L"Show in &Whole Document"         , L"\u2003  S&how\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::Before, SearchCommand::Whole    ), {L"Show Before in W&hole Document"  , L"\u2003  S&how\u2003"} },
+    { SearchCommand(SearchCommand::Show, SearchCommand::After , SearchCommand::Whole    ), {L"Show After in Whole &Document"   , L"\u2003  S&how\u2003"} },
 
 
     { SearchCommand(SearchCommand::Replace , SearchCommand::Forward ), {L"&Replace"         , L"&Replace  \u2003"} },
@@ -155,8 +158,22 @@ const wchar_t* Command_Button(unsigned int command) {
     return (Command_Text.contains(command)) ? Command_Text.at(command).second : L"???";
 }
 
-const wchar_t* Command_Menu(unsigned int command) {
-    return (Command_Text.contains(command)) ? Command_Text.at(command).first: L"???";
+std::wstring Command_Menu(unsigned int command) {
+    auto ctit = Command_Text.find(command);
+    if (ctit == Command_Text.end()) return L"???";
+    std::wstring text = (ctit->second).first;
+    SearchCommand sc = command;
+    if ((sc.verb == SearchCommand::FindAll || sc.verb == SearchCommand::Select || sc.verb == SearchCommand::Mark
+        || sc.verb == SearchCommand::Show) && sc.extent == SearchCommand::All && sc.scope == SearchCommand::Smart) {
+        SearchCommand fa = SearchCommand(data.buttonFindAll);
+        if (fa.verb != sc.verb) {
+            text += sc.verb == SearchCommand::FindAll ? L"\tAlt+A"
+                  : sc.verb == SearchCommand::Select  ? L"\tAlt+S"
+                  : sc.verb == SearchCommand::Mark    ? L"\tAlt+K"
+                                                      : L"\tAlt+H";
+        }
+    }
+    return text;
 }
 
 
@@ -201,14 +218,70 @@ bool processScintillaShortcut(ScintillaControl& sc, char key) {
 }
 
 
-// Subclass procedure for non-Scintilla controls: implement dialog-wide keyboard shortcuts
+// Subclass procedure for all controls: implement dialog-wide keyboard shortcuts
 
-LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR) {
+LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR isScintilla) {
     switch (uMsg) {
     case WM_NCDESTROY:
         RemoveWindowSubclass(hWnd, subclassOther, uIdSubclass);
         break;
+    case WM_GETDLGCODE:
+    {
+        MSG* pMsg = reinterpret_cast<MSG*>(lParam);
+        if (pMsg && (pMsg->message == WM_SYSCHAR || pMsg->message == WM_SYSKEYDOWN)) {
+            wchar_t key = static_cast<wchar_t>(pMsg->wParam);
+            if (key >= L'1' && key <= L'5')
+                return DLGC_WANTALLKEYS; 
+        }
+        break;
+    }
+    case WM_SYSCHAR:
+    {
+        static NMBCDROPDOWN dd = {0, 0, BCN_DROPDOWN, 0, 0, 0, 0};
+        switch (static_cast<wchar_t>(wParam)) {
+        case L'1': dd.hdr.idFrom = IDC_SEARCH_FIND      ; break;
+        case L'2': dd.hdr.idFrom = IDC_SEARCH_COUNT     ; break;
+        case L'3': dd.hdr.idFrom = IDC_SEARCH_FINDALL   ; break;
+        case L'4': dd.hdr.idFrom = IDC_SEARCH_REPLACE   ; break;
+        case L'5': dd.hdr.idFrom = IDC_SEARCH_REPLACEALL; break;
+        default:
+        {
+            dd.hdr.idFrom = 0;
+            SearchCommand sc = 0;
+            switch (static_cast<wchar_t>(wParam)) {
+            case 'a': 
+                if (SearchCommand(data.buttonFindAll).verb != SearchCommand::FindAll)
+                    sc = SearchCommand(SearchCommand::FindAll, SearchCommand::All);
+                break;
+            case 'h': 
+                if (SearchCommand(data.buttonFindAll).verb != SearchCommand::Show)
+                    sc = SearchCommand(SearchCommand::Show, SearchCommand::All); break;
+                break;
+            case 'k': 
+                if (SearchCommand(data.buttonFindAll).verb != SearchCommand::Mark)
+                    sc = SearchCommand(SearchCommand::Mark, SearchCommand::All); break;
+                break;
+            case 's': 
+                if (SearchCommand(data.buttonFindAll).verb != SearchCommand::Select)
+                    sc = SearchCommand(SearchCommand::Select, SearchCommand::All); break;
+                break;
+            }
+            if (sc) {
+                auto result = RequestSearch(sc, data.context, data.find, data.repl, plugin.currentScintilla());
+                showMessage(data.searchDialog, result);
+                return 0;
+            }
+        }
+        }
+        if (dd.hdr.idFrom) {
+            dd.hdr.hwndFrom = GetDlgItem(data.searchDialog, static_cast<int>(dd.hdr.idFrom));
+            GetClientRect(dd.hdr.hwndFrom, &dd.rcButton);
+            PostMessage(data.searchDialog, WM_NOTIFY, static_cast<WPARAM>(dd.hdr.idFrom), reinterpret_cast<LPARAM>(&dd));
+        }
+        break;
+    }
     case WM_KEYDOWN:
+        if (isScintilla) break;
         if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') break;
         processToolsCommand(static_cast<unsigned char>(
             GetKeyState(VK_SHIFT) & 0x8000 ? std::toupper(static_cast<unsigned char>(wParam))
@@ -573,7 +646,7 @@ void decorateSplitButton(const NMCUSTOMDRAW& cd) {
 
 
 BOOL addButtonItem(HMENU menu, SearchCommand cmd) {
-    return AppendMenu(menu, MF_STRING, cmd, Command_Menu(cmd));
+    return AppendMenu(menu, MF_STRING, cmd, Command_Menu(cmd).data());
 }
 
 void showBubble(HWND scintilla, std::string bubble) {
@@ -667,6 +740,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
         SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FINDALL    ), subclassOther, 0, 0);
         SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACE    ), subclassOther, 0, 0);
         SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLACEALL ), subclassOther, 0, 0);
+
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_FINDBOX), subclassOther, 0, 1);
+        SetWindowSubclass(GetDlgItem(hwndDlg, IDC_SEARCH_REPLBOX), subclassOther, 0, 1);
 
         layoutDialog(hwndDlg);
 
@@ -1065,9 +1141,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
                 addButtonItem(pum, SearchCommand(SearchCommand::FindAll, SearchCommand::Open));
                 addButtonItem(pum, SearchCommand(SearchCommand::FindAll, SearchCommand::View));
                 AppendMenu(pum, MF_SEPARATOR, 0, 0);
-                AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subFind), L"Find &All");
+                AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subFind), L"&Find All");
                 AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subSlct), L"Selec&t");
-                AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subMark), L"Mar&k");
+                AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subMark), L"&Mark");
                 AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(subShow), L"Sho&w");
                 break;
             }
