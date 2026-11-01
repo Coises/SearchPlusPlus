@@ -398,36 +398,34 @@ HWND setupScintilla() {
             case 'D':
                 prevDocument();
                 return true;
-            case 'g':
+            case 'f':
                 showSearchInFilesDialog();
                 return true;
-            case 'G':
+            case 'F':
                 closeSearchInFilesDialog();
-                return true;
-            case 'h':
-                showSearchDialog();
-                return true;
-            case 'H':
-                npp(NPPM_DMMHIDE, 0, hitlist);
-                SetFocus(plugin.currentScintilla());
                 return true;
             case 'n':
                 SetFocus(plugin.currentScintilla());
                 return true;
             case 'N':
-                SetFocus(plugin.currentScintilla());
-                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                                                        else ShowWindow(data.searchDialog, SW_HIDE);
-                npp(NPPM_DMMHIDE, 0, hitlist);
-                if (data.searchInFilesDialog) SendMessage(data.searchInFilesDialog, WM_COMMAND, IDCANCEL, 0);
-                return true;
-            case 'o':
-                showSearchDialog();
-                SetFocus(GetDlgItem(data.searchDialog, IDC_SEARCH_FINDBOX));
-                return true;
-            case 'O':
                 if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
                 else ShowWindow(data.searchDialog, SW_HIDE);
+                return true;
+            case 'Q':
+                SetFocus(plugin.currentScintilla());
+                if (data.searchDialog) {
+                    if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                                                            else ShowWindow(data.searchDialog, SW_HIDE);
+                }
+                npp(NPPM_DMMHIDE, 0, hitlist);
+                closeSearchInFilesDialog();
+                return true;
+            case 'r':
+                showSearchDialog();
+                return true;
+            case 'R':
+                npp(NPPM_DMMHIDE, 0, hitlist);
+                SetFocus(plugin.currentScintilla());
                 return true;
             case 's':
                 nextSearch();

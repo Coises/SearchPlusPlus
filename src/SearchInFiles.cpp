@@ -225,19 +225,24 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     case WM_KEYDOWN:
         if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') break;
         switch (wParam) {
-        case 'G':
+        case 'F':
             if (GetKeyState(VK_SHIFT) & 0x8000) {
                 SetFocus(plugin.currentScintilla());
                 closeSearchInFilesDialog();
             }
-            break;
-        case 'H':
-            if (GetKeyState(VK_SHIFT) & 0x8000) hideHitlist();
-            else                                showHitlist();
+            else showSearchDialog();
             break;
         case 'N':
-            SetFocus(plugin.currentScintilla());
             if (GetKeyState(VK_SHIFT) & 0x8000) {
+                if (!data.searchDialog) break;
+                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                else ShowWindow(data.searchDialog, SW_HIDE);
+            }
+            else SetFocus(plugin.currentScintilla());
+            break;
+        case 'Q':
+            if (GetKeyState(VK_SHIFT) & 0x8000) {
+                SetFocus(plugin.currentScintilla());
                 if (data.searchDialog) {
                     if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
                     else ShowWindow(data.searchDialog, SW_HIDE);
@@ -246,13 +251,9 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 closeSearchInFilesDialog();
             }
             break;
-        case 'O':
-            if (GetKeyState(VK_SHIFT) & 0x8000) {
-                if (!data.searchDialog) break;
-                if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                else ShowWindow(data.searchDialog, SW_HIDE);
-            }
-            else showSearchDialog();
+        case 'R':
+            if (GetKeyState(VK_SHIFT) & 0x8000) hideHitlist();
+            else                                showHitlist();
             break;
         }
     }
@@ -262,7 +263,14 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 bool processScintillaShortcut(ScintillaControl& sc, char key) {
     switch (key) {
-    case 'e':
+    case 'F':
+        SetFocus(plugin.currentScintilla());
+        closeSearchInFilesDialog();
+        return true;
+    case 'f':
+        showSearchDialog();
+        return true;
+    case 'g':
     {
         std::string findText = ucd.findCntl.text();
         std::string replText = ucd.replCntl.text();
@@ -272,7 +280,7 @@ bool processScintillaShortcut(ScintillaControl& sc, char key) {
         ucd.replCntl.ReplaceTarget(findText);
         return true;
     }
-    case 'f':
+    case 'H':
     {
         if (!data.searchDialog) break;
         sc.TargetFromSelection();
@@ -280,26 +288,29 @@ bool processScintillaShortcut(ScintillaControl& sc, char key) {
         sc.SetSel(-1, sc.TargetEnd());
         return true;
     }
-    case 'G':
-        SetFocus(plugin.currentScintilla());
-        closeSearchInFilesDialog();
-        return true;
-    case 'H':
-        hideHitlist();
-        return true;
-    case 'h':
-        showHitlist();
-        return true;
     case 'i':
         plugin.getScintillaPointers();
         sc.TargetFromSelection();
         sc.ReplaceTarget(sci.GetSelText());
         sc.SetSel(-1, sc.TargetEnd());
         return true;
+    case 'J':
+    {
+        if (!data.searchDialog) break;
+        sc.TargetFromSelection();
+        sc.ReplaceTarget(data.repl.text());
+        sc.SetSel(-1, sc.TargetEnd());
+        return true;
+    }
+    case 'N':
+        if (!data.searchDialog) break;
+        if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
+                                                else ShowWindow(data.searchDialog, SW_HIDE);
+        return true;
     case 'n':
         SetFocus(plugin.currentScintilla());
         return true;
-    case 'N':
+    case 'Q':
         SetFocus(plugin.currentScintilla());
         if (data.searchDialog) {
             if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
@@ -308,22 +319,12 @@ bool processScintillaShortcut(ScintillaControl& sc, char key) {
         hideHitlist();
         closeSearchInFilesDialog();
         return true;
-    case 'o':
-        showSearchDialog();
-        return true;
-    case 'O':
-        if (!data.searchDialog) break;
-        if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
-                                                else ShowWindow(data.searchDialog, SW_HIDE);
+    case 'R':
+        hideHitlist();
         return true;
     case 'r':
-    {
-        if (!data.searchDialog) break;
-        sc.TargetFromSelection();
-        sc.ReplaceTarget(data.repl.text());
-        sc.SetSel(-1, sc.TargetEnd());
+        showHitlist();
         return true;
-    }
     }
     return false;
 }
@@ -1390,9 +1391,9 @@ INT_PTR CALLBACK mainDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM l
             case ID_SCMSCI_WRAPCHAR       : sc.SetWrapMode(Scintilla::Wrap::Char); break;
             case ID_SCMSCI_WRAPWORD       : sc.SetWrapMode(Scintilla::Wrap::Word); break;
             case ID_SCMSCI_INSERTSELECTION: processScintillaShortcut(sc, 'i'); break;
-            case ID_SCMSCI_COPYFIND       : processScintillaShortcut(sc, 'f'); break;
-            case ID_SCMSCI_COPYREPLACE    : processScintillaShortcut(sc, 'r'); break;
-            case ID_SCMSCI_EXCHANGE       : processScintillaShortcut(sc, 'e'); break;
+            case ID_SCMSCI_COPYFIND       : processScintillaShortcut(sc, 'H'); break;
+            case ID_SCMSCI_COPYREPLACE    : processScintillaShortcut(sc, 'J'); break;
+            case ID_SCMSCI_EXCHANGE       : processScintillaShortcut(sc, 'g'); break;
             default:
                 if (result > 5000 && result <= 5000 + static_cast<int>(history.size())) {
                     sc.TargetWholeDocument();

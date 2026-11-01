@@ -185,7 +185,7 @@ config_rect placement("Search dialog placement");
 bool processScintillaShortcut(ScintillaControl& sc, char key) {
     if (processToolsCommand(key)) return true;
     switch (key) {
-    case 'e':
+    case 'g':
     {
         std::string findText = data.find.text();
         std::string replText = data.repl.text();
@@ -195,7 +195,7 @@ bool processScintillaShortcut(ScintillaControl& sc, char key) {
         data.repl.ReplaceTarget(findText);
         return true;
     }
-    case 'f':
+    case 'H':
         if (sc == data.repl) data.repl.TargetFromSelection();
                         else data.repl.TargetWholeDocument();
         data.repl.ReplaceTarget(data.find.text());
@@ -207,7 +207,7 @@ bool processScintillaShortcut(ScintillaControl& sc, char key) {
         sc.ReplaceTarget(sci.GetSelText());
         sc.SetSel(-1, sc.TargetEnd());
         return true;
-    case 'r':
+    case 'J':
         if (sc == data.find) data.find.TargetFromSelection();
                         else data.find.TargetWholeDocument();
         data.find.ReplaceTarget(data.repl.text());
@@ -228,11 +228,7 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
     case WM_GETDLGCODE:
     {
         MSG* pMsg = reinterpret_cast<MSG*>(lParam);
-        if (pMsg && (pMsg->message == WM_SYSCHAR || pMsg->message == WM_SYSKEYDOWN)) {
-            wchar_t key = static_cast<wchar_t>(pMsg->wParam);
-            if (key >= L'1' && key <= L'5')
-                return DLGC_WANTALLKEYS; 
-        }
+        if (pMsg && (pMsg->message == WM_SYSCHAR || pMsg->message == WM_SYSKEYDOWN)) return DLGC_WANTALLKEYS; 
         break;
     }
     case WM_SYSCHAR:
@@ -976,9 +972,9 @@ INT_PTR CALLBACK searchDialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM
         case ID_SCMSCI_WRAPCHAR       : sc.SetWrapMode(Scintilla::Wrap::Char); break;
         case ID_SCMSCI_WRAPWORD       : sc.SetWrapMode(Scintilla::Wrap::Word); break;
         case ID_SCMSCI_INSERTSELECTION: processScintillaShortcut(sc, 'i'); break;
-        case ID_SCMSCI_COPYFIND       : processScintillaShortcut(sc, 'f'); break;
-        case ID_SCMSCI_COPYREPLACE    : processScintillaShortcut(sc, 'r'); break;
-        case ID_SCMSCI_EXCHANGE       : processScintillaShortcut(sc, 'e'); break;
+        case ID_SCMSCI_COPYFIND       : processScintillaShortcut(sc, 'H'); break;
+        case ID_SCMSCI_COPYREPLACE    : processScintillaShortcut(sc, 'J'); break;
+        case ID_SCMSCI_EXCHANGE       : processScintillaShortcut(sc, 'g'); break;
         default:
             if (result > 5000 && result <= 5000 + static_cast<int>(history.size())) {
                 sc.TargetWholeDocument();

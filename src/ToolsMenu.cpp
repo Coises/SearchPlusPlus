@@ -38,47 +38,43 @@ void syncReplaceButton();
 
 namespace ToolsCommand {
 
-    constexpr unsigned char Focus_Find_Or_Repl = 'o';
-    constexpr unsigned char SearchInFiles      = 'g';
-    constexpr unsigned char Hitlist_Show       = 'h';
-    constexpr unsigned char BookmarkWhenMark   = 'b';
-    constexpr unsigned char BookmarksConfigure = 'B';
-    constexpr unsigned char JumpReplace        = 'j';
-    constexpr unsigned char Peek               = 'E';
-    constexpr unsigned char SaveSearch         = 's';
-    constexpr unsigned char ShowLines          = 'q';
-    constexpr unsigned char ShowLinesShift     = 'Q';
-    constexpr unsigned char ShowShown          = 'W';
-    constexpr unsigned char ExpandVisible      = 'p';
-    constexpr unsigned char ExpandVisibleShift = 'P';
-    constexpr unsigned char HideAll            = 'D';
-    constexpr unsigned char SelToMark          = 'm';
-    constexpr unsigned char SelToMarkShift     = 'M';
-    constexpr unsigned char MarkShown          = 'k';
-    constexpr unsigned char MarkShownShift     = 'K';
-    constexpr unsigned char RemoveMarksFromSel = 'X';
-    constexpr unsigned char InvertMarked       = 'I';
-    constexpr unsigned char MarkToSel          = 'S';
-    constexpr unsigned char CopyMarked         = 'C';
-    constexpr unsigned char CopyMarkedDialog   = 'Y';
-    constexpr unsigned char CopyMarkedMultiple = 'T';
-    constexpr unsigned char ClearMarks         = 'R';
-    constexpr unsigned char ClearMarksMultiple = 'V';
-    constexpr unsigned char ShowAllClear       = 'A';
-    constexpr unsigned char ClearHitlist       = 1  ;
-    constexpr unsigned char Settings           = 'J';
-    constexpr unsigned char SearchDialog_Close = 'O';
+    constexpr unsigned char Document_Search     = 'n';
+    constexpr unsigned char SearchInFiles       = 'f';
+    constexpr unsigned char SearchInFiles_Close = 'F';
+    constexpr unsigned char Hitlist_Show        = 'r';
+    constexpr unsigned char Hitlist_Hide        = 'R';
+    constexpr unsigned char BookmarkWhenMark    = 'b';
+    constexpr unsigned char BookmarksConfigure  = 'B';
+    constexpr unsigned char JumpReplace         = 'j';
+    constexpr unsigned char Peek                = 'Y';
+    constexpr unsigned char SaveSearch          = 's';
+    constexpr unsigned char ShowLines           = 'o';
+    constexpr unsigned char ShowLinesShift      = 'O';
+    constexpr unsigned char ShowShown           = 'W';
+    constexpr unsigned char ExpandVisible       = 'e';
+    constexpr unsigned char ExpandVisibleShift  = 'E';
+    constexpr unsigned char HideAll             = 'h';
+    constexpr unsigned char SelToMark           = 'm';
+    constexpr unsigned char SelToMarkShift      = 'M';
+    constexpr unsigned char MarkShown           = 'k';
+    constexpr unsigned char MarkShownShift      = 'K';
+    constexpr unsigned char RemoveMarksFromSel  = 'V';
+    constexpr unsigned char InvertMarked        = 'I';
+    constexpr unsigned char MarkToSel           = 'S';
+    constexpr unsigned char CopyMarked          = 'p';
+    constexpr unsigned char CopyMarkedDialog    = 'P';
+    constexpr unsigned char CopyMarkedMultiple  = 'T';
+    constexpr unsigned char ClearMarks          = 'C';
+    constexpr unsigned char ClearMarksMultiple  = 'D';
+    constexpr unsigned char ClearHitlist        = 1  ;
+    constexpr unsigned char ShowAllClear        = 'A';
+    constexpr unsigned char Settings            = 'G';
+    constexpr unsigned char SearchDialog_Close  = 'N';
+    constexpr unsigned char All_Windows_Close   = 'Q';
 
     constexpr unsigned char SyncBookToMark     = 10;
     constexpr unsigned char SyncBookToVisible  = 11;
     constexpr unsigned char SyncMarkToBook     = 12;
-
-    // Following are not on the Tools menu, but use this mechanism to implement dialog-wide shortcuts
-
-    constexpr unsigned char SearchInFiles_Close = 'G';
-    constexpr unsigned char Hitlist_Hide        = 'H';
-    constexpr unsigned char Document_Focus      = 'n';
-    constexpr unsigned char All_Windows_Close   = 'N';
 
 };
 
@@ -89,31 +85,31 @@ namespace {
 
     const std::map<const unsigned char, const wchar_t*> Tools_Text {
 
-        { ToolsCommand::Focus_Find_Or_Repl, L"Search &Open Documents..."                            },
-        { ToolsCommand::SearchInFiles     , L"Search in &Files..."                                  },
-        { ToolsCommand::Hitlist_Show      , L"Searc&h Results..."                                   },
+        { ToolsCommand::Document_Search   , L"Mai&n Search++ dialog..."                             },
+        { ToolsCommand::SearchInFiles     , L"Search++ in &Files..."                                },
+        { ToolsCommand::Hitlist_Show      , L"Search++ &Results..."                                 },
         { ToolsCommand::BookmarkWhenMark  , L"&Bookmark lines when marking text (Shift: configure)" },
         { ToolsCommand::JumpReplace       , L"&Jump to next match after replace"                    },
-        { ToolsCommand::Peek              , L"P&eek"                                                },
+        { ToolsCommand::Peek              , L"Sp&y (temporarily show hidden lines)"                 },
         { ToolsCommand::SaveSearch        , L"&Save search..."                                      },
         { ToolsCommand::ShowLines         , L"Show "                                                },
         { ToolsCommand::ShowShown         , L"Sho&w only lines with shown text"                     },
-        { ToolsCommand::ExpandVisible     , L"Ex&pand visible"                                      },
-        { ToolsCommand::HideAll           , L"Hi&de all lines"                                      },
+        { ToolsCommand::ExpandVisible     , L"&Expand visible"                                      },
+        { ToolsCommand::HideAll           , L"&Hide all lines"                                      },
         { ToolsCommand::SelToMark         , L"&Mark selected text"                                  },
         { ToolsCommand::MarkShown         , L"Mar&k shown text"                                     },
-        { ToolsCommand::RemoveMarksFromSel, L"Remove marks "                                        },
+        { ToolsCommand::RemoveMarksFromSel, L"Remo&ve marks "                                       },
         { ToolsCommand::InvertMarked      , L"&Invert marked text"                                  },
-        { ToolsCommand::MarkToSel         , L"Se&lect marked text"                                  },
-        { ToolsCommand::CopyMarked        , L"&Copy marked text "                                   },
-        { ToolsCommand::CopyMarkedDialog  , L"Cop&y marked text..."                                 },
+        { ToolsCommand::MarkToSel         , L"&Select marked text"                                  },
+        { ToolsCommand::CopyMarked        , L"Co&py marked text "                                   },
         { ToolsCommand::CopyMarkedMultiple, L"Copy marked &text as multiple selections"             },
-        { ToolsCommand::ClearMarks        , L"&Remove marks "                                       },
-        { ToolsCommand::ClearMarksMultiple, L"Remo&ve marks from multiple documents..."             },
-        { ToolsCommand::ShowAllClear      , L"Clear shown (show &all and clear style)"              },
+        { ToolsCommand::ClearMarks        , L"&Clear marks "                                        },
+        { ToolsCommand::ClearMarksMultiple, L"Clear marks from multiple &documents..."              },
         { ToolsCommand::ClearHitlist      , L"Clear search res&ults list"                           },
+        { ToolsCommand::ShowAllClear      , L"Clear shown (show &all and clear style)"              },
         { ToolsCommand::Settings          , L"Settin&gs..."                                         },
-        { ToolsCommand::SearchDialog_Close, L"Cl&ose"                                               },
+        { ToolsCommand::SearchDialog_Close, L"Close mai&n Search++ dialog"                          },
+        { ToolsCommand::All_Windows_Close , L"&Quit (close all Search++ windows)"                   },
 
         { ToolsCommand::SyncBookToMark    , L"&Bookmark lines with marked text"                     },
         { ToolsCommand::SyncBookToVisible , L"Bookmark &visible lines"                              },
@@ -825,19 +821,17 @@ namespace {
             break;
         }
 
+        case ToolsCommand::CopyMarked:
         case ToolsCommand::CopyMarkedDialog:
         {
             if (!ts.anyMarked) break;
-            HWND focus = GetFocus();
-            INT_PTR cancel = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_TOOLS_COPYMARKED), data.searchDialog, copyMarkedDialogProc);
-            SetFocus(focus);
-            if (cancel) break;
-        }
-        [[fallthrough]];
-    
-        case ToolsCommand::CopyMarked:
-        {
-            if (!ts.anyMarked) break;
+            if (ts.shift) {
+                HWND focus = GetFocus();
+                INT_PTR cancel = DialogBox(plugin.dllInstance, MAKEINTRESOURCE(IDD_TOOLS_COPYMARKED), data.searchDialog, copyMarkedDialogProc);
+                SetFocus(focus);
+                if (cancel) break;
+
+            }
             std::string text;
             bool first = true;
             Scintilla::Position documentLength = sci.Length();
@@ -1012,11 +1006,7 @@ namespace {
             if (ts.shift) hideHitlist();
                      else showHitlist();
             break;
-    
-        case ToolsCommand::Document_Focus:
-            SetFocus(plugin.currentScintilla());
-            break;
-    
+        
         case ToolsCommand::All_Windows_Close:
             SetFocus(plugin.currentScintilla());
             if (data.searchDialog == data.dockingDialog) npp(NPPM_DMMHIDE, 0, data.searchDialog);
@@ -1025,15 +1015,11 @@ namespace {
             closeSearchInFilesDialog();
             break;
     
-        case ToolsCommand::Focus_Find_Or_Repl:
+        case ToolsCommand::Document_Search:
             if (!ts.shift) {
-                HWND fw = GetFocus();
-                if (data.searchDialog && (fw == data.searchDialog || IsChild(data.searchDialog, fw)))
-                    SetFocus(fw == data.find.handle ? data.repl.handle : data.find.handle);
-                else {
-                    showSearchDialog();
-                    SetFocus(data.find.handle);
-                }
+                HWND cs = plugin.currentScintilla();
+                if (GetFocus() == cs) showSearchDialog();
+                                      else SetFocus(cs);
                 break;
             }
         [[fallthrough]];
@@ -1083,7 +1069,7 @@ void showToolsMenu(HWND button) {
     EnableMenuItem(pumSync, ToolsCommand::SyncMarkToBook   , ts.anyBookmark ? MF_ENABLED : MF_GRAYED);
 
     HMENU pum = CreatePopupMenu();
-    if (!button) AddToolItem(pum, ToolsCommand::Focus_Find_Or_Repl, 0);
+    if (!button) AddToolItem(pum, ToolsCommand::Document_Search, 0);
     AddToolItem(pum, ToolsCommand::SearchInFiles, button);
     AddToolItem(pum, ToolsCommand::Hitlist_Show , button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
@@ -1091,8 +1077,8 @@ void showToolsMenu(HWND button) {
     AddToolItem(pum, ToolsCommand::JumpReplace     , button);
     AddToolItem(pum, ToolsCommand::Peek            , button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
-    if (ts.selVisible) AddToolItem(pum, ToolsCommand::ShowLines, button, L"all li&nes");
-                  else AddToolItem(pum, ToolsCommand::ShowLines, button, L"selected li&nes (Shift: all)");
+    if (ts.selVisible) AddToolItem(pum, ToolsCommand::ShowLines, button, L"all lines");
+                  else AddToolItem(pum, ToolsCommand::ShowLines, button, L"selected lines (Shift: all)");
     AddToolItem(pum, ToolsCommand::ShowShown, button);
     AddToolItem(pum, ToolsCommand::ExpandVisible, button, !ts.anyHidden || !ts.anyVisible ? L"" :
         std::format(L" {}:{}{} (Shift: configure)", data.expandVisibleBefore.get(), data.expandVisibleAfter.get(),
@@ -1104,19 +1090,19 @@ void showToolsMenu(HWND button) {
     if (enableMarkShown && ts.anyMarked) AddToolItem(pum, ToolsCommand::MarkShown, button, L" (Shift: clear first)");
                                     else AddToolItem(pum, ToolsCommand::MarkShown, button);
     AddToolItem(pum, ToolsCommand::RemoveMarksFromSel, button,
-        data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync ? L"and bookmarks from selected te&xt"
-                                                                            : L"from selected te&xt");
+        data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync ? L"and bookmarks from selected text"
+                                                                            : L"from selected text");
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     AddToolItem(pum, ToolsCommand::MarkToSel   , button);
     AddToolItem(pum, ToolsCommand::InvertMarked, button);
     AppendMenu(pum, MF_POPUP | MF_STRING, reinterpret_cast<UINT_PTR>(pumSync), L"Synchroni&ze marks and bookmarks");
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     AddToolItem(pum, ToolsCommand::CopyMarked, button,
-          data.copyMarkedSeparator == CopyMarkedSeparator::None   ? L"with no separators"
-        : data.copyMarkedSeparator == CopyMarkedSeparator::Blank  ? L"separated by blanks"
-        : data.copyMarkedSeparator == CopyMarkedSeparator::Tab    ? L"separated by tabs"
-        : data.copyMarkedSeparator == CopyMarkedSeparator::Line   ? L"separated by line breaks"
-                                                                  : L"separated by custom string"
+          data.copyMarkedSeparator == CopyMarkedSeparator::None   ? L"with no separators (Shift: configure)"
+        : data.copyMarkedSeparator == CopyMarkedSeparator::Blank  ? L"separated by blanks (Shift: configure)"
+        : data.copyMarkedSeparator == CopyMarkedSeparator::Tab    ? L"separated by tabs (Shift: configure)"
+        : data.copyMarkedSeparator == CopyMarkedSeparator::Line   ? L"separated by line breaks (Shift: configure)"
+                                                                  : L"separated by custom string (Shift: configure)"
         );
     AddToolItem(pum, ToolsCommand::CopyMarkedDialog  , button);
     AddToolItem(pum, ToolsCommand::CopyMarkedMultiple, button);
@@ -1125,12 +1111,12 @@ void showToolsMenu(HWND button) {
         data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync ? L"and bookmarks from active document"
                                                                             : L"from active document");
     AddToolItem(pum, ToolsCommand::ClearMarksMultiple, button);
-    AppendMenu(pum, MF_SEPARATOR, 0, 0);
-    AddToolItem(pum, ToolsCommand::ShowAllClear, button);
     AddToolItem(pum, ToolsCommand::ClearHitlist, button);
+    AddToolItem(pum, ToolsCommand::ShowAllClear, button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     AddToolItem(pum, ToolsCommand::Settings, button);
     if (button) AddToolItem(pum, ToolsCommand::SearchDialog_Close, button);
+    AddToolItem(pum, ToolsCommand::All_Windows_Close, button);
 
     EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , ts.hitVisible || ts.anyHits    ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ShowLines         , ts.anyHidden                   ? MF_ENABLED : MF_GRAYED);
@@ -1144,10 +1130,14 @@ void showToolsMenu(HWND button) {
     EnableMenuItem(pum, ToolsCommand::CopyMarked        , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ShowAllClear      , ts.anyHidden || ts.anyShown    ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ClearHitlist      , ts.anyHits                     ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowAllClear      , ts.anyHidden || ts.anyShown    ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ClearMarks,
         ts.anyMarked || (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync && ts.anyBookmark)
+        ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::All_Windows_Close,
+        (data.searchDialog && IsWindowVisible(data.searchDialog)) || ts.hitVisible
+     || (data.searchInFilesDialog && IsWindowVisible(data.searchInFilesDialog))
         ? MF_ENABLED : MF_GRAYED);
 
     MENUITEMINFO mii;
