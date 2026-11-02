@@ -22,6 +22,7 @@
 #include <windowsx.h>
 
 void checkExpandVisibleState();
+void closeExpandVisibleDialog();
 void closeSearchInFilesDialog();
 void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax, bool applyWhenPeeking);
 void showSearchDialog();
@@ -419,6 +420,7 @@ HWND setupScintilla() {
                 }
                 npp(NPPM_DMMHIDE, 0, hitlist);
                 closeSearchInFilesDialog();
+                closeExpandVisibleDialog();
                 return true;
             case 'r':
                 showSearchDialog();

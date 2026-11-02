@@ -23,6 +23,7 @@
 void showSettingsDialog();
 void clearHitlist();
 void closeSearchInFilesDialog();
+void closeExpandVisibleDialog();
 bool hitlistEmpty();
 void hideHitlist();
 bool processToolsCommand(unsigned char command);
@@ -1460,6 +1461,7 @@ void destroySearchDialogs() {
         RemoveFontResourceEx(L"Search++-Private-Symbols.otf", FR_PRIVATE | FR_NOT_ENUM, 0);
     }
     closeSearchInFilesDialog();
+    closeExpandVisibleDialog();
 }
 
 

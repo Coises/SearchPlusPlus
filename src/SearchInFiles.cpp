@@ -35,6 +35,7 @@
 
 using namespace std::string_literals;
 
+void closeExpandVisibleDialog();
 void closeSearchInFilesDialog();
 void dispatchSearchTasks(HWND inform);
 void hideHitlist();
@@ -249,6 +250,7 @@ LRESULT __stdcall subclassOther(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
                 }
                 hideHitlist();
                 closeSearchInFilesDialog();
+                closeExpandVisibleDialog();
             }
             break;
         case 'R':
@@ -318,6 +320,7 @@ bool processScintillaShortcut(ScintillaControl& sc, char key) {
         }
         hideHitlist();
         closeSearchInFilesDialog();
+        closeExpandVisibleDialog();
         return true;
     case 'R':
         hideHitlist();

@@ -21,6 +21,7 @@
 #include "resource.h"
 
 void clearHitlist();
+void closeExpandVisibleDialog();
 void closeSearchInFilesDialog();
 void hideAllLines();
 bool hitlistEmpty();
@@ -92,7 +93,7 @@ namespace {
         { ToolsCommand::JumpReplace       , L"&Jump to next match after replace"                    },
         { ToolsCommand::Peek              , L"Sp&y (temporarily show hidden lines)"                 },
         { ToolsCommand::SaveSearch        , L"&Save search..."                                      },
-        { ToolsCommand::ShowLines         , L"Show "                                                },
+        { ToolsCommand::ShowLines         , L"Sh&ow "                                               },
         { ToolsCommand::ShowShown         , L"Sho&w only lines with shown text"                     },
         { ToolsCommand::ExpandVisible     , L"&Expand visible"                                      },
         { ToolsCommand::HideAll           , L"&Hide all lines"                                      },
@@ -130,19 +131,16 @@ namespace {
     struct ToolsState {
         bool anyBookmark = false;
         bool anyHidden   = false;
-        bool anyHits     = false;
         bool anyMarked   = false;
         bool anySelected = false;
         bool anyShown    = false;
         bool anyShownNn  = false;
         bool anyVisible  = false;
-        bool hitVisible  = false;
         bool selVisible  = false;
         bool shift       = false;
         void get() {
             anyBookmark = sci.MarkerNext(0, 1 << data.bookMarker) >= 0;
             anyHidden = !sci.AllLinesVisible() || HiddenLines::indicated();
-            anyHits = !hitlistEmpty();
             if (sci.IndicatorValueAt(data.markIndicator, 0)) anyMarked = true;
             else {
                 Scintilla::Position p = sci.IndicatorEnd(data.markIndicator, 0);
@@ -165,10 +163,6 @@ namespace {
             }
             Scintilla::Line lastLine = sci.LineCount() - 1;
             anyVisible = sci.LineVisible(0) || sci.VisibleFromDocLine(lastLine);
-            {
-                HWND hh = hitlistHwnd();
-                hitVisible = hh && IsWindowVisible(hh);
-            }
             if (!anyHidden) selVisible = true;
             else if (!anyVisible) selVisible = false;
             else {
@@ -1013,6 +1007,7 @@ namespace {
             else if (data.searchDialog) ShowWindow(data.searchDialog, SW_HIDE);
             hideHitlist();
             closeSearchInFilesDialog();
+            closeExpandVisibleDialog();
             break;
     
         case ToolsCommand::Document_Search:
@@ -1043,6 +1038,11 @@ namespace {
 }
 
 
+void closeExpandVisibleDialog() {
+    if (expandVisibleDialog) SendMessage(expandVisibleDialog, WM_COMMAND, IDCANCEL, 0);
+}
+
+
 bool processToolsCommand(unsigned char command) {
     ToolsState ts;
     plugin.getScintillaPointers();
@@ -1060,6 +1060,15 @@ void showToolsMenu(HWND button) {
 
     bool enableMarkShown = data.markAlsoBookmarks && data.bookmarkTools != BookmarkTools::None ? ts.anyShown : ts.anyShownNn;
 
+    bool mainVisible = data.searchDialog && IsWindowVisible(data.searchDialog);
+    bool sifVisible = data.searchInFilesDialog && IsWindowVisible(data.searchInFilesDialog);
+    bool anyHits = !hitlistEmpty();
+    bool hitVisible;
+    {
+        HWND hh = hitlistHwnd();
+        hitVisible = hh && IsWindowVisible(hh);
+    }
+
     HMENU pumSync = CreatePopupMenu();
     AddToolItem(pumSync, ToolsCommand::SyncBookToMark   , 0, ts.anyMarked   && ts.anyBookmark ? L" (Shift: clear first)" : L"");
     AddToolItem(pumSync, ToolsCommand::SyncBookToVisible, 0, ts.anyVisible  && ts.anyBookmark ? L" (Shift: clear first)" : L"");
@@ -1069,9 +1078,9 @@ void showToolsMenu(HWND button) {
     EnableMenuItem(pumSync, ToolsCommand::SyncMarkToBook   , ts.anyBookmark ? MF_ENABLED : MF_GRAYED);
 
     HMENU pum = CreatePopupMenu();
-    if (!button) AddToolItem(pum, ToolsCommand::Document_Search, 0);
-    AddToolItem(pum, ToolsCommand::SearchInFiles, button);
-    AddToolItem(pum, ToolsCommand::Hitlist_Show , button);
+    if (!button) AddToolItem(pum, ToolsCommand::Document_Search, 0, mainVisible ? L" (Shift: close)" : L"");
+    AddToolItem(pum, ToolsCommand::SearchInFiles, button, sifVisible ? L" (Shift: close)" : L"");
+    AddToolItem(pum, ToolsCommand::Hitlist_Show , button, hitVisible ? L" (Shift: close)" : L"");
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
     AddToolItem(pum, ToolsCommand::BookmarkWhenMark, button);
     AddToolItem(pum, ToolsCommand::JumpReplace     , button);
@@ -1118,7 +1127,7 @@ void showToolsMenu(HWND button) {
     if (button) AddToolItem(pum, ToolsCommand::SearchDialog_Close, button);
     AddToolItem(pum, ToolsCommand::All_Windows_Close, button);
 
-    EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , ts.hitVisible || ts.anyHits    ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , hitVisible || anyHits          ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ShowLines         , ts.anyHidden                   ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ShowShown         , ts.anyShown                    ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ExpandVisible     , ts.anyHidden && ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
@@ -1130,15 +1139,13 @@ void showToolsMenu(HWND button) {
     EnableMenuItem(pum, ToolsCommand::CopyMarked        , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::CopyMarkedDialog  , ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::CopyMarkedMultiple, ts.anyMarked                   ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ClearHitlist      , ts.anyHits                     ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ClearHitlist      , anyHits                        ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ShowAllClear      , ts.anyHidden || ts.anyShown    ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ClearMarks,
         ts.anyMarked || (data.markAlsoBookmarks && data.bookmarkTools == BookmarkTools::Sync && ts.anyBookmark)
         ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::All_Windows_Close,
-        (data.searchDialog && IsWindowVisible(data.searchDialog)) || ts.hitVisible
-     || (data.searchInFilesDialog && IsWindowVisible(data.searchInFilesDialog))
-        ? MF_ENABLED : MF_GRAYED);
+        mainVisible || sifVisible || hitVisible || expandVisibleDialog ? MF_ENABLED : MF_GRAYED);
 
     MENUITEMINFO mii;
     mii.cbSize = sizeof mii;
