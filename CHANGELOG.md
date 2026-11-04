@@ -1,5 +1,17 @@
 # Search++: An enhanced search plugin for Notepad++
 
+## Version 0.8 -- November 3rd, 2026
+
+* Fix failure to handle hidden lines markers correctly when executing **Show** commands with **Always hide all lines...** not checked and when executing the **Show only lines with shown text** command on the **Tools** menu.
+
+* Track and restore first line and last line hidden states across tab changes.
+
+* Add **Spy (temporarily show hidden lines)** toggle to the **Tools** menu. When spy mode is on all lines are visible even though the markers for hidden lines and collapsed folding groups remain; hidden lines can be restored by toggling spy mode off again.
+
+* Replace the **Reset** button in the **Expand visible** configuration dialog with a **Tools** button. Make Tools menu keyboard shortcuts work in that dialog.
+
+* General reassignment of shortcut keys for greater consistency. Quite a few things have changed, so it is important to check the help, the community thread and/or the **Tools** menu and the Find and Replace box context menus for the new assignments if you use keyboard shortcuts in Search++. I regret the disruption; hopefully this will be a one-time change, and keyboard shortcuts will stay the same after this.
+
 ## Version 0.7.2 -- October 15th, 2026
 
 * Correct failure to find a zero-length match at the end of a file, selection or span of marked text when the previous match included last character of the file, selection or span of marked text.
