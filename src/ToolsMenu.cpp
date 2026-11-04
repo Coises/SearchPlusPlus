@@ -29,11 +29,13 @@ HWND hitlistHwnd();
 void hideHitlist();
 void makeCharsVisible(Scintilla::Position cpMin, Scintilla::Position cpMax, bool applyWhenPeeking);
 void makeLinesVisible(Scintilla::Line lnMin, Scintilla::Line lnMax, bool applyWhenPeeking);
+bool processToolsCommand(unsigned char command);
 void showAllLines();
 void showHitlist();
 void showSearchDialog();
 void showSearchInFilesDialog();
 void showSettingsDialog();
+void showToolsMenu(HWND button);
 void syncReplaceButton();
 
 
@@ -49,11 +51,11 @@ namespace ToolsCommand {
     constexpr unsigned char JumpReplace         = 'j';
     constexpr unsigned char Peek                = 'Y';
     constexpr unsigned char SaveSearch          = 's';
-    constexpr unsigned char ShowLines           = 'o';
-    constexpr unsigned char ShowLinesShift      = 'O';
+    constexpr unsigned char ShowSelectedLines   = 'o';
+    constexpr unsigned char ShowAllLines        = 'O';
     constexpr unsigned char ShowShown           = 'W';
     constexpr unsigned char ExpandVisible       = 'e';
-    constexpr unsigned char ExpandVisibleShift  = 'E';
+    constexpr unsigned char ExpandVisibleDialog = 'E';
     constexpr unsigned char HideAll             = 'h';
     constexpr unsigned char SelToMark           = 'm';
     constexpr unsigned char SelToMarkShift      = 'M';
@@ -86,31 +88,33 @@ namespace {
 
     const std::map<const unsigned char, const wchar_t*> Tools_Text {
 
-        { ToolsCommand::Document_Search   , L"Mai&n Search++ dialog..."                             },
-        { ToolsCommand::SearchInFiles     , L"Search++ in &Files..."                                },
-        { ToolsCommand::Hitlist_Show      , L"Search++ &Results..."                                 },
-        { ToolsCommand::BookmarkWhenMark  , L"&Bookmark lines when marking text (Shift: configure)" },
-        { ToolsCommand::JumpReplace       , L"&Jump to next match after replace"                    },
-        { ToolsCommand::Peek              , L"Sp&y (temporarily show hidden lines)"                 },
-        { ToolsCommand::SaveSearch        , L"&Save search..."                                      },
-        { ToolsCommand::ShowLines         , L"Sh&ow "                                               },
-        { ToolsCommand::ShowShown         , L"Sho&w only lines with shown text"                     },
-        { ToolsCommand::ExpandVisible     , L"&Expand visible"                                      },
-        { ToolsCommand::HideAll           , L"&Hide all lines"                                      },
-        { ToolsCommand::SelToMark         , L"&Mark selected text"                                  },
-        { ToolsCommand::MarkShown         , L"Mar&k shown text"                                     },
-        { ToolsCommand::RemoveMarksFromSel, L"Remo&ve marks "                                       },
-        { ToolsCommand::InvertMarked      , L"&Invert marked text"                                  },
-        { ToolsCommand::MarkToSel         , L"&Select marked text"                                  },
-        { ToolsCommand::CopyMarked        , L"Co&py marked text "                                   },
-        { ToolsCommand::CopyMarkedMultiple, L"Copy marked &text as multiple selections"             },
-        { ToolsCommand::ClearMarks        , L"&Clear marks "                                        },
-        { ToolsCommand::ClearMarksMultiple, L"Clear marks from multiple &documents..."              },
-        { ToolsCommand::ClearHitlist      , L"Clear search res&ults list"                           },
-        { ToolsCommand::ShowAllClear      , L"Clear shown (show &all and clear style)"              },
-        { ToolsCommand::Settings          , L"Settin&gs..."                                         },
-        { ToolsCommand::SearchDialog_Close, L"Close mai&n Search++ dialog"                          },
-        { ToolsCommand::All_Windows_Close , L"&Quit (close all Search++ windows)"                   },
+        { ToolsCommand::Document_Search    , L"Mai&n Search++ dialog..."                             },
+        { ToolsCommand::SearchInFiles      , L"Search++ in &Files..."                                },
+        { ToolsCommand::Hitlist_Show       , L"Search++ &Results..."                                 },
+        { ToolsCommand::BookmarkWhenMark   , L"&Bookmark lines when marking text (Shift: configure)" },
+        { ToolsCommand::JumpReplace        , L"&Jump to next match after replace"                    },
+        { ToolsCommand::Peek               , L"Sp&y (temporarily show hidden lines)"                 },
+        { ToolsCommand::SaveSearch         , L"&Save search..."                                      },
+        { ToolsCommand::ShowSelectedLines  , L"Sh&ow selected lines (Shift: all)"                    },
+        { ToolsCommand::ShowAllLines       , L"Sh&ow all lines"                                      },
+        { ToolsCommand::ShowShown          , L"Sho&w only lines with shown text"                     },
+        { ToolsCommand::ExpandVisible      , L"&Expand visible"                                      },
+        { ToolsCommand::ExpandVisibleDialog, L"&Expand visible: configure"                           },
+        { ToolsCommand::HideAll            , L"&Hide all lines"                                      },
+        { ToolsCommand::SelToMark          , L"&Mark selected text"                                  },
+        { ToolsCommand::MarkShown          , L"Mar&k shown text"                                     },
+        { ToolsCommand::RemoveMarksFromSel , L"Remo&ve marks "                                       },
+        { ToolsCommand::InvertMarked       , L"&Invert marked text"                                  },
+        { ToolsCommand::MarkToSel          , L"&Select marked text"                                  },
+        { ToolsCommand::CopyMarked         , L"Co&py marked text "                                   },
+        { ToolsCommand::CopyMarkedMultiple , L"Copy marked &text as multiple selections"             },
+        { ToolsCommand::ClearMarks         , L"&Clear marks "                                        },
+        { ToolsCommand::ClearMarksMultiple , L"Clear marks from multiple &documents..."              },
+        { ToolsCommand::ClearHitlist       , L"Clear search res&ults list"                           },
+        { ToolsCommand::ShowAllClear       , L"Clear shown (show &all and clear style)"              },
+        { ToolsCommand::Settings           , L"Settin&gs..."                                         },
+        { ToolsCommand::SearchDialog_Close , L"Close mai&n Search++ dialog"                          },
+        { ToolsCommand::All_Windows_Close  , L"&Quit (close all Search++ windows)"                   },
 
         { ToolsCommand::SyncBookToMark    , L"&Bookmark lines with marked text"                     },
         { ToolsCommand::SyncBookToVisible , L"Bookmark &visible lines"                              },
@@ -262,7 +266,6 @@ void checkExpandVisibleState() {
                     || data.expandVisibleAfter .peek(expandVisibleDialog, IDC_EXPANDVISIBLE_AFTER_SPIN ) > 0;
     EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_BEFORE_PUSH), canExpand                ? TRUE : FALSE);
     EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_AFTER_PUSH ), canExpand                ? TRUE : FALSE);
-    EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_RESET      ), ts.anyShown              ? TRUE : FALSE);
     EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_EXPAND     ), notBothZero && canExpand ? TRUE : FALSE);
     EnableWindow(GetDlgItem(expandVisibleDialog, IDC_EXPANDVISIBLE_SAVE       ), notBothZero && changes   ? TRUE : FALSE);
 }
@@ -389,6 +392,23 @@ namespace {
     }
 
 
+    // Subclass procedure for Tools | Expand visible configure dialog controls
+
+    LRESULT __stdcall subclassExpandVisible(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR) {
+        switch (uMsg) {
+        case WM_NCDESTROY:
+            RemoveWindowSubclass(hWnd, subclassExpandVisible, uIdSubclass);
+            break;
+        case WM_KEYDOWN:
+            if ((lParam & KF_REPEAT) || !(GetKeyState(VK_CONTROL) & 0x8000) || wParam < L'A' || wParam > L'Z') break;
+            processToolsCommand(static_cast<unsigned char>(
+                GetKeyState(VK_SHIFT) & 0x8000 ? std::toupper(static_cast<unsigned char>(wParam))
+                : std::tolower(static_cast<unsigned char>(wParam))));
+        }
+        return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+    }
+
+
     // Dialog procedure for Tools | Expand visible configure
 
     HWND expandVisibleFocus  = 0;
@@ -411,6 +431,16 @@ namespace {
             data.expandVisibleAfter   .put(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN );
             data.expandVisibleSelected.put(hwndDlg, IDC_EXPANDVISIBLE_SELECTED   );
             checkExpandVisibleState();
+            SetWindowSubclass(GetDlgItem(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_EDIT), subclassExpandVisible, 0, 0);
+            SetWindowSubclass(GetDlgItem(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_SPIN), subclassExpandVisible, 0, 0);
+            SetWindowSubclass(GetDlgItem(hwndDlg, IDC_EXPANDVISIBLE_BEFORE_PUSH), subclassExpandVisible, 0, 0);
+            SetWindowSubclass(GetDlgItem(hwndDlg, IDC_EXPANDVISIBLE_AFTER_EDIT ), subclassExpandVisible, 0, 0);
+            SetWindowSubclass(GetDlgItem(hwndDlg, IDC_EXPANDVISIBLE_AFTER_SPIN ), subclassExpandVisible, 0, 0);
+            SetWindowSubclass(GetDlgItem(hwndDlg, IDC_EXPANDVISIBLE_AFTER_PUSH ), subclassExpandVisible, 0, 0);
+            SetWindowSubclass(GetDlgItem(hwndDlg, IDC_EXPANDVISIBLE_SELECTED   ), subclassExpandVisible, 0, 0);
+            SetWindowSubclass(GetDlgItem(hwndDlg, IDC_EXPANDVISIBLE_TOOLS      ), subclassExpandVisible, 0, 0);
+            SetWindowSubclass(GetDlgItem(hwndDlg, IDC_EXPANDVISIBLE_EXPAND     ), subclassExpandVisible, 0, 0);
+            SetWindowSubclass(GetDlgItem(hwndDlg, IDC_EXPANDVISIBLE_SAVE       ), subclassExpandVisible, 0, 0);
             npp(NPPM_MODELESSDIALOG, MODELESSDIALOGADD, hwndDlg);
             npp(NPPM_DARKMODESUBCLASSANDTHEME, NPP::NppDarkMode::dmfInit, hwndDlg);
             return TRUE;
@@ -438,9 +468,8 @@ namespace {
                               data.expandVisibleSelected.peek(hwndDlg, IDC_EXPANDVISIBLE_SELECTED));
                 checkExpandVisibleState();
                 return TRUE;
-            case IDC_EXPANDVISIBLE_RESET:
-                plugin.getScintillaPointers();
-                showShown();
+            case IDC_EXPANDVISIBLE_TOOLS:
+                showToolsMenu(reinterpret_cast<HWND>(lParam));
                 return TRUE;
             case IDC_EXPANDVISIBLE_EXPAND:
                 plugin.getScintillaPointers();
@@ -636,14 +665,15 @@ namespace {
             }
         [[fallthrough]];
     
-        case ToolsCommand::ShowLines:
-        case ToolsCommand::ShowLinesShift:
-            if (command == ToolsCommand::ShowAllClear || ts.shift || ts.selVisible) {
+        case ToolsCommand::ShowSelectedLines:
+        case ToolsCommand::ShowAllLines:
+            if (command == ToolsCommand::ShowAllClear || command == ToolsCommand::ShowAllLines || ts.shift) {
                 ShowPosition sp(sci);
                 showAllLines();
                 sp.scroll();
             }
             else {
+                if (ts.selVisible) break;
                 int n = sci.Selections();
                 for (int i = 0; i < n; ++i) makeCharsVisible(sci.SelectionNStart(i), sci.SelectionNEnd(i), true);
             }
@@ -658,20 +688,19 @@ namespace {
         }
     
         case ToolsCommand::ExpandVisible:
-            if (!ts.anyHidden || !ts.anyVisible) break;
             if (!ts.shift) {
+                if (!ts.anyHidden || !ts.anyVisible) break;
                 expandVisible(data.expandVisibleBefore, data.expandVisibleAfter, data.expandVisibleSelected);
                 break;
             }
         [[fallthrough]];
 
-        case ToolsCommand::ExpandVisibleShift:
-        {
-            if (expandVisibleDialog) SetForegroundWindow(expandVisibleDialog);
-            else CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_EXPANDVISIBLE),
-                              plugin.nppData._nppHandle, expandVisibleDialogProc);
+        case ToolsCommand::ExpandVisibleDialog:
+            if (!expandVisibleDialog) CreateDialog(plugin.dllInstance, MAKEINTRESOURCE(IDD_EXPANDVISIBLE),
+                                                   plugin.nppData._nppHandle, expandVisibleDialogProc);
+            else if (IsChild(expandVisibleDialog, GetFocus())) showSearchDialog();
+            else SetForegroundWindow(expandVisibleDialog);
             break;
-        }
     
         case ToolsCommand::HideAll:
         {
@@ -1086,10 +1115,10 @@ void showToolsMenu(HWND button) {
     AddToolItem(pum, ToolsCommand::JumpReplace     , button);
     AddToolItem(pum, ToolsCommand::Peek            , button);
     AppendMenu(pum, MF_SEPARATOR, 0, 0);
-    if (ts.selVisible) AddToolItem(pum, ToolsCommand::ShowLines, button, L"all lines");
-                  else AddToolItem(pum, ToolsCommand::ShowLines, button, L"selected lines (Shift: all)");
+    AddToolItem(pum, ts.selVisible ? ToolsCommand::ShowAllLines : ToolsCommand::ShowSelectedLines, button);
     AddToolItem(pum, ToolsCommand::ShowShown, button);
-    AddToolItem(pum, ToolsCommand::ExpandVisible, button, !ts.anyHidden || !ts.anyVisible ? L"" :
+    if (!ts.anyHidden || !ts.anyVisible) AddToolItem(pum, ToolsCommand::ExpandVisibleDialog, button);
+    else AddToolItem(pum, ToolsCommand::ExpandVisible, button,
         std::format(L" {}:{}{} (Shift: configure)", data.expandVisibleBefore.get(), data.expandVisibleAfter.get(),
         data.expandVisibleSelected ? L" selected" : L"").data());
     AddToolItem(pum, ToolsCommand::HideAll, button);
@@ -1128,7 +1157,7 @@ void showToolsMenu(HWND button) {
     AddToolItem(pum, ToolsCommand::All_Windows_Close, button);
 
     EnableMenuItem(pum, ToolsCommand::Hitlist_Show      , hitVisible || anyHits          ? MF_ENABLED : MF_GRAYED);
-    EnableMenuItem(pum, ToolsCommand::ShowLines         , ts.anyHidden                   ? MF_ENABLED : MF_GRAYED);
+    EnableMenuItem(pum, ToolsCommand::ShowAllLines      , ts.anyHidden                   ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ShowShown         , ts.anyShown                    ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::ExpandVisible     , ts.anyHidden && ts.anyVisible  ? MF_ENABLED : MF_GRAYED);
     EnableMenuItem(pum, ToolsCommand::HideAll           , ts.anyVisible                  ? MF_ENABLED : MF_GRAYED);
